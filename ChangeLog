@@ -1,6 +1,12 @@
 2008-08-20  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rahunas.h:
+	  - Add predefine RH_LOG_LEVEL and set it to RH_LOG_NORMAL.
+	  - Remove unneccessary code.
+
+2008-08-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunas.h:
 	  - Add timemsg(), static funtion returning the time message for logging. 
 	  - Adjust DP() for the DEBUG logging, which activate by define RH_DEBUG in 
 	    compilation time.

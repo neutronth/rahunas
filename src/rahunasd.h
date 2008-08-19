@@ -64,18 +64,7 @@ enum RH_LOG {
 	RH_LOG_ERROR
 };
 
-#ifdef RH_LOG_LEVEL
-#else
-#  ifdef LOG_DEBUG
-#    define RH_LOG_LEVEL RH_LOG_DEBUG
-#  else
-#    ifdef LOG_NORMAL
-#      define RH_LOG_LEVEL RH_LOG_NORMAL
-#    else
-#      define RH_LOG_LEVEL RH_LOG_ERROR
-#    endif
-#  endif
-#endif
+#define RH_LOG_LEVEL RH_LOG_NORMAL
 
 #ifdef RH_DEBUG
 #define DP(format, args...) \
