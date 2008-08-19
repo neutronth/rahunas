@@ -1,5 +1,10 @@
 2008-08-20  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rahunas.{h,c}:
+	  - Replace logmsg which using RH_DEBUG to new DP().
+
+2008-08-20  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rahunas.h:
 	  - Add predefine RH_LOG_LEVEL and set it to RH_LOG_NORMAL.
 	  - Remove unneccessary code.

@@ -73,7 +73,7 @@ enum RH_LOG {
     fprintf(stderr, format "\n", ## args); \
   } while (0)
 #else
-#define DP(priority, format, args...)
+#define DP(format, args...)
 #endif
 
 #endif // __RAHUNASD_H

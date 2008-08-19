@@ -49,17 +49,17 @@ uint32_t iptoid(struct rahunas_map *map, const char *ip) {
 	  return (-1);
 
   if (!(inet_aton(ip, &req_ip))) {
-    logmsg(RH_LOG_DEBUG, "Could not convert IP: %s", ip);
+    DP("Could not convert IP: %s", ip);
     return (-1);  
   }
 
-  //logmsg(RH_LOG_DEBUG, "Request IP: %s", ip);
+  DP("Request IP: %s", ip);
 	
   ret = ntohl(req_ip.s_addr) - ntohl(map->first_ip);
 	if (ret < 0 || ret > (map->size - 1))
 	  ret = (-1);
 
-  //logmsg(RH_LOG_DEBUG, "Request Index: %lu", ret);
+  DP("Request Index: %lu", ret);
   return ret; 
 }
 
@@ -288,7 +288,7 @@ int parse_set_list(const char *in, struct rahunas_map *map)
 	members = map->members;
 
   // Found members
-  //logmsg(RH_LOG_DEBUG, in);
+  DP("Parse from list: %s", in);
 	sep = strstr(in, ":");
 	sess_ip = strndup(in, sep - in);
   if (sess_ip == NULL)
@@ -381,14 +381,14 @@ int update_set(struct rahunas_map *map)
 
 		  if (members[i].expired) {
     	  if (!no_detail) {
-    		    logmsg(RH_LOG_DEBUG, "IP %s, Client: Username %s, "
-    		                         "Session-ID %s, Session-Start %d, "
-                                 "Expired %d",
-                                 idtoip(map, i),
-    			    									 members[i].username, 
-    			    									 members[i].session_id,
-    			    									 members[i].session_start,
-                                 members[i].expired);
+    		    DP("IP %s, Client: Username %s, "
+    		       "Session-ID %s, Session-Start %d, "
+               "Expired %d",
+               idtoip(map, i),
+    			     members[i].username, 
+    			     members[i].session_id,
+    			     members[i].session_start,
+               members[i].expired);
 
 			      send_xmlrpc_stopacct(map, i);
           }
@@ -449,11 +449,11 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
   
   if (gnet_xmlrpc_client_call(client, "stopacct", params, &reply) == 0)
     {
-      logmsg(RH_LOG_DEBUG, "stopacct reply = %s", reply);
+      DP("stopacct reply = %s", reply);
       g_free(reply);
     }
   else
-    logmsg(RH_LOG_DEBUG, "Failed executing stopacct!");
+    DP("%s", "Failed executing stopacct!");
 	
 	g_free(params);
 
@@ -494,7 +494,7 @@ int rh_init_members (struct rahunas_map* map)
 
 gboolean polling(gpointer data) {
   struct rahunas_map *map = (struct rahunas_map *)data;
-	logmsg(RH_LOG_DEBUG, "Start polling!");
+	DP("%s", "Start polling!");
 	chk_set (map);
 	update_set (map);
   return TRUE;
