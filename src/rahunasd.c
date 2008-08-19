@@ -114,13 +114,10 @@ int rh_closelog(int fd)
 int logmsg(int priority, const char *msg, ...) 
 {
   int n, size = 256;
-  char time_msg[20];
-  time_t t;
 	va_list ap;
 	char *time_fmt = "%b %e %T";
 	char *p = NULL;
   char *np = NULL;
-  struct tm *ltime = NULL;
 
 	if (priority < RH_LOG_LEVEL)
 	  return 0;
@@ -154,20 +151,7 @@ int logmsg(int priority, const char *msg, ...)
 	if (!p)
 	  return (-1);
 
-	t = time(NULL);
-	ltime = localtime(&t);
-	if (ltime == NULL) {
-		return (-1);
-	}
-
-	if ((np = rh_malloc(size+20)) == NULL) {
-		rh_free(p);
-		return (-1);
-	}
-
-	strftime(time_msg, sizeof time_msg, time_fmt, ltime);
-
-	fprintf(stderr, "%s : %s\n", time_msg, p);
+	fprintf(stderr, "%s : %s\n", timemsg(), p);
 
 	rh_free(&p);
 	rh_free(&np);

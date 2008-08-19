@@ -25,36 +25,6 @@
 #define XMLSERVICE_PORT	8888
 #define XMLSERVICE_URL	"/xmlrpc_service.php"
 
-enum RH_LOG {
-  RH_LOG_DEBUG,
-	RH_LOG_NORMAL,
-	RH_LOG_ERROR
-};
-
-#ifdef RH_LOG_LEVEL
-#else
-#  ifdef LOG_DEBUG
-#    define RH_LOG_LEVEL RH_LOG_DEBUG
-#  else
-#    ifdef LOG_NORMAL
-#      define RH_LOG_LEVEL RH_LOG_NORMAL
-#    else
-#      define RH_LOG_LEVEL RH_LOG_ERROR
-#    endif
-#  endif
-#endif
-
-#ifdef RH_DEBUG
-#define DP(priority, format, args...) \
-  do {  \
-    if (priority > RH_LOG_LEVEL) { \
-      fprintf(stderr, "%s: %s (DBG): ", __FILE__, __FUNCTION__); \
-      fprintf(stderr, format "\n", ## args);
-    } \
-  } while (0)
-#else
-#define DP(priority, format, args...)
-#endif
 
 struct rahunas_map {
   struct rahunas_member *members;
@@ -76,5 +46,45 @@ char *idtoip(struct rahunas_map *map, uint32_t id);
 
 void *rh_malloc(size_t size);
 void rh_free(void **data);
+
+static char *timemsg()
+{
+  static char tmsg[32] = "";
+  char tfmt[] = "%b %e %T";
+  time_t t;
+
+  t = time(NULL);
+  strftime(tmsg, sizeof tmsg, tfmt, localtime(&t));
+  return tmsg; 
+}
+
+enum RH_LOG {
+  RH_LOG_DEBUG,
+	RH_LOG_NORMAL,
+	RH_LOG_ERROR
+};
+
+#ifdef RH_LOG_LEVEL
+#else
+#  ifdef LOG_DEBUG
+#    define RH_LOG_LEVEL RH_LOG_DEBUG
+#  else
+#    ifdef LOG_NORMAL
+#      define RH_LOG_LEVEL RH_LOG_NORMAL
+#    else
+#      define RH_LOG_LEVEL RH_LOG_ERROR
+#    endif
+#  endif
+#endif
+
+#ifdef RH_DEBUG
+#define DP(format, args...) \
+  do {  \
+    fprintf(stderr, "%s - %s: %s (DBG): ", timemsg(), __FILE__, __FUNCTION__); \
+    fprintf(stderr, format "\n", ## args); \
+  } while (0)
+#else
+#define DP(priority, format, args...)
+#endif
 
 #endif // __RAHUNASD_H

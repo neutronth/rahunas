@@ -1,3 +1,13 @@
+2008-08-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunas.h:
+	  - Add timemsg(), static funtion returning the time message for logging. 
+	  - Adjust DP() for the DEBUG logging, which activate by define RH_DEBUG in 
+	    compilation time.
+
+	* src/rahunas.c:
+	  - Adjust logmsg() to use the new timemsg().
+
 2008-08-19  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rahunas.{h,c}:
