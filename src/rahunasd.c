@@ -23,6 +23,7 @@
 #include "ipset-control.h"
 
 /* Abstract functions */
+int logmsg(int priority, const char *msg, ...); 
 int getline(int fd, char *buf, size_t size);
 int finish();
 int ipset_flush();
@@ -39,8 +40,6 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id);
 
 /* Declaration */
 struct rahunas_map *map = NULL;
-int fd_log;
-int fd_debug;
 
 uint32_t iptoid(struct rahunas_map *map, const char *ip) {
   uint32_t ret;
@@ -101,11 +100,7 @@ void rh_free(void **data)
 
 int rh_openlog(const char *filename)
 {
-  fd_log = open(filename, O_WRONLY | O_APPEND);
-	if (fd_log == (-1))
-	  return 0;
-  else	
-	  return 1;
+  return open(filename, O_WRONLY | O_APPEND);
 }
 
 int rh_closelog(int fd)
@@ -553,11 +548,7 @@ watch_child(char *argv[])
   /* Change the file mode mask */
   umask(0);
 
-  /* Open log file */
- 	if (!rh_openlog(DEFAULT_LOG)) {
-    syslog(LOG_ERR, "Could not open log file %s", DEFAULT_LOG);
-    exit(EXIT_FAILURE);
-  }
+
 
 	if ((sid = setsid()) < 0)
 	  syslog(LOG_ALERT, "setsid failed");
@@ -640,6 +631,7 @@ int main(int argc, char **argv)
 {
 	gchar* addr = "localhost";
 	int port    = 8123;
+  int fd_log;
 
 	char line[256];
 	char version[256];
@@ -654,11 +646,13 @@ int main(int argc, char **argv)
 
   sprintf(version, "Starting %s - Version %s", PROGRAM, VERSION);
 
-  /* Test open log file */
- 	if (!rh_openlog()) {
+  /* Open log file */
+ 	if ((fd_log = rh_openlog(DEFAULT_LOG)) == (-1)) {
     syslog(LOG_ERR, "Could not open log file %s", DEFAULT_LOG);
     exit(EXIT_FAILURE);
   }
+
+  dup2(fd_log, STDERR_FILENO);
 
 	logmsg(RH_LOG_NORMAL, version);
   syslog(LOG_INFO, version);

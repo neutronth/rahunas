@@ -13,8 +13,8 @@
 #include <time.h>
 
 #define PROGRAM "RuhuNASd"
-#define VERSION "0.1"
-#define MAX_MEMBERS 65536
+#define VERSION "0.1.1"
+#define MAX_MEMBERS 0x00FFFF
 
 /* Configuration */
 #define DEFAULT_LOG "/var/log/rahunas/rahunas.log"
