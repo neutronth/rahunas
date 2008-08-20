@@ -1,11 +1,16 @@
 2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
 
-	* src/Makefile.am:
+	* src/include/linux/netfilter_ipv4/ip_set*.h: 
+	  add to resolve FTBFS when clone from git (forgot to commit last time).
+
+2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rahunasd.{h,c}, src/rh-ipset.{h,c}, src/rh-xmlrpc-server.c:
 	  Implement the native ipset command, the codes are adapted from ipset 
 	  userspace program.
 	* src/ipset-control.{h,c}: Removed as they are replaced by new native ipset
 	  implementation.
+	* src/Makefile.am: Adjust to support new native ipset implementation.
 
 2008-08-20  Neutron Soutmun <neo.neutron@gmail.com>
 
