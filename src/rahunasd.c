@@ -21,7 +21,6 @@
 #include "rahunasd.h"
 #include "rh-xmlrpc-server.h"
 #include "rh-ipset.h"
-#include "ipset-control.h"
 
 /* Abstract functions */
 int logmsg(int priority, const char *msg, ...); 

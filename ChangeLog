@@ -1,5 +1,9 @@
 2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rahunasd.c: Remove the including to ipset-control.h which not exist now.
+
+2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/include/linux/netfilter_ipv4/ip_set*.h: 
 	  add to resolve FTBFS when clone from git (forgot to commit last time).
 
