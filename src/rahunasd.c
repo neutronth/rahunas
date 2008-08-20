@@ -20,6 +20,7 @@
 
 #include "rahunasd.h"
 #include "rh-xmlrpc-server.h"
+#include "rh-ipset.h"
 #include "ipset-control.h"
 
 /* Abstract functions */
@@ -27,8 +28,6 @@ int logmsg(int priority, const char *msg, ...);
 int getline(int fd, char *buf, size_t size);
 int finish();
 int ipset_flush();
-int chk_set(struct rahunas_map *map);
-int update_set(struct rahunas_map *map);
 
 struct rahunas_map* rh_init_map();
 int rh_init_members(struct rahunas_map *map);
@@ -40,6 +39,10 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id);
 
 /* Declaration */
 struct rahunas_map *map = NULL;
+struct set *rahunas_set = NULL;
+
+struct set **set_list = NULL;
+ip_set_id_t max_sets = 0;
 
 uint32_t iptoid(struct rahunas_map *map, const char *ip) {
   uint32_t ret;
@@ -96,6 +99,17 @@ void rh_free(void **data)
 
   free(*data);
   *data = NULL;
+}
+
+void rh_free_member (struct rahunas_member *member)
+{
+  if (member->username)
+    free(member->username);
+
+  if (member->session_id)
+    free(member->session_id);
+  
+  memset(member, 0, sizeof(struct rahunas_member));
 }
 
 int rh_openlog(const char *filename)
@@ -167,7 +181,7 @@ void rh_shutdown(int sig)
 int ipset_flush()
 {
   logmsg(RH_LOG_NORMAL, "Flushing IPSET...");
-  return ctrl_flush();
+  /* TODO: Flush the ipset */
 }
 
 int finish()
@@ -194,6 +208,7 @@ int finish()
 		rh_free(&map);
 	}
 
+  rh_free(&rahunas_set);
   logmsg(RH_LOG_NORMAL, exitmsg);
 	syslog(LOG_INFO, exitmsg);
   return 0;
@@ -307,113 +322,6 @@ int parse_set_list(const char *in, struct rahunas_map *map)
 	return id;
 }
 
-int chk_set(struct rahunas_map *map) 
-{
-  struct rahunas_member *members = NULL;
-	unsigned short set_start = 0;
-	char  line[256];
-  int   pipefd[2];
-	pid_t cpid;
-	uint32_t  id;
-
-	members = map->members;
-
-	if (pipe(pipefd) == -1) {
-    syslog(LOG_ERR, "Could not create pipe");
-		return -1;
-	}
-
-	cpid = fork();
-	if (cpid == 0) {
-	  close(pipefd[0]);
-		dup2(pipefd[1], STDOUT_FILENO);
-		execlp("ipset", "ipset", "-nL", SET_NAME, NULL);
-		return (-1);
-		close(pipefd[1]);
-	}
-
-  wait(NULL);
-
-  close(pipefd[1]);
-
-	while (getline(pipefd[0], line, sizeof line) > 0) {
-
-    if (strstr(line, "Bindings:") != NULL)
-		  set_start = 0;
-
-		if (set_start)
-		  parse_set_list(line, map);
-
-		// Capture header
-    if (strstr(line, "Header:") != NULL)
-		  if (map != NULL && map->size == 0) {
-        parse_set_header(line, map);
-				break;
-			}
-
-		if (strstr(line, "Members:") != NULL)
-		  set_start = 1;
-	}
-	close(pipefd[0]); 
-
-	return 0;
-}
-
-
-int update_set(struct rahunas_map *map) 
-{
-  struct rahunas_member *members = NULL;
-  unsigned int i;
-  unsigned short no_detail = 0;
- 
-  if (!map)
-	  return (-1);
-	
-	members = map->members;
-
-	for (i=0; i < map->size; i++) {
-    no_detail = 0;
-    if (members[i].flags) {
-      if (!members[i].username || !members[i].session_id)
-        no_detail = 1;
- 
-    
-
-		  if (members[i].expired) {
-    	  if (!no_detail) {
-    		    DP("IP %s, Client: Username %s, "
-    		       "Session-ID %s, Session-Start %d, "
-               "Expired %d",
-               idtoip(map, i),
-    			     members[i].username, 
-    			     members[i].session_id,
-    			     members[i].session_start,
-               members[i].expired);
-
-			      send_xmlrpc_stopacct(map, i);
-          }
-
-        if (ctrl_del_from_set(map, i) == 0) {
-          if (!no_detail) {
-            logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
-                            "Session ID: %s",
-                            members[i].username, 
-                            idtoip(map, i), 
-                            members[i].session_id); 
-          }
-
-            rh_free(&(members[i].username));
-            rh_free(&(members[i].session_id));
-
-			    memset(&members[i], 0, sizeof(struct rahunas_member));
-			    logmsg(RH_LOG_NORMAL, "Client IP %s was removed!", idtoip(map,i));
-			  }
-			}
-		}
-	}
-  return 0;
-}
-
 int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
   struct rahunas_member *members = NULL;
   GNetXmlRpcClient *client = NULL;
@@ -439,10 +347,12 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
     return (-1);
   }
 	
-	params = g_strdup_printf("%s|%s|%d", 
+	params = g_strdup_printf("%s|%s|%s|%d|%s", 
+                           idtoip(map, id),
 	                         members[id].username,
 													 members[id].session_id,
-													 members[id].session_start);
+													 members[id].session_start,
+                           mac_tostring(members[id].mac_address));
 
   if (params == NULL)
     return (-1);
@@ -495,9 +405,124 @@ int rh_init_members (struct rahunas_map* map)
 gboolean polling(gpointer data) {
   struct rahunas_map *map = (struct rahunas_map *)data;
 	DP("%s", "Start polling!");
-	chk_set (map);
-	update_set (map);
+  walk_through_set();
   return TRUE;
+}
+
+size_t expired_check(void *data)
+{
+  struct ip_set_list *setlist = (struct ip_set_list *) data;
+  struct set *set = set_list[setlist->index];
+  size_t offset;
+  struct ip_set_rahunas *table = NULL;
+  struct rahunas_member *members = map->members;
+  unsigned int i;
+  char *ip = NULL;
+  ip_set_ip_t current_ip;
+  int res  = 0;
+
+  offset = sizeof(struct ip_set_list) + setlist->header_size;
+  table = (struct ip_set_rahunas *)(data + offset);
+
+  DP("Map size %d", map->size);
+ 
+  for (i = 0; i < map->size; i++) {
+    if (test_bit(IPSET_RAHUNAS_ISSET,
+          (void *)&table[i].flags)) {
+      if ((time(NULL) - table[i].timestamp) > IDLE_THRESHOLD) {
+        DP("Found IP: %s expired", idtoip(map, i));
+        current_ip = ntohl(map->first_ip) + i;
+        res = set_adtip_nb(rahunas_set, &current_ip, &table[i].ethernet,
+                           IP_SET_OP_DEL_IP);  
+        DP("set_adtip_nb() res=%d errno=%d", res, errno);
+
+        if (res == 0) {
+			    send_xmlrpc_stopacct(map, i);
+          rh_free_member(&members[i]);
+        }
+      } 
+    }
+  }
+}
+
+int get_header_from_set ()
+{
+  struct ip_set_req_rahunas_create *header = NULL;
+  void *data = NULL;
+  ip_set_id_t idx;
+  socklen_t size, req_size;
+  size_t offset;
+  int res = 0;
+ 	in_addr_t first_ip;
+	in_addr_t last_ip;
+
+  size = req_size = load_set_list(SET_NAME, &idx, 
+                                  IP_SET_OP_LIST_SIZE, CMD_LIST); 
+
+  DP("Get Set Size: %d", size);
+  
+  if (size) {
+    data = rh_malloc(size);
+    ((struct ip_set_req_list *) data)->op = IP_SET_OP_LIST;
+    ((struct ip_set_req_list *) data)->index = idx;
+    res = kernel_getfrom_handleerrno(data, &size);
+    DP("get_lists getsockopt() res=%d errno=%d", res, errno);
+
+    if (res != 0 || size != req_size) {
+      free(data);
+      return -EAGAIN;
+    }
+    size = 0;
+  }
+
+  offset = sizeof(struct ip_set_list);
+  header = (struct ip_set_req_rahunas_create *) (data + offset);
+
+  first_ip = htonl(header->from); 
+  last_ip = htonl(header->to); 
+  
+  memcpy(&map->first_ip, &first_ip, sizeof(in_addr_t));
+  memcpy(&map->last_ip, &last_ip, sizeof(in_addr_t));
+	map->size = ntohl(map->last_ip) - ntohl(map->first_ip) + 1;
+
+	logmsg(RH_LOG_NORMAL, "First IP: %s", ip_tostring(ntohl(map->first_ip)));
+	logmsg(RH_LOG_NORMAL, "Last  IP: %s", ip_tostring(ntohl(map->last_ip)));
+	logmsg(RH_LOG_NORMAL, "Set Size: %lu", map->size);
+
+  rh_free(&data);
+  return res;
+}
+
+int walk_through_set ()
+{
+  void *data = NULL;
+  ip_set_id_t idx;
+  socklen_t size, req_size;
+  int res = 0;
+
+  size = req_size = load_set_list(SET_NAME, &idx, 
+                                  IP_SET_OP_LIST_SIZE, CMD_LIST); 
+
+  DP("Get Set Size: %d", size);
+  
+  if (size) {
+    data = rh_malloc(size);
+    ((struct ip_set_req_list *) data)->op = IP_SET_OP_LIST;
+    ((struct ip_set_req_list *) data)->index = idx;
+    res = kernel_getfrom_handleerrno(data, &size);
+    DP("get_lists getsockopt() res=%d errno=%d", res, errno);
+
+    if (res != 0 || size != req_size) {
+      free(data);
+      return -EAGAIN;
+    }
+    size = 0;
+  }
+
+  expired_check(data);
+
+  rh_free(&data);
+  return res;
 }
 
 static void
@@ -623,6 +648,7 @@ int main(int argc, char **argv)
 	GNetXmlRpcServer *server = NULL;
 	GMainLoop* main_loop     = NULL;
 
+
 	watch_child(argv);
   
   gnet_init();
@@ -641,8 +667,13 @@ int main(int argc, char **argv)
 	logmsg(RH_LOG_NORMAL, version);
   syslog(LOG_INFO, version);
 
+  rahunas_set = set_adt_get(SET_NAME);
+  DP("getsetname: %s", rahunas_set->name);
+  DP("getsetid: %d", rahunas_set->id);
+  DP("getsetindex: %d", rahunas_set->index);
+
   map = rh_init_map();
-  chk_set(map);
+  get_header_from_set();
   rh_init_members(map);
 
   /* XML RPC Server */

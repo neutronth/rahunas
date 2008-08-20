@@ -1,8 +1,14 @@
 bin_PROGRAMS = rahunasd
 
-AM_CFLAGS = $(LIBGNET_CFLAGS)
+IPSET_VERSION:=2.3.3
 
-rahunasd_SOURCES = rahunasd.c rh-xmlrpc-server.c ipset-control.c
+AM_CFLAGS = $(LIBGNET_CFLAGS) -I$(top_builddir)/src/include/ \
+	-DIPSET_VERSION=\"$(IPSET_VERSION)\"
+
+rahunasd_SOURCES = rahunasd.c \
+	rh-xmlrpc-server.c \
+  rh-ipset.c	
+
 rahunasd_LDADD =  \
 	$(top_builddir)/xmlrpc/libgnetxmlrpc.a \
 	$(LIBGNET_LIBS)

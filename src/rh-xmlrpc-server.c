@@ -8,7 +8,10 @@
 #include <stdlib.h>
 #include "rahunasd.h"
 #include "rh-xmlrpc-server.h"
-#include "ipset-control.h"
+#include "rh-ipset.h"
+
+
+extern struct set *rahunas_set;
 
 int do_startsession(GNetXmlRpcServer *server,
                     const gchar *command,
@@ -18,12 +21,15 @@ int do_startsession(GNetXmlRpcServer *server,
 {
   struct rahunas_map *map = (struct rahunas_map *)user_data;
 	struct rahunas_member *members = NULL;
+  unsigned char ethernet[ETH_ALEN];
 	gchar *ip = NULL;
 	gchar *username = NULL;
 	gchar *session_id = NULL;
+  gchar *mac_address = NULL;
 	gchar *pStart = NULL;
 	gchar *pEnd = NULL;
 	uint32_t id;
+  int res = 0;
 
 	if (!map)
 	  goto out;
@@ -52,8 +58,16 @@ int do_startsession(GNetXmlRpcServer *server,
     goto out;
 	}
 	username = g_strndup(pStart, pEnd - pStart);
+
+  pStart = pEnd + 1;
+	pEnd = g_strstr_len(pStart, strlen(pStart), "|");
+	if (pEnd == NULL) {
+    goto out;
+	}
+	session_id = g_strndup(pStart, pEnd - pStart);
+
 	pStart = pEnd + 1;
-  session_id = g_strndup(pStart, strlen(pStart));
+  mac_address = g_strndup(pStart, strlen(pStart));
 
 	id = iptoid(map, ip);
 
@@ -62,28 +76,34 @@ int do_startsession(GNetXmlRpcServer *server,
 		return 0;
 	}
 
-	if (members[id].flags) {
-    *reply_string = g_strdup("Client already login");
-		return 0;
-	}
 
-  if (ctrl_add_to_set(map, id) == 0) {
-	  if (!members[id].username)
-		  free(members[id].username);
-		members[id].username = username;
-    
-		if (!members[id].session_id)
-		  free(members[id].session_id);
-		members[id].session_id = session_id;
+  res = set_adtip(rahunas_set, ip, mac_address, IP_SET_OP_ADD_IP);
+  if (res == 0) {
+    members[id].flags = 1;
+    if (!members[id].username)
+      free(members[id].username);
+
+    if (!members[id].session_id)
+      free(members[id].session_id);
+
+    members[id].username   = strdup(username);
+    members[id].session_id = strdup(session_id);
 
 		time(&(members[id].session_start));
 
+    parse_mac(mac_address, &ethernet);
+    memcpy(&members[id].mac_address, &ethernet, ETH_ALEN);
+
     logmsg(RH_LOG_NORMAL, "Session Start, User: %s, IP: %s, "
-                          "Session ID: %s",
+                          "Session ID: %s, MAC: %s",
                           members[id].username, 
                           idtoip(map, id), 
-                          members[id].session_id); 
-	}
+                          members[id].session_id,
+                          mac_tostring(members[id].mac_address)); 
+
+  } else if (res == RH_IS_IN_SET) {
+    members[id].flags = 1;
+  }
 
   *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s", 
 	                                 ip, members[id].username, 
@@ -105,8 +125,13 @@ int do_stopsession(GNetXmlRpcServer *server,
 {
   struct rahunas_map *map = (struct rahunas_map *)user_data;
 	struct rahunas_member *members;
-	gchar *ip;
+	gchar *ip = NULL;
+	gchar *mac_address = NULL;
+	gchar *pStart = NULL;
+	gchar *pEnd = NULL;
 	uint32_t   id;
+  int res = 0;
+  unsigned char ethernet[ETH_ALEN];
 
 	if (!map)
 	  goto out;
@@ -119,7 +144,23 @@ int do_stopsession(GNetXmlRpcServer *server,
 	if (param == NULL)
 	  goto out;
 
-  ip = param;
+  DP("RPC Receive: %s", param);
+
+  pStart = param;
+	pEnd = g_strstr_len(pStart, strlen(pStart), "|");
+	if (pEnd == NULL) {
+	  goto out;
+	}
+
+	ip = g_strndup(pStart, pEnd - pStart);
+  if (ip == NULL)
+    goto out;
+
+	pStart = pEnd + 1;
+  mac_address = g_strndup(pStart, strlen(pStart));
+  if (mac_address == NULL)
+    goto out;
+
 	id = iptoid(map, ip);
 
 	if (id < 0) {
@@ -128,29 +169,30 @@ int do_stopsession(GNetXmlRpcServer *server,
 	}
 
 	if (members[id].flags) {
-	  if (ctrl_del_from_set(map, id) == 0) {
+    parse_mac(mac_address, &ethernet);
+    if (memcmp(&ethernet, &members[id].mac_address, ETH_ALEN) == 0) {
+      res = set_adtip(rahunas_set, idtoip(map, id), mac_address,
+                      IP_SET_OP_DEL_IP);
+      if (res == 0) {
+        logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
+                              "Session ID: %s, MAC: %s",
+                              members[id].username, 
+                              idtoip(map, id), 
+                              members[id].session_id,
+                              mac_tostring(members[id].mac_address)); 
 
-    logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
-                          "Session ID: %s",
-                          members[id].username, 
-                          idtoip(map, id), 
-                          members[id].session_id); 
-
-      if (members[id].username)
-        free(members[id].username);
-         
-      if (members[id].session_id)
-        free(members[id].session_id);
-
-	    memset(&members[id], 0, sizeof(struct rahunas_member));
-			*reply_string = g_strdup_printf("Client IP %s was removed!", 
-			                                idtoip(map, id));
-			return 0;
-		} else {
-      *reply_string = g_strdup_printf("Client IP %s remove error", ip);
-		  return 0;
-		}
-	}
+        rh_free_member(&members[id]);   
+ 
+        *reply_string = g_strdup_printf("Client IP %s was removed!", 
+  			                                  idtoip(map, id));
+  	    return 0;
+      } else {
+         *reply_string = g_strdup_printf("Client IP %s error remove!", 
+  			                                idtoip(map, id));
+  			  return 0;
+      }
+		}	
+  }
 
   *reply_string = g_strdup_printf("%s", ip);
 	return 0;
@@ -201,10 +243,12 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
       return 0;
     }
     
-    *reply_string = g_strdup_printf("%s|%s|%s|%d", ip, 
-		                                               members[id].username,
-																								   members[id].session_id,
-																								   members[id].session_start);
+    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s", 
+                                      ip, 
+		                                  members[id].username,
+																		  members[id].session_id,
+																		  members[id].session_start,
+                                      mac_tostring(members[id].mac_address));
 		return 0;
 	}
 

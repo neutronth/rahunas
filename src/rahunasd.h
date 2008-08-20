@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <linux/if_ether.h>
 
 #define PROGRAM "RuhuNASd"
 #define VERSION "0.1.1"
@@ -18,8 +19,8 @@
 
 /* Configuration */
 #define DEFAULT_LOG "/var/log/rahunas/rahunas.log"
-#define IDLE_THRESHOLD 30
-#define POLLING 30 
+#define IDLE_THRESHOLD 600
+#define POLLING 120 
 #define SET_NAME "rahunas_set"
 #define XMLSERVICE_HOST	"localhost"
 #define XMLSERVICE_PORT	8888
@@ -39,6 +40,7 @@ struct rahunas_member {
 	time_t session_start;
 	char *username;
   char *session_id;
+  unsigned char mac_address[ETH_ALEN];
 };
 
 uint32_t iptoid(struct rahunas_map *map, const char *ip);
@@ -46,6 +48,8 @@ char *idtoip(struct rahunas_map *map, uint32_t id);
 
 void *rh_malloc(size_t size);
 void rh_free(void **data);
+
+void rh_free_member (struct rahunas_member *member);
 
 static char *timemsg()
 {
