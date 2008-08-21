@@ -1,5 +1,14 @@
 2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rahunasd.{h,c}, src/rh-xmlrpc-server.c:
+	  - Prevent the segfault due to the log printing username and session_id 
+	    pointing to NULL.
+	  - Implement the ipset Flush set command.
+	* src/rh-ipset.{h,c}: Add code to support ipset Flush set command.
+	* + rahunas.in: Add init script example.
+
+2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rahunasd.c: Remove the including to ipset-control.h which not exist now.
 
 2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>

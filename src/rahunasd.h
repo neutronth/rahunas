@@ -19,13 +19,31 @@
 
 /* Configuration */
 #define DEFAULT_LOG "/var/log/rahunas/rahunas.log"
+#define DEFAULT_PID "/var/run/rahunasd.pid"
 #define IDLE_THRESHOLD 600
-#define POLLING 120 
+#define POLLING 30 
 #define SET_NAME "rahunas_set"
 #define XMLSERVICE_HOST	"localhost"
 #define XMLSERVICE_PORT	8888
 #define XMLSERVICE_URL	"/xmlrpc_service.php"
 
+enum RH_LOG {
+  RH_LOG_DEBUG,
+	RH_LOG_NORMAL,
+	RH_LOG_ERROR
+};
+
+#define RH_LOG_LEVEL RH_LOG_NORMAL
+
+#ifdef RH_DEBUG
+#define DP(format, args...) \
+  do {  \
+    fprintf(stderr, "%s - %s: %s (DBG): ", timemsg(), __FILE__, __FUNCTION__); \
+    fprintf(stderr, format "\n", ## args); \
+  } while (0)
+#else
+#define DP(format, args...)
+#endif
 
 struct rahunas_map {
   struct rahunas_member *members;
@@ -61,23 +79,5 @@ static char *timemsg()
   strftime(tmsg, sizeof tmsg, tfmt, localtime(&t));
   return tmsg; 
 }
-
-enum RH_LOG {
-  RH_LOG_DEBUG,
-	RH_LOG_NORMAL,
-	RH_LOG_ERROR
-};
-
-#define RH_LOG_LEVEL RH_LOG_NORMAL
-
-#ifdef RH_DEBUG
-#define DP(format, args...) \
-  do {  \
-    fprintf(stderr, "%s - %s: %s (DBG): ", timemsg(), __FILE__, __FUNCTION__); \
-    fprintf(stderr, format "\n", ## args); \
-  } while (0)
-#else
-#define DP(format, args...)
-#endif
 
 #endif // __RAHUNASD_H

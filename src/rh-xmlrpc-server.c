@@ -10,8 +10,8 @@
 #include "rh-xmlrpc-server.h"
 #include "rh-ipset.h"
 
-
 extern struct set *rahunas_set;
+extern const char* dummy;
 
 int do_startsession(GNetXmlRpcServer *server,
                     const gchar *command,
@@ -21,7 +21,7 @@ int do_startsession(GNetXmlRpcServer *server,
 {
   struct rahunas_map *map = (struct rahunas_map *)user_data;
 	struct rahunas_member *members = NULL;
-  unsigned char ethernet[ETH_ALEN];
+  unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
 	gchar *ip = NULL;
 	gchar *username = NULL;
 	gchar *session_id = NULL;
@@ -76,18 +76,22 @@ int do_startsession(GNetXmlRpcServer *server,
 		return 0;
 	}
 
-
   res = set_adtip(rahunas_set, ip, mac_address, IP_SET_OP_ADD_IP);
   if (res == 0) {
     members[id].flags = 1;
-    if (!members[id].username)
+    if (members[id].username && members[id].username != dummy)
       free(members[id].username);
 
-    if (!members[id].session_id)
+    if (members[id].session_id && members[id].username != dummy)
       free(members[id].session_id);
 
     members[id].username   = strdup(username);
+    if (!members[id].username)
+      members[id].username = dummy;
+
     members[id].session_id = strdup(session_id);
+    if (!members[id].session_id)
+      members[id].session_id = dummy;
 
 		time(&(members[id].session_start));
 
@@ -131,7 +135,7 @@ int do_stopsession(GNetXmlRpcServer *server,
 	gchar *pEnd = NULL;
 	uint32_t   id;
   int res = 0;
-  unsigned char ethernet[ETH_ALEN];
+  unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
 
 	if (!map)
 	  goto out;
@@ -174,6 +178,12 @@ int do_stopsession(GNetXmlRpcServer *server,
       res = set_adtip(rahunas_set, idtoip(map, id), mac_address,
                       IP_SET_OP_DEL_IP);
       if (res == 0) {
+        if (!members[id].username)
+          members[id].username = dummy;
+
+        if (!members[id].session_id)
+          members[id].session_id = dummy;
+
         logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
                               "Session ID: %s, MAC: %s",
                               members[id].username, 

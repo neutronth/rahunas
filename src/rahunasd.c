@@ -43,6 +43,9 @@ struct set *rahunas_set = NULL;
 struct set **set_list = NULL;
 ip_set_id_t max_sets = 0;
 
+const char *dummy = '\0';
+pid_t pid, sid;
+
 uint32_t iptoid(struct rahunas_map *map, const char *ip) {
   uint32_t ret;
   struct in_addr req_ip;
@@ -102,18 +105,20 @@ void rh_free(void **data)
 
 void rh_free_member (struct rahunas_member *member)
 {
-  if (member->username)
+  if (member->username && member->username != dummy)
     free(member->username);
 
-  if (member->session_id)
+  if (member->session_id && member->session_id != dummy)
     free(member->session_id);
   
   memset(member, 0, sizeof(struct rahunas_member));
+  member->username = dummy;
+  member->session_id = dummy;
 }
 
 int rh_openlog(const char *filename)
 {
-  return open(filename, O_WRONLY | O_APPEND);
+  return open(filename, O_WRONLY | O_APPEND | O_CREAT);
 }
 
 int rh_closelog(int fd)
@@ -170,17 +175,24 @@ int logmsg(int priority, const char *msg, ...)
 	rh_free(&np);
 }
 
-void rh_shutdown(int sig)
+void rh_sighandler(int sig)
 {
-  ipset_flush();
-  finish();
-  rh_closelog(DEFAULT_LOG);
+  switch (sig) {
+    case SIGINT:
+    case SIGTERM:
+    case SIGKILL:
+      ipset_flush();
+      finish();
+      rh_closelog(DEFAULT_LOG);
+      exit(EXIT_SUCCESS);
+      break;
+  }
 }
 
 int ipset_flush()
 {
   logmsg(RH_LOG_NORMAL, "Flushing IPSET...");
-  /* TODO: Flush the ipset */
+  set_flush(SET_NAME);
 }
 
 int finish()
@@ -189,6 +201,9 @@ int finish()
 	struct rahunas_member *members = NULL;
 	int i;
   int end;
+
+  if (pid != 0) // Do not permit child to call this
+    kill(pid, SIGKILL);
 
   if (map) {
     if (map->members) {
@@ -199,8 +214,7 @@ int finish()
     }  
 
 	  for (i=0; i < end; i++) {
-			  rh_free(&(members[i].username));
-			  rh_free(&(members[i].session_id));
+			  rh_free_member(&members[i]);
 		}
 
 		rh_free(&(map->members));
@@ -437,6 +451,20 @@ size_t expired_check(void *data)
 
         if (res == 0) {
 			    send_xmlrpc_stopacct(map, i);
+
+          if (!members[i].username)
+            members[i].username = dummy;
+
+          if (!members[i].session_id)
+            members[i].session_id = dummy;
+
+          logmsg(RH_LOG_NORMAL, "Session Idle-Timeout, User: %s, IP: %s, "
+                                "Session ID: %s, MAC: %s",
+                                members[i].username, 
+                                idtoip(map, i), 
+                                members[i].session_id,
+                                mac_tostring(members[i].mac_address)); 
+
           rh_free_member(&members[i]);
         }
       } 
@@ -534,15 +562,11 @@ watch_child(char *argv[])
 	int status;
 
 	int nullfd;
-
-  pid_t pid, sid;
+  int pidfd;
 
 	if (*(argv[0]) == '(')
 	  return;
 
-  signal(SIGINT, rh_shutdown);
-  signal(SIGTERM, rh_shutdown);
-  signal(SIGKILL, rh_shutdown);
 
   pid = fork();	
 	if (pid < 0) {
@@ -550,13 +574,17 @@ watch_child(char *argv[])
 		exit(EXIT_FAILURE);
 	} else if (pid > 0) {
 	  /* parent */
+    pidfd = open(DEFAULT_PID, O_WRONLY | O_TRUNC | O_CREAT);
+    if (pidfd) {
+      dup2(pidfd, STDOUT_FILENO);
+      fprintf(stdout, "%d\n", pid);
+      close(pidfd);
+    }
 	  exit(EXIT_SUCCESS);
 	}
 
   /* Change the file mode mask */
   umask(0);
-
-
 
 	if ((sid = setsid()) < 0)
 	  syslog(LOG_ALERT, "setsid failed");
@@ -569,6 +597,12 @@ watch_child(char *argv[])
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
+
+  signal(SIGCHLD, SIG_IGN);
+  signal(SIGHUP, rh_sighandler);
+  signal(SIGINT, rh_sighandler);
+  signal(SIGTERM, rh_sighandler);
+  signal(SIGKILL, rh_sighandler);
 
   while(1) {
 
@@ -617,7 +651,7 @@ watch_child(char *argv[])
   	if (WIFSIGNALED(status)) {
       switch (WTERMSIG(status)) {
   		  case SIGKILL:
-  			  exit(0);
+          rh_sighandler(SIGKILL);
   				break;
   			
   			case SIGINT:
@@ -646,14 +680,8 @@ int main(int argc, char **argv)
 
 	GNetXmlRpcServer *server = NULL;
 	GMainLoop* main_loop     = NULL;
-
-
-	watch_child(argv);
   
-  gnet_init();
-  main_loop = g_main_loop_new (NULL, FALSE);
-
-  sprintf(version, "Starting %s - Version %s", PROGRAM, VERSION);
+	watch_child(argv);
 
   /* Open log file */
  	if ((fd_log = rh_openlog(DEFAULT_LOG)) == (-1)) {
@@ -663,6 +691,12 @@ int main(int argc, char **argv)
 
   dup2(fd_log, STDERR_FILENO);
 
+  gnet_init();
+  main_loop = g_main_loop_new (NULL, FALSE);
+
+  sprintf(version, "Starting %s - Version %s", PROGRAM, VERSION);
+
+  
 	logmsg(RH_LOG_NORMAL, version);
   syslog(LOG_INFO, version);
 

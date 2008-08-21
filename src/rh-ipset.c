@@ -172,7 +172,7 @@ int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac,
               unsigned op)
 {
   ip_set_ip_t ip;
-  unsigned char mac[ETH_ALEN];
+  unsigned char mac[ETH_ALEN] = {0,0,0,0,0,0};
   parse_ip(adtip, &ip);  
   parse_mac(adtmac, &mac);
 
@@ -234,6 +234,18 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
   free(data);
 
   return res;
+}
+
+
+void set_flush(const char *name)
+{
+  struct ip_set_req_std req;
+
+  req.op = IP_SET_OP_FLUSH;
+  req.version = IP_SET_PROTOCOL_VERSION;
+  strcpy(req.name, name);
+
+  kernel_sendto(&req, sizeof(struct ip_set_req_std));
 }
 
 size_t load_set_list(const char name[IP_SET_MAXNAMELEN],

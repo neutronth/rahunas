@@ -74,6 +74,8 @@ int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac,
 int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip, 
                      unsigned char adtmac[ETH_ALEN], unsigned op);
 
+void set_flush(const char *name);
+
 size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
 			    ip_set_id_t *idx,
 			    unsigned op, unsigned cmd);
