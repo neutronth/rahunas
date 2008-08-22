@@ -17,20 +17,29 @@ extern ip_set_id_t max_sets;
 int kernel_getsocket(void)
 {
   int sockfd = -1;
+  int tries = GETSOCK_TRIES;
 
-  sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-  if (sockfd <0) {
-    syslog(LOG_ERR, "You need to be root to run this daemon.");
-    exit(EXIT_FAILURE);
+  while (tries > 0) {
+    sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+    if (sockfd < 0) {
+      syslog(LOG_ERR, "Failed kernel_getsocket(), Retry....");
+      sleep(2);
+    } else {
+      return sockfd;
+    }
+    tries--;
   }
   
-  return sockfd;
+  exit(EXIT_FAILURE);
 }
 
 int wrapped_getsockopt(void *data, socklen_t *size)
 {
   int res;
   int sockfd = kernel_getsocket();
+
+  if (sockfd < 0)
+    return -1;
 
   /* Send! */
   res = getsockopt(sockfd, SOL_IP, SO_IP_SET, data, size);
@@ -44,6 +53,9 @@ int wrapped_setsockopt(void *data, socklen_t size)
 {
   int res;
   int sockfd = kernel_getsocket();
+
+  if (sockfd < 0)
+    return -1;
 
   /* Send! */
   res = setsockopt(sockfd, SOL_IP, SO_IP_SET, data, size);

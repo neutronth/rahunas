@@ -12,6 +12,7 @@
 #include <linux/netfilter_ipv4/ip_set.h>
 #include <linux/netfilter_ipv4/ip_set_rahunas.h>
 
+#define GETSOCK_TRIES 5
 #define LIST_TRIES 5
 
 /* The view of an ipset in userspace */

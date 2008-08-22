@@ -13,7 +13,7 @@
 #include <time.h>
 #include <linux/if_ether.h>
 
-#define PROGRAM "RuhuNASd"
+#define PROGRAM "RahuNASd"
 #define VERSION "0.1.1"
 #define MAX_MEMBERS 0x00FFFF
 
@@ -21,7 +21,7 @@
 #define DEFAULT_LOG "/var/log/rahunas/rahunas.log"
 #define DEFAULT_PID "/var/run/rahunasd.pid"
 #define IDLE_THRESHOLD 600
-#define POLLING 30 
+#define POLLING 60 
 #define SET_NAME "rahunas_set"
 #define XMLSERVICE_HOST	"localhost"
 #define XMLSERVICE_PORT	8888
