@@ -1,3 +1,9 @@
+2008-08-22  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunasd.c, src/rh-xmlrpc-server.c:
+	  - Rename dummy to termstring (make sense).
+	  - More preventing the segfault due to print NULL string pointer.
+
 2008-08-21  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rahunasd.{h,c}, src/rh-xmlrpc-server.c:

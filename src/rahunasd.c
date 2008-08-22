@@ -43,7 +43,7 @@ struct set *rahunas_set = NULL;
 struct set **set_list = NULL;
 ip_set_id_t max_sets = 0;
 
-const char *dummy = '\0';
+const char *termstring = '\0';
 pid_t pid, sid;
 
 uint32_t iptoid(struct rahunas_map *map, const char *ip) {
@@ -72,7 +72,10 @@ char *idtoip(struct rahunas_map *map, uint32_t id) {
   struct in_addr sess_addr;
 
   if (!map)
-	  return NULL;
+    return termstring;
+
+  if (id < 0)
+    return termstring;
 
   sess_addr.s_addr = htonl((ntohl(map->first_ip) + id));
 
@@ -105,15 +108,15 @@ void rh_free(void **data)
 
 void rh_free_member (struct rahunas_member *member)
 {
-  if (member->username && member->username != dummy)
+  if (member->username && member->username != termstring)
     free(member->username);
 
-  if (member->session_id && member->session_id != dummy)
+  if (member->session_id && member->session_id != termstring)
     free(member->session_id);
   
   memset(member, 0, sizeof(struct rahunas_member));
-  member->username = dummy;
-  member->session_id = dummy;
+  member->username = termstring;
+  member->session_id = termstring;
 }
 
 int rh_openlog(const char *filename)
@@ -453,10 +456,10 @@ size_t expired_check(void *data)
 			    send_xmlrpc_stopacct(map, i);
 
           if (!members[i].username)
-            members[i].username = dummy;
+            members[i].username = termstring;
 
           if (!members[i].session_id)
-            members[i].session_id = dummy;
+            members[i].session_id = termstring;
 
           logmsg(RH_LOG_NORMAL, "Session Idle-Timeout, User: %s, IP: %s, "
                                 "Session ID: %s, MAC: %s",

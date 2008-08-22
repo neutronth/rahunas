@@ -11,7 +11,7 @@
 #include "rh-ipset.h"
 
 extern struct set *rahunas_set;
-extern const char* dummy;
+extern const char* termstring;
 
 int do_startsession(GNetXmlRpcServer *server,
                     const gchar *command,
@@ -79,19 +79,19 @@ int do_startsession(GNetXmlRpcServer *server,
   res = set_adtip(rahunas_set, ip, mac_address, IP_SET_OP_ADD_IP);
   if (res == 0) {
     members[id].flags = 1;
-    if (members[id].username && members[id].username != dummy)
+    if (members[id].username && members[id].username != termstring)
       free(members[id].username);
 
-    if (members[id].session_id && members[id].username != dummy)
+    if (members[id].session_id && members[id].username != termstring)
       free(members[id].session_id);
 
     members[id].username   = strdup(username);
     if (!members[id].username)
-      members[id].username = dummy;
+      members[id].username = termstring;
 
     members[id].session_id = strdup(session_id);
     if (!members[id].session_id)
-      members[id].session_id = dummy;
+      members[id].session_id = termstring;
 
 		time(&(members[id].session_start));
 
@@ -179,10 +179,10 @@ int do_stopsession(GNetXmlRpcServer *server,
                       IP_SET_OP_DEL_IP);
       if (res == 0) {
         if (!members[id].username)
-          members[id].username = dummy;
+          members[id].username = termstring;
 
         if (!members[id].session_id)
-          members[id].session_id = dummy;
+          members[id].session_id = termstring;
 
         logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
                               "Session ID: %s, MAC: %s",
