@@ -1,5 +1,12 @@
 2008-08-23  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rh-ipset.c:
+	  - Shutdown the socket after finish the request.
+	  - Log the errno of the failure of the kernel_getsocket() to syslog for 
+	    later debuging.
+
+2008-08-23  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rahunasd.h:
 	  - Fix typo the project name, it is shame.
 	  - Change POLLING interval from 30 seconds to 60 seconds, 
