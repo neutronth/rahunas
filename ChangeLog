@@ -1,3 +1,9 @@
+2008-08-25  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-ipset.c:
+	  - Shutdown will not close the socket after finish the request, 
+	    try close() to done.
+
 2008-08-23  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-ipset.c:
