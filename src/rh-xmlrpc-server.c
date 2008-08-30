@@ -9,6 +9,7 @@
 #include "rahunasd.h"
 #include "rh-xmlrpc-server.h"
 #include "rh-ipset.h"
+#include "rh-utils.h"
 
 extern struct set *rahunas_set;
 extern const char* termstring;
@@ -26,8 +27,6 @@ int do_startsession(GNetXmlRpcServer *server,
 	gchar *username = NULL;
 	gchar *session_id = NULL;
   gchar *mac_address = NULL;
-	gchar *pStart = NULL;
-	gchar *pEnd = NULL;
 	uint32_t id;
   int res = 0;
 
@@ -42,32 +41,14 @@ int do_startsession(GNetXmlRpcServer *server,
 
 	members = map->members;
 
-  pStart = param;
-	pEnd = g_strstr_len(pStart, strlen(pStart), "|");
-	if (pEnd == NULL) {
-	  goto out;
-	}
+ 	ip          = rh_string_get_sep(param, "|", 1);
+	username    = rh_string_get_sep(param, "|", 2);
+	session_id  = rh_string_get_sep(param, "|", 3);
+  mac_address = rh_string_get_sep(param, "|", 4);
 
-	ip = g_strndup(pStart, pEnd - pStart);
-  if (ip == NULL)
+  if (ip == NULL || username == NULL 
+        || session_id == NULL || mac_address == NULL)
     goto out;
-
-	pStart = pEnd + 1;
-	pEnd = g_strstr_len(pStart, strlen(pStart), "|");
-	if (pEnd == NULL) {
-    goto out;
-	}
-	username = g_strndup(pStart, pEnd - pStart);
-
-  pStart = pEnd + 1;
-	pEnd = g_strstr_len(pStart, strlen(pStart), "|");
-	if (pEnd == NULL) {
-    goto out;
-	}
-	session_id = g_strndup(pStart, pEnd - pStart);
-
-	pStart = pEnd + 1;
-  mac_address = g_strndup(pStart, strlen(pStart));
 
 	id = iptoid(map, ip);
 
@@ -131,8 +112,6 @@ int do_stopsession(GNetXmlRpcServer *server,
 	struct rahunas_member *members;
 	gchar *ip = NULL;
 	gchar *mac_address = NULL;
-	gchar *pStart = NULL;
-	gchar *pEnd = NULL;
 	uint32_t   id;
   int res = 0;
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
@@ -150,19 +129,10 @@ int do_stopsession(GNetXmlRpcServer *server,
 
   DP("RPC Receive: %s", param);
 
-  pStart = param;
-	pEnd = g_strstr_len(pStart, strlen(pStart), "|");
-	if (pEnd == NULL) {
-	  goto out;
-	}
+  ip          = rh_string_get_sep(param, "|", 1);
+  mac_address = rh_string_get_sep(param, "|", 2);
 
-	ip = g_strndup(pStart, pEnd - pStart);
-  if (ip == NULL)
-    goto out;
-
-	pStart = pEnd + 1;
-  mac_address = g_strndup(pStart, strlen(pStart));
-  if (mac_address == NULL)
+  if (ip == NULL || mac_address == NULL)
     goto out;
 
 	id = iptoid(map, ip);

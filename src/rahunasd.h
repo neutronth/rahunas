@@ -64,9 +64,6 @@ struct rahunas_member {
 uint32_t iptoid(struct rahunas_map *map, const char *ip);
 char *idtoip(struct rahunas_map *map, uint32_t id);
 
-void *rh_malloc(size_t size);
-void rh_free(void **data);
-
 void rh_free_member (struct rahunas_member *member);
 
 static char *timemsg()

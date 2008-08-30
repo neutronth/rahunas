@@ -21,6 +21,7 @@
 #include "rahunasd.h"
 #include "rh-xmlrpc-server.h"
 #include "rh-ipset.h"
+#include "rh-utils.h"
 
 /* Abstract functions */
 int logmsg(int priority, const char *msg, ...); 
@@ -80,30 +81,6 @@ char *idtoip(struct rahunas_map *map, uint32_t id) {
   sess_addr.s_addr = htonl((ntohl(map->first_ip) + id));
 
   return inet_ntoa(sess_addr);
-}
-
-void *rh_malloc(size_t size)
-{
-  void *p;
-  
-  if (size == 0)
-    return NULL;
-
-  if ((p = malloc(size)) == NULL) {
-    syslog(LOG_ERR, "RahuNASd: not enough memory");
-    exit(EXIT_FAILURE);
-  } 
-
-  return p;
-}
-
-void rh_free(void **data)
-{
-  if (*data == NULL)
-    return;
-
-  free(*data);
-  *data = NULL;
 }
 
 void rh_free_member (struct rahunas_member *member)

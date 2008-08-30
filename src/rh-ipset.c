@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include "rh-ipset.h"
+#include "rh-utils.h"
 
 extern struct set **set_list;
 extern ip_set_id_t max_sets;

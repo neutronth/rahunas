@@ -1,3 +1,14 @@
+2008-08-31  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +src/rh-utils.{h,c}: Add new utility functions.
+	* src/rahunasd.{h,c}: 
+	  - Move rh_malloc() and rh_free() to rh-utils.
+	  - include file rh-utils.h which now provide rh_{malloc,free}().
+	* src/rh-ipset.c: include file rh-utils.h.
+	* src/rh-xmlrpc-server.c:
+	  - Implement new function rh_string_get_sep() which more clean looking code.
+	* src/Makefile.am: Update accordingly to new change.
+
 2008-08-25  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-ipset.c:
