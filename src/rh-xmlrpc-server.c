@@ -54,7 +54,7 @@ int do_startsession(GNetXmlRpcServer *server,
 
 	if (id < 0) {
     *reply_string = g_strdup("Invalid IP Address");
-		return 0;
+		goto cleanup;
 	}
 
   res = set_adtip(rahunas_set, ip, mac_address, IP_SET_OP_ADD_IP);
@@ -93,13 +93,18 @@ int do_startsession(GNetXmlRpcServer *server,
   *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s", 
 	                                 ip, members[id].username, 
 																	 members[id].session_id);
-  g_free(ip);
-	return 0;
+  goto cleanup;
 
 out:
     *reply_string = g_strdup("Invalid input parameters");
-    g_free(ip);
-		return 0;
+    goto cleanup;
+
+cleanup:
+  g_free(ip);
+  g_free(username);
+  g_free(session_id);
+  g_free(mac_address);
+  return 0;
 }
 
 int do_stopsession(GNetXmlRpcServer *server,
@@ -139,7 +144,7 @@ int do_stopsession(GNetXmlRpcServer *server,
 
 	if (id < 0) {
     *reply_string = g_strdup("Invalid IP Address");
-		return 0;
+    goto cleanup;
 	}
 
 	if (members[id].flags) {
@@ -165,21 +170,25 @@ int do_stopsession(GNetXmlRpcServer *server,
  
         *reply_string = g_strdup_printf("Client IP %s was removed!", 
   			                                  idtoip(map, id));
-  	    return 0;
       } else {
          *reply_string = g_strdup_printf("Client IP %s error remove!", 
   			                                idtoip(map, id));
-  			  return 0;
       }
+      goto cleanup;
 		}	
   }
 
   *reply_string = g_strdup_printf("%s", ip);
-	return 0;
+  goto cleanup;
 
 out:
-    *reply_string = g_strdup("Invalid input parameters");
-		return 0;
+  *reply_string = g_strdup("Invalid input parameters");
+  goto cleanup;
+
+cleanup:
+  g_free(ip);
+  g_free(mac_address);
+  return 0;
 }
 
 int do_getsessioninfo(GNetXmlRpcServer *server,
@@ -209,7 +218,7 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
 
 	if (id < 0) {
     *reply_string = g_strdup("Invalid IP Address");
-		return 0;
+    return 0;
 	}
 
 	if (members[id].flags) {

@@ -1,3 +1,9 @@
+2008-09-01  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunasd.c: Remove unnecessary functions.
+	* src/rh-xmlrpc-server.c: Free the allocated memory of the the vars that 
+	  calling rh_string_get_sep().
+
 2008-08-31  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* +src/rh-utils.{h,c}: Add new utility functions.

@@ -32,9 +32,6 @@ int ipset_flush();
 struct rahunas_map* rh_init_map();
 int rh_init_members(struct rahunas_map *map);
 
-int parse_set_header(const char *in, struct rahunas_map *map);
-int parse_set_list(const char *in, struct rahunas_map *map);
-
 int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id);
 
 /* Declaration */
@@ -228,91 +225,6 @@ int getline(int fd, char *buf, size_t size)
 	}
 
 	return (current - buf);
-}
-
-
-int parse_set_header(const char *in, struct rahunas_map *map)
-{
- 	in_addr_t first_ip;
-	in_addr_t last_ip;
-	char *ip_from_start = NULL;
-  char *ip_from_end = NULL;
-	char *ip_to_start = NULL;
-  char *ip_to_end = NULL;
-	char *ip_from = NULL;
-  char *ip_to = NULL;
-
-	if (!map || !in)
-	  return (-1);
-
-  ip_from_start = strstr(in, "from:");
-	if (ip_from_start == NULL)
-	  return (-1);
-
-	ip_to_start = strstr(in, "to:");
-	if (ip_to_start == NULL)
-	  return (-1);
-
-  ip_from_start += 6;
-	ip_from_end = ip_to_start - 1;
-	ip_to_start += 4;
-	ip_to_end = in + strlen(in);
-
-	ip_from = strndup(ip_from_start, ip_from_end - ip_from_start);
-	ip_to   = strndup(ip_to_start, ip_to_end - ip_to_start);
-	logmsg(RH_LOG_NORMAL, "First IP: %s", ip_from);
-	logmsg(RH_LOG_NORMAL, "Last IP: %s", ip_to);
-
-	first_ip = inet_addr(ip_from);
-  memcpy(&map->first_ip, &first_ip, sizeof(in_addr_t));
-
-	last_ip = inet_addr(ip_to);
-  memcpy(&map->last_ip, &last_ip, sizeof(in_addr_t));
-
-	map->size = ntohl(map->last_ip) - ntohl(map->first_ip) + 1;
-
-	logmsg(RH_LOG_NORMAL, "Set Size: %lu", map->size);
-	free(ip_from);
-	free(ip_to);
-
-	return 0;
-}
-
-int parse_set_list(const char *in, struct rahunas_map *map)
-{
-	char *sep = NULL;
-  char *sess_ip = NULL;
-	char *sess_idle_time = NULL;
-	uint32_t  id;
-
-	struct rahunas_member *members;
-
-	if (!map || !in)
-	  return (-1);
-
-  if (!map->members)
-    return (-1);
-	
-	members = map->members;
-
-  // Found members
-  DP("Parse from list: %s", in);
-	sep = strstr(in, ":");
-	sess_ip = strndup(in, sep - in);
-  if (sess_ip == NULL)
-    return (-1);
-	id = iptoid(map, sess_ip);
- 
-	sess_idle_time = strndup(sep + 1, strstr(in, "seconds") - sep - 1);
-  if (sess_idle_time == NULL)
-    return (-1);
-
-  members[id].flags = 1;
-  members[id].expired = atoi(sess_idle_time) < IDLE_THRESHOLD ? 0 : 1;
-
-  free(sess_ip);
-  free(sess_idle_time);
-	return id;
 }
 
 int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
