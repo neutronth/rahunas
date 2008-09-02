@@ -5,7 +5,8 @@
  */
 #ifndef __RH_XMLRPC_CMD_H
 #define __RH_XMLRPC_CMD_H
+#include "rh-radius.h"
 
-int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id);
+int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause);
 
 #endif // __RH_XMLRPC_CMD_H

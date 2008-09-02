@@ -8,7 +8,7 @@
 #include "rahunasd.h"
 #include "rh-xmlrpc-cmd.h"
 
-int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
+int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause) {
   struct rahunas_member *members = NULL;
   GNetXmlRpcClient *client = NULL;
   gchar *reply  = NULL;
@@ -33,12 +33,13 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
     return (-1);
   }
 	
-	params = g_strdup_printf("%s|%s|%s|%d|%s", 
+	params = g_strdup_printf("%s|%s|%s|%d|%s|%d", 
                            idtoip(map, id),
 	                         members[id].username,
 													 members[id].session_id,
 													 members[id].session_start,
-                           mac_tostring(members[id].mac_address));
+                           mac_tostring(members[id].mac_address),
+                           cause);
 
   if (params == NULL)
     return (-1);
@@ -49,7 +50,10 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id) {
       g_free(reply);
     }
   else
-    DP("%s", "Failed executing stopacct!");
+    {
+      DP("%s", "Failed executing stopacct!");
+      return (-1);
+    }
 	
 	g_free(params);
 

@@ -33,6 +33,9 @@ int ipset_flush();
 struct rahunas_map* rh_init_map();
 int rh_init_members(struct rahunas_map *map);
 
+int walk_through_set (int (*callback)(void *));
+size_t expired_check(void *data);
+size_t nas_reboot(void *data);
 
 /* Declaration */
 struct rahunas_map *map = NULL;
@@ -158,17 +161,23 @@ void rh_sighandler(int sig)
     case SIGINT:
     case SIGTERM:
     case SIGKILL:
-      ipset_flush();
-      finish();
-      rh_closelog(DEFAULT_LOG);
-      exit(EXIT_SUCCESS);
+      if (pid == 0) {
+        walk_through_set(&nas_reboot);
+        rh_exit();
+        exit(EXIT_SUCCESS);
+      }
+
+      if (pid != 0) {
+        syslog(LOG_NOTICE, "Kill Child PID %d", pid);
+        kill(pid, SIGTERM);
+      }
       break;
   }
 }
 
 int ipset_flush()
 {
-  logmsg(RH_LOG_NORMAL, "Flushing IPSET...");
+  syslog(LOG_NOTICE, "Flushing IPSET...");
   set_flush(SET_NAME);
 }
 
@@ -178,9 +187,6 @@ int finish()
 	struct rahunas_member *members = NULL;
 	int i;
   int end;
-
-  if (pid != 0) // Do not permit child to call this
-    kill(pid, SIGKILL);
 
   if (map) {
     if (map->members) {
@@ -199,7 +205,6 @@ int finish()
 	}
 
   rh_free(&rahunas_set);
-  logmsg(RH_LOG_NORMAL, exitmsg);
 	syslog(LOG_INFO, exitmsg);
   return 0;
 }
@@ -261,7 +266,7 @@ int rh_init_members (struct rahunas_map* map)
 gboolean polling(gpointer data) {
   struct rahunas_map *map = (struct rahunas_map *)data;
 	DP("%s", "Start polling!");
-  walk_through_set();
+  walk_through_set(&expired_check);
   return TRUE;
 }
 
@@ -293,7 +298,7 @@ size_t expired_check(void *data)
         DP("set_adtip_nb() res=%d errno=%d", res, errno);
 
         if (res == 0) {
-			    send_xmlrpc_stopacct(map, i);
+			    send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_IDLE_TIMEOUT);
 
           if (!members[i].username)
             members[i].username = termstring;
@@ -311,6 +316,53 @@ size_t expired_check(void *data)
           rh_free_member(&members[i]);
         }
       } 
+    }
+  }
+}
+
+size_t nas_reboot(void *data)
+{
+  struct ip_set_list *setlist = (struct ip_set_list *) data;
+  struct set *set = set_list[setlist->index];
+  size_t offset;
+  struct ip_set_rahunas *table = NULL;
+  struct rahunas_member *members = map->members;
+  unsigned int i;
+  char *ip = NULL;
+  ip_set_ip_t current_ip;
+  int res  = 0;
+
+  offset = sizeof(struct ip_set_list) + setlist->header_size;
+  table = (struct ip_set_rahunas *)(data + offset);
+
+  DP("Map size %d", map->size);
+ 
+  for (i = 0; i < map->size; i++) {
+    if (test_bit(IPSET_RAHUNAS_ISSET, (void *)&table[i].flags)) {
+      DP("Found IP: %s in set, try logout", idtoip(map, i));
+      current_ip = ntohl(map->first_ip) + i;
+      res = set_adtip_nb(rahunas_set, &current_ip, &table[i].ethernet,
+                         IP_SET_OP_DEL_IP);  
+      DP("set_adtip_nb() res=%d errno=%d", res, errno);
+
+      if (res == 0) {
+			    send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_NAS_REBOOT);
+
+        if (!members[i].username)
+          members[i].username = termstring;
+
+        if (!members[i].session_id)
+          members[i].session_id = termstring;
+
+        logmsg(RH_LOG_NORMAL, "Session Stop (NAS Reboot), User: %s, IP: %s, "
+                              "Session ID: %s, MAC: %s",
+                              members[i].username, 
+                              idtoip(map, i), 
+                              members[i].session_id,
+                              mac_tostring(members[i].mac_address)); 
+
+        rh_free_member(&members[i]);
+      }
     }
   }
 }
@@ -363,7 +415,7 @@ int get_header_from_set ()
   return res;
 }
 
-int walk_through_set ()
+int walk_through_set (int (*callback)(void *))
 {
   void *data = NULL;
   ip_set_id_t idx;
@@ -388,11 +440,20 @@ int walk_through_set ()
     }
     size = 0;
   }
-
-  expired_check(data);
+  
+  if (data != NULL)
+    (*callback)(data);
 
   rh_free(&data);
   return res;
+}
+
+void rh_exit()
+{
+  syslog(LOG_ALERT, "Child Exiting ..");
+  ipset_flush();
+  finish();
+  rh_closelog(DEFAULT_LOG);
 }
 
 static void
@@ -406,7 +467,7 @@ watch_child(char *argv[])
 
 	int nullfd;
   int pidfd;
-
+  
 	if (*(argv[0]) == '(')
 	  return;
 
@@ -441,11 +502,6 @@ watch_child(char *argv[])
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
 
-  signal(SIGCHLD, SIG_IGN);
-  signal(SIGHUP, rh_sighandler);
-  signal(SIGINT, rh_sighandler);
-  signal(SIGTERM, rh_sighandler);
-  signal(SIGKILL, rh_sighandler);
 
   while(1) {
 
@@ -461,9 +517,9 @@ watch_child(char *argv[])
 
     time(&start);
 	  /* parent */
-  	pid = wait3(&status, 0, NULL);
+  	pid = waitpid(-1, &status, 0);
   	time(&stop);
-  
+
   	if (WIFEXITED(status)) {
   	  syslog(LOG_NOTICE,
   		         "RahuNASd Parent: child process %d exited with status %d",
@@ -476,37 +532,20 @@ watch_child(char *argv[])
       syslog(LOG_NOTICE, "RahuNASd Parent: child process %d exited", pid);
   	}
   
-  		if (stop - start < 10)
-  		  failcount++;
-  		else
-  		  failcount = 0;
+    if (stop - start < 10)
+      failcount++;
+    else
+      failcount = 0;
   
-  		if (failcount == 5) {
-  		  syslog(LOG_ALERT, "Exiting due to repeated, frequent failures");
-  			exit(EXIT_FAILURE);
-  		}
+    if (failcount == 5) {
+      syslog(LOG_ALERT, "Exiting due to repeated, frequent failures");
+      exit(EXIT_FAILURE);
+    }
   
   
   	if (WIFEXITED(status))
   	  if (WEXITSTATUS(status) == 0)
   		  exit(EXIT_SUCCESS);
-  	
-  	if (WIFSIGNALED(status)) {
-      switch (WTERMSIG(status)) {
-  		  case SIGKILL:
-          rh_sighandler(SIGKILL);
-  				break;
-  			
-  			case SIGINT:
-  			case SIGTERM:
-  			  syslog(LOG_ALERT, "Exiting due to unexpected forced shutdown");
-  				exit(EXIT_FAILURE);
-  				break;
-  			
-  			default:
-  			  break;
-  		}
-  	}
   	
   	sleep(3);
   }
@@ -523,7 +562,10 @@ int main(int argc, char **argv)
 
 	GNetXmlRpcServer *server = NULL;
 	GMainLoop* main_loop     = NULL;
-  
+
+  signal(SIGTERM, rh_sighandler);
+  signal(SIGKILL, rh_sighandler);
+
 	watch_child(argv);
 
   /* Open log file */
@@ -582,5 +624,4 @@ int main(int argc, char **argv)
 	g_main_loop_run(main_loop);
 
 	exit(EXIT_SUCCESS);
-	return 0;
 }
