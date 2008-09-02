@@ -7,6 +7,7 @@ AM_CFLAGS = $(LIBGNET_CFLAGS) -I$(top_builddir)/src/include/ \
 
 rahunasd_SOURCES = rahunasd.c \
 	rh-xmlrpc-server.c \
+	rh-xmlrpc-cmd.c \
   rh-ipset.c \
 	rh-utils.c
 
