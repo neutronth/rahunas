@@ -1,5 +1,9 @@
 2008-09-02  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rh-xmlrpc-cmd.h, src/rh-utils.h: Add header definitions.
+
+2008-09-02  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* +src/rh-xmlrpc-cmd.{h,c}: Add new xmlrpc client command sender.
 	* src/rahunasd.c: Move the send_xmlrpc_stopacct() code to rh-xmlrpc-cmd.
 	* src/Makefile.am: Update accordingly to new change.
