@@ -13,5 +13,4 @@ void rh_free(void **data);
 
 const char *rh_string_get_sep(const char *haystack, const char *sep, 
                               unsigned short idx);
-
 #endif // __RH_UTILS_H

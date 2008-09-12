@@ -9,7 +9,10 @@ rahunasd_SOURCES = rahunasd.c \
 	rh-xmlrpc-server.c \
 	rh-xmlrpc-cmd.c \
   rh-ipset.c \
-	rh-utils.c
+	rh-utils.c \
+	rh-task.c \
+	rh-task-ipset.c \
+	rh-task-memset.c
 
 rahunasd_LDADD =  \
 	$(top_builddir)/xmlrpc/libgnetxmlrpc.a \

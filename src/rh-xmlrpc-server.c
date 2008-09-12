@@ -1,6 +1,7 @@
 /**
  * RahuNAS XML-RPC Server implementation
  * Author: Neutron Soutmun <neo.neutron@gmail.com>
+ *         Suriya Soutmun <darksolar@gmail.com>
  * Date:   2008-08-07
  */
 
@@ -8,10 +9,11 @@
 #include <stdlib.h>
 #include "rahunasd.h"
 #include "rh-xmlrpc-server.h"
+#include "rh-radius.h"
 #include "rh-ipset.h"
 #include "rh-utils.h"
+#include "rh-task.h"
 
-extern struct set *rahunas_set;
 extern const char* termstring;
 
 int do_startsession(GNetXmlRpcServer *server,
@@ -23,12 +25,12 @@ int do_startsession(GNetXmlRpcServer *server,
   struct rahunas_map *map = (struct rahunas_map *)user_data;
 	struct rahunas_member *members = NULL;
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
+  struct task_req req;
 	gchar *ip = NULL;
 	gchar *username = NULL;
 	gchar *session_id = NULL;
   gchar *mac_address = NULL;
 	uint32_t id;
-  int res = 0;
 
 	if (!map)
 	  goto out;
@@ -57,38 +59,13 @@ int do_startsession(GNetXmlRpcServer *server,
 		goto cleanup;
 	}
 
-  res = set_adtip(rahunas_set, ip, mac_address, IP_SET_OP_ADD_IP);
-  if (res == 0) {
-    members[id].flags = 1;
-    if (members[id].username && members[id].username != termstring)
-      free(members[id].username);
+  req.id = id;
+  req.username = username;
+  req.session_id = session_id;
+  parse_mac(mac_address, &ethernet);
+  memcpy(req.mac_address, &ethernet, ETH_ALEN);
 
-    if (members[id].session_id && members[id].username != termstring)
-      free(members[id].session_id);
-
-    members[id].username   = strdup(username);
-    if (!members[id].username)
-      members[id].username = termstring;
-
-    members[id].session_id = strdup(session_id);
-    if (!members[id].session_id)
-      members[id].session_id = termstring;
-
-		time(&(members[id].session_start));
-
-    parse_mac(mac_address, &ethernet);
-    memcpy(&members[id].mac_address, &ethernet, ETH_ALEN);
-
-    logmsg(RH_LOG_NORMAL, "Session Start, User: %s, IP: %s, "
-                          "Session ID: %s, MAC: %s",
-                          members[id].username, 
-                          idtoip(map, id), 
-                          members[id].session_id,
-                          mac_tostring(members[id].mac_address)); 
-
-  } else if (res == RH_IS_IN_SET) {
-    members[id].flags = 1;
-  }
+  rh_task_startsess(map, &req);
 
   *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s", 
 	                                 ip, members[id].username, 
@@ -115,6 +92,7 @@ int do_stopsession(GNetXmlRpcServer *server,
 {
   struct rahunas_map *map = (struct rahunas_map *)user_data;
 	struct rahunas_member *members;
+  struct task_req req;
 	gchar *ip = NULL;
 	gchar *mac_address = NULL;
 	uint32_t   id;
@@ -147,27 +125,15 @@ int do_stopsession(GNetXmlRpcServer *server,
     goto cleanup;
 	}
 
+  req.id = id;
+  parse_mac(mac_address, &ethernet);
+  memcpy(req.mac_address, &ethernet, ETH_ALEN);
+  req.req_opt = RH_RADIUS_TERM_USER_REQUEST;
+
 	if (members[id].flags) {
-    parse_mac(mac_address, &ethernet);
     if (memcmp(&ethernet, &members[id].mac_address, ETH_ALEN) == 0) {
-      res = set_adtip(rahunas_set, idtoip(map, id), mac_address,
-                      IP_SET_OP_DEL_IP);
+      res = rh_task_stopsess(map, &req);
       if (res == 0) {
-        if (!members[id].username)
-          members[id].username = termstring;
-
-        if (!members[id].session_id)
-          members[id].session_id = termstring;
-
-        logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
-                              "Session ID: %s, MAC: %s",
-                              members[id].username, 
-                              idtoip(map, id), 
-                              members[id].session_id,
-                              mac_tostring(members[id].mac_address)); 
-
-        rh_free_member(&members[id]);   
- 
         *reply_string = g_strdup_printf("Client IP %s was removed!", 
   			                                  idtoip(map, id));
       } else {

@@ -12,9 +12,6 @@
 #include "rh-ipset.h"
 #include "rh-utils.h"
 
-extern struct set **set_list;
-extern ip_set_id_t max_sets;
-
 int kernel_getsocket(void)
 {
   int sockfd = -1;
@@ -255,7 +252,6 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
   return res;
 }
 
-
 void set_flush(const char *name)
 {
   struct ip_set_req_std req;
@@ -348,4 +344,85 @@ tryagain:
 	free(data);
 	
 	return size;
+}
+
+int get_header_from_set (struct rahunas_map *map)
+{
+  struct ip_set_req_rahunas_create *header = NULL;
+  void *data = NULL;
+  ip_set_id_t idx;
+  socklen_t size, req_size;
+  size_t offset;
+  int res = 0;
+ 	in_addr_t first_ip;
+	in_addr_t last_ip;
+
+  size = req_size = load_set_list(SET_NAME, &idx, 
+                                  IP_SET_OP_LIST_SIZE, CMD_LIST); 
+
+  DP("Get Set Size: %d", size);
+  
+  if (size) {
+    data = rh_malloc(size);
+    ((struct ip_set_req_list *) data)->op = IP_SET_OP_LIST;
+    ((struct ip_set_req_list *) data)->index = idx;
+    res = kernel_getfrom_handleerrno(data, &size);
+    DP("get_lists getsockopt() res=%d errno=%d", res, errno);
+
+    if (res != 0 || size != req_size) {
+      free(data);
+      return -EAGAIN;
+    }
+    size = 0;
+  }
+
+  offset = sizeof(struct ip_set_list);
+  header = (struct ip_set_req_rahunas_create *) (data + offset);
+
+  first_ip = htonl(header->from); 
+  last_ip = htonl(header->to); 
+  
+  memcpy(&map->first_ip, &first_ip, sizeof(in_addr_t));
+  memcpy(&map->last_ip, &last_ip, sizeof(in_addr_t));
+	map->size = ntohl(map->last_ip) - ntohl(map->first_ip) + 1;
+
+	logmsg(RH_LOG_NORMAL, "First IP: %s", ip_tostring(ntohl(map->first_ip)));
+	logmsg(RH_LOG_NORMAL, "Last  IP: %s", ip_tostring(ntohl(map->last_ip)));
+	logmsg(RH_LOG_NORMAL, "Set Size: %lu", map->size);
+
+  rh_free(&data);
+  return res;
+}
+
+int walk_through_set (int (*callback)(void *))
+{
+  void *data = NULL;
+  ip_set_id_t idx;
+  socklen_t size, req_size;
+  int res = 0;
+
+  size = req_size = load_set_list(SET_NAME, &idx, 
+                                  IP_SET_OP_LIST_SIZE, CMD_LIST); 
+
+  DP("Get Set Size: %d", size);
+  
+  if (size) {
+    data = rh_malloc(size);
+    ((struct ip_set_req_list *) data)->op = IP_SET_OP_LIST;
+    ((struct ip_set_req_list *) data)->index = idx;
+    res = kernel_getfrom_handleerrno(data, &size);
+    DP("get_lists getsockopt() res=%d errno=%d", res, errno);
+
+    if (res != 0 || size != req_size) {
+      free(data);
+      return -EAGAIN;
+    }
+    size = 0;
+  }
+  
+  if (data != NULL)
+    (*callback)(data);
+
+  rh_free(&data);
+  return res;
 }

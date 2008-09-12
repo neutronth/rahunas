@@ -6,6 +6,7 @@
 
 #include <syslog.h>
 #include <glib.h>
+#include <time.h>
 
 #include "rh-utils.h"
 

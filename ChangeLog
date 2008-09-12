@@ -1,3 +1,17 @@
+2008-09-12  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +src/rh-task-*.{h,c}: 
+		- Add the tasks concept of the workers. eg. memset, ipset,
+	    dbset and etc. 
+	  - Each tasks provide the function to handle each events, 
+			eg. init, start and stop service, start and stop session.
+	* src/rahunas.{h,c}, src/rh-ipset.{h,c}, src/rh-utils.{h,c},
+	  src/rh-xmlrpc-server.c: 
+	  Change respectively to new tasks concept and do code beautifier. 
+	* +src/rh-config.h: Move the configuration definitions from rahunasd.h.
+	* src/Makefile.am: Change respectively to properly build the tasks concept.
+	* AUTHORS: Add Suriya Soutmun to the author team.
+
 2008-09-03  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rahunasd.{h,c}: 

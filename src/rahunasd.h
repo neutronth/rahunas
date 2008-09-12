@@ -7,33 +7,25 @@
 #ifndef __RAHUNASD_H
 #define __RAHUNASD_H
 
+
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
 #include <linux/if_ether.h>
+#include <errno.h>
+
+#include "rh-config.h"
+#include "rh-utils.h"
 
 #define PROGRAM "RahuNASd"
 #define VERSION "0.1.1"
 #define MAX_MEMBERS 0x00FFFF
 
-/* Configuration */
-#define DEFAULT_LOG "/var/log/rahunas/rahunas.log"
-#define DEFAULT_PID "/var/run/rahunasd.pid"
-
-#ifdef RH_DEBUG
-#  define IDLE_THRESHOLD 30
-#  define POLLING 15 
-#else
-#  define IDLE_THRESHOLD 600
-#  define POLLING 60 
-#endif
-
-#define SET_NAME "rahunas_set"
-#define XMLSERVICE_HOST	"localhost"
-#define XMLSERVICE_PORT	8888
-#define XMLSERVICE_URL	"/xmlrpc_service.php"
+extern struct rahunas_map *map;
+extern struct set *rahunas_set;
+extern const char *termstring; 
 
 enum RH_LOG {
   RH_LOG_DEBUG,
@@ -74,7 +66,7 @@ char *idtoip(struct rahunas_map *map, uint32_t id);
 
 void rh_free_member (struct rahunas_member *member);
 
-static char *timemsg()
+static const char *timemsg()
 {
   static char tmsg[32] = "";
   char tfmt[] = "%b %e %T";

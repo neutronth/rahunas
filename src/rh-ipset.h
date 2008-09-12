@@ -15,6 +15,9 @@
 #define GETSOCK_TRIES 5
 #define LIST_TRIES 5
 
+extern struct set **set_list;
+extern ip_set_id_t max_sets;
+
 /* The view of an ipset in userspace */
 struct set {
 	char name[IP_SET_MAXNAMELEN];		/* Name of the set */
@@ -80,6 +83,10 @@ void set_flush(const char *name);
 size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
 			    ip_set_id_t *idx,
 			    unsigned op, unsigned cmd);
+
+int get_header_from_set (struct rahunas_map *map);
+
+int walk_through_set (int (*callback)(void *));
 
 void parse_ip(const char *str, ip_set_ip_t *ip);
 void parse_mac(const char *mac, unsigned char *ethernet);
