@@ -19,8 +19,6 @@
 #include "rh-config.h"
 #include "rh-utils.h"
 
-#define PROGRAM "RahuNASd"
-#define VERSION "0.1.1"
 #define MAX_MEMBERS 0x00FFFF
 
 extern struct rahunas_map *map;

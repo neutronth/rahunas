@@ -7,135 +7,331 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <time.h>
+#include <string.h>
+#include <libgda/libgda.h>
 #include "rahunasd.h"
 #include "rh-task.h"
 #include "rh-ipset.h"
 
+struct dbset_row {
+  gchar *session_id;
+  gchar *username;
+  gchar *ip;
+  gchar *mac;
+  time_t session_start;
+};
+
+gboolean get_errors (GdaConnection * connection)
+{
+  GList *list;
+  GList *node;
+  GdaConnectionEvent *error;
+
+  list = (GList *) gda_connection_get_events(connection);
+
+  for (node = g_list_first(list); node != NULL; node = g_list_next(node)) {
+    error = (GdaConnectionEvent *) node->data;
+    logmsg(RH_LOG_NORMAL, "DB Error no: %d", 
+             gda_connection_event_get_code(error));
+    logmsg(RH_LOG_NORMAL, "DB Desc: %s", 
+             gda_connection_event_get_description(error));
+    logmsg(RH_LOG_NORMAL, "DB Source: %s", 
+             gda_connection_event_get_source(error));
+    logmsg(RH_LOG_NORMAL, "DB SQL State: %s", 
+             gda_connection_event_get_sqlstate(error));
+  }
+}
+
+gboolean *parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
+  gint  row_id;
+  gint  column_id;
+  GValue *value;
+  gchar  *str;
+  gchar  *title;
+  GdaNumeric *num;
+  struct dbset_row *row;
+  struct tm tm;
+  time_t time;
+
+  char tmp[80];
+
+  for (row_id = 0; row_id < gda_data_model_get_n_rows(dm); row_id++) {
+    row = (struct dbset_row *)g_malloc(sizeof(struct dbset_row));
+    if (row == NULL) {
+      /* Do implement the row list cleanup */
+    }
+
+    *data_list = g_list_append(*data_list, row); 
+
+    for (column_id = 0; column_id < gda_data_model_get_n_columns(dm); 
+           column_id++) {
+
+      title = gda_data_model_get_column_title(dm, column_id);
+      value = gda_data_model_get_value_at (dm, column_id, row_id);
+      str = gda_value_stringify(value);
+               
+      if (strncmp("session_id", title, 10) == 0) {
+        row->session_id = g_strdup(str);
+      } else if (strncmp("username", title, 8) == 0) {
+        row->username = g_strdup(str);
+      } else if (strncmp("ip", title, 2) == 0) {
+        row->ip = g_strdup(str);
+      } else if (strncmp("mac", title, 3) == 0) {
+        row->mac = g_strdup(str);
+      } else if (strncmp("session_start", title, 13) == 0) {
+        strptime(str, "%s", &tm);
+        time = mktime(&tm);
+        memcpy(&row->session_start, &time, sizeof(time_t));
+      } 
+    }
+  }
+  
+  return TRUE;
+}
+
+GList *execute_sql_command(GdaConnection *connection, const gchar *buffer)
+{
+  GdaCommand *command;
+  GList *data_list = NULL;
+  GList *list;
+  GList *node;
+  GdaDataModel *dm;
+  gboolean errors = FALSE;
+
+
+  command = gda_command_new (buffer, GDA_COMMAND_TYPE_SQL,
+                             GDA_COMMAND_OPTION_STOP_ON_ERRORS);
+
+  list = gda_connection_execute_command (connection, command, NULL, NULL);
+  if (list != NULL) {
+    for (node = list; node != NULL; node = g_list_next(node)) {
+      if (GDA_IS_DATA_MODEL(node->data)) {
+        dm = (GdaDataModel *) node->data;
+        parse_dm_to_struct(&data_list, dm);
+        g_object_unref(dm);
+      } else {
+        get_errors (connection);
+        errors = TRUE;  
+      }
+    }
+  }
+
+  gda_command_free(command);
+  
+  return errors == TRUE ? NULL : data_list;
+}
+
+void execute_sql(GdaConnection *connection, const gchar *buffer)
+{
+  GdaCommand *command;
+  
+  command = gda_command_new (buffer, GDA_COMMAND_TYPE_SQL,
+                             GDA_COMMAND_OPTION_STOP_ON_ERRORS);
+  gda_connection_execute_select_command (connection, command, NULL, NULL);
+
+  gda_command_free (command);
+}
+
+void list_datasource (void)
+{
+  GList *ds_list;
+  GList *node;
+  GdaDataSourceInfo *info;
+
+  ds_list = gda_config_get_data_source_list();
+
+  for (node = g_list_first(ds_list); node != NULL; node = g_list_next(node)) {
+    info = (GdaDataSourceInfo *) node->data;
+
+    if (strncmp(info->name, PROGRAM, strlen(PROGRAM)) == 0) {
+      logmsg(RH_LOG_NORMAL, "Datasource: NAME: %s PROVIDER: %s",
+             info->name, info->provider);
+      logmsg(RH_LOG_NORMAL, "  CNC: %s", info->cnc_string);
+      logmsg(RH_LOG_NORMAL, "  DESC: %s", info->description);
+    }
+  }
+
+  gda_config_free_data_source_list(ds_list);
+}
+
+GdaConnection *get_connection(GdaClient *client)
+{
+  return gda_client_open_connection (client, PROGRAM, NULL, NULL,
+                                     GDA_CONNECTION_OPTIONS_NONE, NULL);
+}
+
+void free_data_list(GList *data_list)
+{
+  GList *node;
+  struct dbset_row *row;
+
+  for (node = g_list_first(data_list); node != NULL; 
+         node = g_list_next (node)) {
+    row = (struct dbset_row *) node->data;
+    g_free(row->session_id);
+    g_free(row->username);
+    g_free(row->ip);
+    g_free(row->mac);
+  }
+  
+  g_list_free (data_list);  
+}
+
+gboolean restore_set(GList **data_list, struct rahunas_map *map)
+{
+  GList *node;
+  struct rahunas_member *members = NULL;
+  struct dbset_row *row = NULL;
+  uint32_t id;
+
+  if (!map)
+    return FALSE;
+
+  members = map->members;
+
+  node = g_list_first(*data_list);
+
+  if (node == NULL)
+    return TRUE;
+
+  for (node; node != NULL; node = g_list_next(node)) {
+    row = (struct dbset_row *) node->data;
+
+    id = iptoid(map, row->ip);
+    
+    if (id < 0)
+      continue;
+
+    // MEMSET
+    members[id].session_id = g_strdup(row->session_id);
+    members[id].username   = g_strdup(row->username);
+    parse_mac(row->mac, &members[id].mac_address); 
+    memcpy(&row->session_start, &members[id].session_start, sizeof(time_t));
+
+    // IPSET
+    set_adtip(rahunas_set, row->ip, row->mac, IP_SET_OP_ADD_IP);
+  }
+  return TRUE;
+}
+
 /* Initialize */
 static void init (void)
 {
-  struct rahunas_member *members = NULL;
-  int size;
+  char ds_name[] = PROGRAM;
+  char ds_provider[] = "SQLite";
+  char ds_cnc_string[] = "DB_DIR=" RAHUNAS_CONF_DIR ";DB_NAME=" DB_NAME; 
+  char ds_desc[] = "RahuNAS DB Set";
 
-  logmsg(RH_LOG_NORMAL, "Task MEMSET init..");  
-  map = (struct rahunas_map*)(rh_malloc(sizeof(struct rahunas_map)));
+  logmsg(RH_LOG_NORMAL, "Task DBSET init..");  
 
-  map->members = NULL;
-  map->size = 0;
+  gda_init(PROGRAM, RAHUNAS_VERSION, NULL, NULL);
 
-  if (get_header_from_set(map) < 0) {
-    syslog(LOG_ERR, "Could not fetch IPSET header");
-    exit(EXIT_FAILURE);
-  }
-
-  size = map->size == 0 ? MAX_MEMBERS : map->size;
-
-	members = 
-    (struct rahunas_member*)(rh_malloc(sizeof(struct rahunas_member)*size));
-
-	memset(members, 0, sizeof(struct rahunas_member)*size);
-
-	map->members = members;
+  gda_config_save_data_source(ds_name, ds_provider, ds_cnc_string, ds_desc,
+                              NULL, NULL, FALSE);
+ 
+  list_datasource();
 }
 
 /* Cleanup */
 static void cleanup (void)
 {
-  struct rahunas_member *members = NULL;
-	int i;
-  int end;
+  char ds_name[] = PROGRAM;
 
-  if (map) {
-    if (map->members) {
-      members = map->members;
-      end = map->size;
-    } else {
-      end = 0;
-    }  
-
-	  for (i=0; i < end; i++) {
-			  rh_free_member(&members[i]);
-		}
-
-		rh_free(&(map->members));
-		rh_free(&map);
-	}
-
-  logmsg(RH_LOG_NORMAL, "Task MEMSET cleanup..");  
-  return 0;
+  logmsg(RH_LOG_NORMAL, "Task DBSET cleanup..");  
+  
+  gda_config_remove_data_source (ds_name);
 }
 
 
 /* Start service task */
 static int startservice (struct rahunas_map *map)
 {
-  /* Do nothing or need to implement */
+  GdaClient *client;
+  GdaConnection *connection;
+  GList *data_list;
+  GList *node;
+  struct dbset_row *row;
+
+  logmsg(RH_LOG_NORMAL, "Task DBSET start..");  
+
+  client = gda_client_new ();
+  connection = gda_client_open_connection (client, PROGRAM, NULL, NULL,
+                 GDA_CONNECTION_OPTIONS_READ_ONLY, NULL);
+
+  data_list = execute_sql_command(connection, "SELECT * FROM dbset");
+
+  restore_set(&data_list, map);
+
+  free_data_list(data_list);
+
+  g_object_unref(G_OBJECT(client));
+
+  return 0;
 }
 
 /* Stop service task */
 static int stopservice  (struct rahunas_map *map)
 {
   /* Do nothing or need to implement */
+  logmsg(RH_LOG_NORMAL, "Task DBSET stop..");  
 }
 
 /* Start session task */
 static int startsess (struct rahunas_map *map, struct task_req *req)
 {
-	struct rahunas_member *members = map->members;
-  uint32_t id = req->id;
+  GdaClient *client;
+  GdaConnection *connection;
+  gint res;
+  char startsess_cmd[256];
+  char time_str[32];
 
-  members[id].flags = 1;
-  if (members[id].username && members[id].username != termstring)
-    free(members[id].username);
+  client = gda_client_new ();
+  connection = gda_client_open_connection (client, PROGRAM, NULL, NULL,
+                 GDA_CONNECTION_OPTIONS_NONE, NULL);
+  
+  strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
+  sprintf(startsess_cmd, "INSERT INTO dbset"
+         "(session_id,username,ip,mac,session_start) "
+         "VALUES('%s','%s','%s','%s',%s)",
+         req->session_id, req->username, idtoip(map, req->id), 
+         mac_tostring(req->mac_address), time_str);
 
-  if (members[id].session_id && members[id].username != termstring)
-    free(members[id].session_id);
+  DP("SQL: %s", startsess_cmd);
 
-  members[id].username   = strdup(req->username);
-  if (!members[id].username)
-    members[id].username = termstring;
+  execute_sql(connection, startsess_cmd);
 
-  members[id].session_id = strdup(req->session_id);
-  if (!members[id].session_id)
-    members[id].session_id = termstring;
+  g_object_unref(G_OBJECT(client)); 
 
-	time(&(members[id].session_start));
-  memcpy(&req->session_start, &members[id].session_start, sizeof(time_t));
-
-  memcpy(&members[id].mac_address, &(req->mac_address), ETH_ALEN);
-
-  logmsg(RH_LOG_NORMAL, "Session Start, User: %s, IP: %s, "
-                        "Session ID: %s, MAC: %s",
-                        members[id].username, 
-                        idtoip(map, id), 
-                        members[id].session_id,
-                        mac_tostring(members[id].mac_address)); 
   return 0;
 }
 
 /* Stop session task */
-static int stopsess  (struct rahunas_map *map, struct task_req *req)
+static int stopsess (struct rahunas_map *map, struct task_req *req)
 {
-	struct rahunas_member *members = map->members;
-  uint32_t id = req->id;
+  GdaClient *client;
+  GdaConnection *connection;
+  gint res;
+  char stopsess_cmd[256];
 
-  if (!members[id].username)
-    members[id].username = termstring;
+  client = gda_client_new ();
+  connection = gda_client_open_connection (client, PROGRAM, NULL, NULL,
+                 GDA_CONNECTION_OPTIONS_NONE, NULL);
 
-  if (!members[id].session_id)
-    members[id].session_id = termstring;
+  DP("Username  : %s", map->members[req->id].username);
+  DP("SessionID : %s", map->members[req->id].session_id);
 
-  logmsg(RH_LOG_NORMAL, "Session Stop, User: %s, IP: %s, "
-                        "Session ID: %s, MAC: %s",
-                        members[id].username, 
-                        idtoip(map, id), 
-                        members[id].session_id,
-                        mac_tostring(members[id].mac_address)); 
+  sprintf(stopsess_cmd, "DELETE FROM dbset WHERE "
+         "session_id='%s' AND username='%s'",
+         map->members[req->id].session_id, 
+         map->members[req->id].username);
 
-  rh_free_member(&members[id]);   
+  DP("SQL: %s", stopsess_cmd);
+
+  execute_sql(connection, stopsess_cmd);
+
+  g_object_unref(G_OBJECT(client)); 
 
   return 0;
- 
 }
 
 /* Commit start session task */
@@ -162,9 +358,9 @@ static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
   /* Do nothing or need to implement */
 }
 
-static struct task task_memset = {
-  .taskname = "MEMSET",
-  .taskprio = 2,
+static struct task task_dbset = {
+  .taskname = "DBSET",
+  .taskprio = 1,
   .init = &init,
   .cleanup = &cleanup,
   .startservice = &startservice,
@@ -177,6 +373,6 @@ static struct task task_memset = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_memset_reg(void) {
-  task_register(&task_memset);
+void rh_task_dbset_reg(void) {
+  task_register(&task_dbset);
 }

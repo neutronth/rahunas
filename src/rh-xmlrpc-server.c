@@ -125,13 +125,14 @@ int do_stopsession(GNetXmlRpcServer *server,
     goto cleanup;
 	}
 
-  req.id = id;
   parse_mac(mac_address, &ethernet);
   memcpy(req.mac_address, &ethernet, ETH_ALEN);
-  req.req_opt = RH_RADIUS_TERM_USER_REQUEST;
 
 	if (members[id].flags) {
     if (memcmp(&ethernet, &members[id].mac_address, ETH_ALEN) == 0) {
+      req.id = id;
+      req.req_opt = RH_RADIUS_TERM_USER_REQUEST;
+
       res = rh_task_stopsess(map, &req);
       if (res == 0) {
         *reply_string = g_strdup_printf("Client IP %s was removed!", 

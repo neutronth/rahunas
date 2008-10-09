@@ -46,6 +46,8 @@ static void cleanup (void)
 	int i;
   int end;
 
+  logmsg(RH_LOG_NORMAL, "Task MEMSET cleanup..");  
+
   if (map) {
     if (map->members) {
       members = map->members;
@@ -62,7 +64,6 @@ static void cleanup (void)
 		rh_free(&map);
 	}
 
-  logmsg(RH_LOG_NORMAL, "Task MEMSET cleanup..");  
   return 0;
 }
 
@@ -177,7 +178,7 @@ static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
 
 static struct task task_memset = {
   .taskname = "MEMSET",
-  .taskprio = 2,
+  .taskprio = 3,
   .init = &init,
   .cleanup = &cleanup,
   .startservice = &startservice,

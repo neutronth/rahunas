@@ -1,12 +1,20 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
+m4_define(major, 0)
+m4_define(minor, 1)
+m4_define(micro, 1)
+
 AC_PREREQ(2.61)
-AC_INIT([RahuNAS],[0.1],[neo.neutron@gmail.com] )
+RAHUNAS_VERSION=0.1.1
+AC_INIT([RahuNAS], major.minor.micro,[neo.neutron@gmail.com] )
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/rahunasd.h])
 AC_CONFIG_HEADER([config.h])
+
+AC_SUBST(RAHUNAS_VERSION, major.minor.micro)
+AC_SUBST(PROGRAM, "RahuNAS")
 
 # Checks for programs.
 AC_PROG_CC
@@ -20,6 +28,13 @@ PKG_CHECK_MODULES(LIBGNET, [ gnet-2.0 >= $GNET_REQ ], , [ AC_MSG_ERROR([GNet is 
 
 AC_SUBST(LIBGNET_CFLAGS)
 AC_SUBST(LIBGNET_LIBS)
+
+dnl Check for LibGDA 3.x
+LIBGDA_REQ=3.0.2
+PKG_CHECK_MODULES(LIBGDA, [ libgda-3.0 >= $LIBGDA_REQ ], , [ AC_MSG_ERROR([LibGDA is required]) ])
+
+AC_SUBST(LIBGDA_CFLAGS)
+AC_SUBST(LIBGDA_LIBS)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -42,6 +57,8 @@ AC_CONFIG_FILES([
 	Makefile
 	xmlrpc/Makefile
 	src/Makefile
+	data/Makefile
+  src/include/linux/netfilter_ipv4/Makefile
 ])
 
 AC_OUTPUT

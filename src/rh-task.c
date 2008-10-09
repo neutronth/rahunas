@@ -9,75 +9,59 @@
 #include "rh-task-memset.h"
 #include "rh-task-ipset.h"
 
-static struct task dummy;
-
-static struct task *task_find(const char *taskname)
-{
-  struct task *runner = get_task_list(); 
-  while(runner != NULL) {
-    if (strncmp(runner->taskname, taskname, RH_TASK_MAXNAMELEN) == 0)
-      return runner;
-    
-    runner = runner->next;
-  }
-
-  return NULL;
-}
-
-struct task *get_task_list ()
-{
-  if (task_list == NULL)
-    return NULL;
-  else
-    return task_list->next; /* start after dummy */
-}
-
 void task_register(struct task *task)
 {
-  struct task *chk, *prev = NULL;
-  struct task *runner = task_list;
+  GList *chk  = NULL;
+  GList *node = NULL;
+  struct task *ltask = NULL;
 
   if (task == NULL)
      return;
 
   DP("Registering Task: %s", task->taskname);
 
-  chk = task_find(task->taskname);
+  chk = g_list_find(task_list, task);
 
   /* Already register */
   if (chk != NULL) {
     DP("Already registered");
     return;
   }
- 
-  while (runner->next != NULL && (task->taskprio < runner->next->taskprio)) {
-    runner = runner->next;
+
+  if (task_list == NULL) {
+    task_list = g_list_append(task_list, task);
+    return;
   }
 
-  task->next = runner->next;
-  runner->next = task;
+  for (node = g_list_first(task_list); node != NULL; node = g_list_next(node)) {
+    ltask = (struct task *)node->data;
+    if (task->taskprio >= ltask->taskprio)
+      break;  
+  }
+  
+  task_list = g_list_insert_before(task_list, node, task);
 }
 
 static void rh_task_call_init (void)
 {
-  struct task *runner = get_task_list();
-  while(runner != NULL) {
-    (*runner->init)();
-    runner = runner->next;
+  GList *runner = g_list_first(task_list);
+  struct task *ltask = NULL;
+
+  DP("Initialize...");
+
+  while (runner != NULL) {
+    ltask = (struct task *)runner->data;
+    (*ltask->init)();
+    runner = g_list_next(runner);
   }
 }
 
 void rh_task_init(void)
 {
-  strncpy(dummy.taskname, "DUMMY", 6);
-  dummy.taskprio = 999; /* ensure it always be head */
-  dummy.next = NULL;
-
-  task_list = &dummy;
-
   /* Register all tasks */
   rh_task_ipset_reg();
   rh_task_memset_reg();
+  rh_task_dbset_reg();
 
   /* Call each init */
   rh_task_call_init();
@@ -85,87 +69,82 @@ void rh_task_init(void)
 
 void rh_task_cleanup(void)
 {
-  struct task *runner = get_task_list();
+  GList *runner = g_list_last(task_list);
+  struct task *ltask = NULL;
 
   DP("Task Cleanup");
 
-  if (runner == NULL)
-    return;
-
   while (runner != NULL) {
-    (*runner->cleanup)();
-    runner = runner->next;
-  }
+    ltask = (struct task *)runner->data;
+    (*ltask->cleanup)();
+    runner = g_list_previous(runner);
+  }  
+
+  g_list_free(task_list);
 }
 
 int  rh_task_startservice(struct rahunas_map *map)
 {
-  struct task *runner = get_task_list();
+  GList *runner = g_list_first(task_list);
+  struct task *ltask = NULL;
 
   DP("Start service");
 
-  if (runner == NULL)
-    return 0;
-
   while (runner != NULL) {
-    (*runner->startservice)(map);
-    runner = runner->next;
-  }
-  
-  logmsg(RH_LOG_NORMAL, "Service start");
+    ltask = (struct task *)runner->data;
+    (*ltask->startservice)(map);
+    runner = g_list_next(runner);
+  }  
+
+  logmsg(RH_LOG_NORMAL, "Service started");
   return 0;
 }
 
 int  rh_task_stopservice(struct rahunas_map *map)
 {  
-  struct task *runner = get_task_list();
+  GList *runner = g_list_last(task_list);
+  struct task *ltask = NULL;
 
   DP("Stop service");
 
-  if (runner == NULL)
-    return 0;
-
   while (runner != NULL) {
-    (*runner->stopservice)(map);
-    runner = runner->next;
-  }
+    ltask = (struct task *)runner->data;
+    (*ltask->stopservice)(map);
+    runner = g_list_previous(runner);
+  }  
+
+  logmsg(RH_LOG_NORMAL, "Service stopped");
 }
 
 int  rh_task_startsess(struct rahunas_map *map, struct task_req *req)
 {
-  struct task *runner = get_task_list();
+  GList *runner = g_list_first(task_list);
+  struct task *ltask = NULL;
 
   DP("Start session called");
 
-  if (runner == NULL)
-    return 0;
-
   while (runner != NULL) {
-    if ((*runner->startsess)(map, req) < 0) {
-      DP("Failed, rollback");
-    }
-    runner = runner->next;
-  }
-  
+    ltask = (struct task *)runner->data;
+    (*ltask->startsess)(map, req);
+    runner = g_list_next(runner);
+  }  
+
   return 0;
 }
 
 int  rh_task_stopsess(struct rahunas_map *map, struct task_req *req)
 {
-  struct task *runner = get_task_list();
+  GList *runner = g_list_last(task_list);
+  struct task *ltask = NULL;
 
   DP("Stop session called");
 
-  if (runner == NULL)
-    return 0;
-
   while (runner != NULL) {
-    if ((*runner->stopsess)(map, req) < 0) {
-      DP("Failed, rollback");
-    }
-    runner = runner->next;
-  }
-  
+    ltask = (struct task *)runner->data;
+    (*ltask->stopsess)(map, req);
+    runner = g_list_previous(runner);
+  }  
+
   return 0;
 }
 

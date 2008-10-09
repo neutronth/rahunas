@@ -1,1 +1,1 @@
-SUBDIRS = xmlrpc src
+SUBDIRS = xmlrpc src data

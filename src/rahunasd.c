@@ -355,7 +355,7 @@ int main(int argc, char **argv)
 
   dup2(fd_log, STDERR_FILENO);
 
-  sprintf(version, "Starting %s - Version %s", PROGRAM, VERSION);
+  sprintf(version, "Starting %s - Version %s", PROGRAM, RAHUNAS_VERSION);
 	logmsg(RH_LOG_NORMAL, version);
   syslog(LOG_INFO, version);
 

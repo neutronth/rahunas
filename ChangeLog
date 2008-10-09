@@ -1,3 +1,48 @@
+2008-10-10  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* configure.ac:
+	  - Add the module checking for libgda which require to build the new 
+	    database session backups (sqlite3).
+	  - Add the major, minor and micro variables to easy handle the future 
+	    version bump.
+	  - Add VERSION and PROGRAM variables which will be used in the core program.
+	  - Add data/Makefile.
+		- Add src/include/linux/netfilter_ipv4/Makefile to include it in the 
+		  distribution. (make dist-*) 
+	* src/rahunasd.{h,c}: Update the code which using VERSION and PROGRAM 
+		  corresponding to the build config.
+	* +data/Makefile.am, +data/rahunas.db, Makefile.am: 
+	  Add data dir which now contains sqlite3 db file and update makefile.
+	* +src/rh-task-dbset.{h,c}:	
+	  Add the database session backups task.
+	* src/Makefile.am:
+	  - Update corresponding to the new database session backups task.
+	  - Add missing header files to rahunasd_SOURCES which they are not included
+		  in the distribution. (make dist-*)
+	* src/rh-config.h: Define DB_NAME which using by task-dbset.  
+	* src/rh-task-ipset.c: 
+	  - Update taskprio from 1 to 2 for the appropriate 
+	    point of working which now the ipset is the middle priority task.
+	  - Update the positions of the logmsg. (Debuging purpose)
+	* src/rh-task-memset.c:
+	  - Update taskprio from 2 to 3 for the appropriate 
+	    point of working which now the memset is the most priority task.
+	  - Update the positions of the logmsg. (Debuging purpose)
+	* src/rh-task.{h,c}: 
+	  - Change the way to handle the tasklist from singly linked-list to the
+	    GList from GLib which can handle the forward and backward link. (Doubly
+		  linked-list), the tasks eq. stopservice, stopsess, cleanup need to start 
+	    from the least priority first. (Prevent the most significant data in 
+	    memset was deleted which will cause the failures of the other tasks that 
+			depend on it.
+	  - Update the struct task structure by remove unneeded *next which now we
+	    handle the task list by the GList.
+	* src/rh-xmlrpc-server.c: Move the req.id and req.req_opt to the inner of 
+	  the condition checking because of their values not even use if the 
+	  conditions are not true.
+	* +src/include/linux/netfilter_ipv4/Makefile.am: Add the header files in this 
+	  dir to EXTRA_DIST which they will be distribute in the distribution.
+
 2008-09-12  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* +src/rh-task-*.{h,c}: 

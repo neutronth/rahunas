@@ -24,4 +24,6 @@
 #define XMLSERVICE_PORT	8888
 #define XMLSERVICE_URL	"/xmlrpc_service.php"
 
+#define DB_NAME "rahunas"
+
 #endif // __RH_CONFIG_H

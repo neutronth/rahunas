@@ -56,10 +56,10 @@ static void init (void)
 /* Cleanup */
 static void cleanup (void)
 {
+  logmsg(RH_LOG_NORMAL, "Task IPSET cleanup..");  
   set_flush(SET_NAME);
 
   rh_free(&rahunas_set);
-  logmsg(RH_LOG_NORMAL, "Task IPSET cleanup..");  
 }
 
 /* Start service task */
@@ -72,9 +72,9 @@ static int startservice (struct rahunas_map *map)
 /* Stop service task */
 static int stopservice  (struct rahunas_map *map)
 {
+  logmsg(RH_LOG_NORMAL, "Task IPSET stop..");  
   walk_through_set(&nas_stopservice);
 
-  logmsg(RH_LOG_NORMAL, "Task IPSET stop..");  
   return 0;
 }
 
@@ -128,7 +128,7 @@ static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
 
 static struct task task_ipset = {
   .taskname = "IPSET",
-  .taskprio = 1,
+  .taskprio = 2,
   .init = &init,
   .cleanup = &cleanup,
   .startservice = &startservice,

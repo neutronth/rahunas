@@ -7,6 +7,7 @@
 #define __RH_TASK_H
 
 #include "rahunasd.h"
+#include <glib.h>
 
 #define RH_TASK_MAXNAMELEN 64
 
@@ -20,7 +21,6 @@ struct task_req {
 };
 
 struct task {
-  struct task *next;
 
   char taskname[RH_TASK_MAXNAMELEN];
   unsigned int taskprio;
@@ -56,10 +56,9 @@ struct task {
   int (*rollbackstopsess) (struct rahunas_map *map, struct task_req *req);
 };
 
-static struct task *task_list = NULL;
+static GList *task_list = NULL;
 
 extern void task_register(struct task *task);
-struct task *get_task_list ();
 
 void rh_task_init(void);
 void rh_task_cleanup(void);
