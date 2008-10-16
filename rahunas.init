@@ -53,7 +53,7 @@ case "$1" in
 		/var/run/$NAME.pid --exec $DAEMON
 	sleep 1
 
-	/home/neutron/firewall.sh
+	/etc/rahunas/firewall.sh
 	start-stop-daemon --start --quiet --pidfile \
 		/var/run/$NAME.pid --exec $DAEMON
 	echo "$NAME."
