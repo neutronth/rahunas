@@ -1,3 +1,9 @@
+2008-10-16  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +rahunas.{init.default,firewall}: Add the support scripts for do the 
+	  initialize daemon, firewall and daemon config.
+	* data/rahunas.db: Remove the tested data from db.
+
 2008-10-10  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* configure.ac:
