@@ -1,0 +1,27 @@
+# This file controls the behaviour of the rahunas init script.  It
+# will be parsed as a shell script.
+
+# Set to "yes" to have the init script start rahunas.
+RUN_DAEMON=no
+
+# External Interface
+DEV_WAN="eth0"
+
+# Internal Interface
+DEV_LAN="eth1"
+
+# Running in bridge mode - [yes|no]
+BRIDGE=no
+
+# Clients IP 
+# CLIENTS_RANGE_START and CLENTS_RANGE_END are [single ip].
+# CLIENTS_NETWORK is [network_address/netmask].
+# CLIENTS_IGNORE_MAC is [yes|no].
+#
+# Note: The CLIENTS_NETWORK will be used if it set whenever 
+# CLIENTS_RANGE_{START,STOP} are even set.
+
+CLIENTS_RANGE_START="192.168.0.2"
+CLIENTS_RANGE_END="192.168.0.254"
+CLIENTS_NETWORK=""
+CLIENTS_IGNORE_MAC=no

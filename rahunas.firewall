@@ -1,0 +1,117 @@
+#!/bin/sh
+# The firewall script to provides the ability to capture the web request from 
+# the clients and redirect them to the login page to get the authorization to 
+# access the network.
+
+IPTABLES=/sbin/iptables
+IPSET=/usr/sbin/ipset
+
+DESC="RahuNAS firewall support script"
+
+# These values are overriden in /etc/default/rahunas if they exist
+RUN_DAEMON=no
+DEV_WAN="eth0"
+DEV_LAN="eth1"
+BRIDGE=""
+CLIENTS_RANGE_START="192.168.0.2"
+CLIENTS_RANGE_END="192.168.0.254"
+CLIENTS_NETWORK=""
+CLIENTS_IGNORE_MAC=no
+
+# Get configuration
+if [ -r /etc/default/rahunas ]; then
+  . /etc/default/rahunas
+fi
+
+echo -n $DESC
+
+if [ "$RUN_DAEMON" = "no" ]; then
+  exit 0
+fi
+
+# Bridge config
+
+if [ "$BRIDGE" = "yes" ]; then
+  DEV_IN_PARAM="-m physdev --physdev-in"
+else
+  DEV_IN_PARAM="-i"
+fi
+
+$IPTABLES -F -t nat
+$IPTABLES -F -t mangle 
+$IPTABLES -F
+$IPTABLES -X
+
+$IPSET -X
+
+ipset_opt=""
+ipset_ignoremac=""
+
+if [ "$CLIENTS_NETWORK" != "" ]; then
+  ipset_opt="--network $CLIENTS_NETWORK"
+else
+  ipset_opt="--from $CLIENTS_RANGE_START --to $CLIENTS_RANGE_END"
+fi
+
+if [ "$CLIENTS_IGNORE_MAC" = "yes" ]; then
+  ipset_ignoremac="--ignoremac"
+fi
+
+$IPSET -N rahunas_set rahunas $ipset_opt $ipset_ignoremac 
+
+##
+# Allow all traffic for established and related connections
+##
+
+$IPTABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPTABLES -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+$IPTABLES -A INPUT $DEV_IN_PARAM $DEV_WAN -m state --state NEW -j ACCEPT
+$IPTABLES -A INPUT -i lo -j ACCEPT
+
+##
+# Allow incoming to our DNS server
+##
+$IPTABLES -I INPUT -p tcp --dport domain -j ACCEPT
+$IPTABLES -I INPUT -p udp --dport domain -j ACCEPT
+
+##
+# Allow incoming to our HTTP server for login page
+##
+$IPTABLES -I INPUT -p tcp -m multiport --dports 80,443,8888 -j ACCEPT
+
+##
+# Allow incoming to our DHCP
+##
+$IPTABLES -I INPUT $DEV_IN_PARAM $DEV_LAN \
+	-p udp --dport 67:68 -j ACCEPT
+$IPTABLES -I FORWARD $DEV_IN_PARAM $DEV_LAN \
+	-p udp --dport 67:68 -j DROP
+
+##
+# Set Default Policy
+##
+$IPTABLES -P INPUT DROP
+$IPTABLES -P OUTPUT ACCEPT
+$IPTABLES -P FORWARD DROP 
+
+##
+# Mark the connections that have been authorized to save rule check time
+##
+$IPTABLES -t mangle -A PREROUTING -m set --set rahunas_set src,dst \
+	-j CONNMARK --set-mark 0x2 
+
+##
+# Accept Forwarding for the authorized clients
+##
+$IPTABLES -A FORWARD -m connmark --mark 0x2 -j ACCEPT
+
+##
+# Redirect unauthorized clients to login page
+##
+
+$IPTABLES -t nat -A PREROUTING -p tcp -m multiport --dports 80,8080,8088,3128 \
+	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 10 \
+	-j REDIRECT --to-port 8888
+
+echo "done"
