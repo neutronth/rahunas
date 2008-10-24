@@ -15,8 +15,10 @@ if ($auto_refresh) {
   header("Refresh: $interval; url=$current_url");
 }
 
-$forward_uri = $config['NAS_LOGIN_PROTO'] . "://" .
-               $config['NAS_LOGIN_HOST'] . "/login.php";
+$forward_uri  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
+$forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
+$forward_uri .= "/login.php?sss=" . time();
+
 $request_url = $_SESSION['request_url'];
 
 $ip = $_SERVER['REMOTE_ADDR'];

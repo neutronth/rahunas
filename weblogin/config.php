@@ -10,6 +10,7 @@ $config = array(
 	"NAS_IDENTIFIER" => "RahuNAS-01",
 	"NAS_IP_ADDRESS" => "10.55.95.251",
 	"NAS_LOGIN_HOST" => "10.55.95.251",
+  "NAS_LOGIN_PORT" => "8443",
 	"NAS_LOGIN_PROTO" => "https",
 	"NAS_PORT" => 1,
 	"DEFAULT_REDIRECT_URL" => "http://www.kku.ac.th",

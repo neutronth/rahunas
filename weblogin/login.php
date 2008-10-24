@@ -10,8 +10,9 @@ require_once 'header.php';
 if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
   $ip = $_SERVER['REMOTE_ADDR'];
 	$forward = false;
-	$LogoutURL = $config['NAS_LOGIN_PROTO'] . "://" .
-               $config['NAS_LOGIN_HOST'] . "/logout.php";
+  $LogoutURL  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
+  $LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
+	$LogoutURL .= "/logout.php";
 
   $RequestURL = empty($_GET['request_url']) ? 
 	                 $config['DEFAULT_REDIRECT_URL']

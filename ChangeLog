@@ -1,3 +1,18 @@
+2008-10-24  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunasd.h, src/rh-xmlrpc-server.c:
+	  Empty MAC Address now substitute by DEFAULT_MAC (00:00:00:00:00:00) to
+		support the new ignoremac feature (Tested with the OSPF Routing Protocol).
+
+	* weblogin/config.php, weblogin/index.php, weblogin/login.php, 
+	  weblogin/logout.php:
+		- Add supporting for https port number other than default 443. 
+		- Default https port for RahuNAS is 8443. 
+	
+	* rahunas.firewall: 
+	  - Adjust the wrong connmark from 10 to 0x2; 
+	  - Remove unnecessary command.
+
 2008-10-16  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* +weblogin/*: Add the PHP web login.

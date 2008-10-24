@@ -21,6 +21,8 @@
 
 #define MAX_MEMBERS 0x00FFFF
 
+#define DEFAULT_MAC "00:00:00:00:00:00"
+
 extern struct rahunas_map *map;
 extern struct set *rahunas_set;
 extern const char *termstring; 

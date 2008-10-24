@@ -1,10 +1,9 @@
 <?php
 require_once 'config.php';
 require_once 'header.php';
-
-$forward_uri = $config['NAS_LOGIN_PROTO'] . "://" .
-               $config['NAS_LOGIN_HOST'] .
-							 "/login.php?sss=" . time();
+$forward_uri  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
+$forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
+$forward_uri .= "/login.php?sss=" . time();
 ?>
 <html>
 <head>

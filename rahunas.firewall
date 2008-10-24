@@ -78,7 +78,7 @@ $IPTABLES -I INPUT -p udp --dport domain -j ACCEPT
 ##
 # Allow incoming to our HTTP server for login page
 ##
-$IPTABLES -I INPUT -p tcp -m multiport --dports 80,443,8888 -j ACCEPT
+$IPTABLES -I INPUT -p tcp -m multiport --dports 80,8443,8888 -j ACCEPT
 
 ##
 # Allow incoming to our DHCP
@@ -111,7 +111,5 @@ $IPTABLES -A FORWARD -m connmark --mark 0x2 -j ACCEPT
 ##
 
 $IPTABLES -t nat -A PREROUTING -p tcp -m multiport --dports 80,8080,8088,3128 \
-	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 10 \
+	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
 	-j REDIRECT --to-port 8888
-
-echo "done"

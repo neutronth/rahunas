@@ -49,8 +49,11 @@ int do_startsession(GNetXmlRpcServer *server,
   mac_address = rh_string_get_sep(param, "|", 4);
 
   if (ip == NULL || username == NULL 
-        || session_id == NULL || mac_address == NULL)
+        || session_id == NULL)
     goto out;
+
+  if (mac_address == NULL)
+    mac_address = g_strdup(DEFAULT_MAC);
 
 	id = iptoid(map, ip);
 
@@ -115,8 +118,11 @@ int do_stopsession(GNetXmlRpcServer *server,
   ip          = rh_string_get_sep(param, "|", 1);
   mac_address = rh_string_get_sep(param, "|", 2);
 
-  if (ip == NULL || mac_address == NULL)
+  if (ip == NULL)
     goto out;
+
+  if (mac_address == NULL)
+    mac_address = g_strdup(DEFAULT_MAC);
 
 	id = iptoid(map, ip);
 
