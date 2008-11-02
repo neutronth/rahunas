@@ -6,7 +6,7 @@
 IPTABLES=/sbin/iptables
 IPSET=/usr/sbin/ipset
 
-DESC="RahuNAS firewall support script"
+NAME="rahunas"
 
 # These values are overriden in /etc/default/rahunas if they exist
 RUN_DAEMON=no
@@ -23,8 +23,6 @@ if [ -r /etc/default/rahunas ]; then
   . /etc/default/rahunas
 fi
 
-echo -n $DESC
-
 if [ "$RUN_DAEMON" = "no" ]; then
   exit 0
 fi
@@ -37,79 +35,214 @@ else
   DEV_IN_PARAM="-i"
 fi
 
-$IPTABLES -F -t nat
-$IPTABLES -F -t mangle 
-$IPTABLES -F
-$IPTABLES -X
+# Set declaration
+SETNAME="${NAME}_set"
 
-$IPSET -X
-
-ipset_opt=""
-ipset_ignoremac=""
-
-if [ "$CLIENTS_NETWORK" != "" ]; then
-  ipset_opt="--network $CLIENTS_NETWORK"
-else
-  ipset_opt="--from $CLIENTS_RANGE_START --to $CLIENTS_RANGE_END"
-fi
-
-if [ "$CLIENTS_IGNORE_MAC" = "yes" ]; then
-  ipset_ignoremac="--ignoremac"
-fi
-
-$IPSET -N rahunas_set rahunas $ipset_opt $ipset_ignoremac 
+# Chains declaration
+CHAIN_INPUT="${NAME}_input"
+CHAIN_FORWARD="${NAME}_forward"
+CHAIN_MANGLE_PREROUTING="${NAME}_mangle_prerouting"
+CHAIN_NAT_PREROUTING="${NAME}_nat_prerouting"
+CHAIN_NAT_POSTROUTING="${NAME}_nat_postrouting"
+CHAIN_NAT_AUTHEN="${NAME}_nat_authen"
 
 ##
-# Allow all traffic for established and related connections
+# Add set
 ##
-
-$IPTABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-$IPTABLES -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-$IPTABLES -A INPUT $DEV_IN_PARAM $DEV_WAN -m state --state NEW -j ACCEPT
-$IPTABLES -A INPUT -i lo -j ACCEPT
-
-##
-# Allow incoming to our DNS server
-##
-$IPTABLES -I INPUT -p tcp --dport domain -j ACCEPT
-$IPTABLES -I INPUT -p udp --dport domain -j ACCEPT
-
-##
-# Allow incoming to our HTTP server for login page
-##
-$IPTABLES -I INPUT -p tcp -m multiport --dports 80,8443,8888 -j ACCEPT
-
-##
-# Allow incoming to our DHCP
-##
-$IPTABLES -I INPUT $DEV_IN_PARAM $DEV_LAN \
-	-p udp --dport 67:68 -j ACCEPT
-$IPTABLES -I FORWARD $DEV_IN_PARAM $DEV_LAN \
-	-p udp --dport 67:68 -j DROP
+add_set () {
+  ipset_opt=""
+  ipset_ignoremac=""
+  
+  if [ "$CLIENTS_NETWORK" != "" ]; then
+    ipset_opt="--network $CLIENTS_NETWORK"
+  else
+    ipset_opt="--from $CLIENTS_RANGE_START --to $CLIENTS_RANGE_END"
+  fi
+  
+  if [ "$CLIENTS_IGNORE_MAC" = "yes" ]; then
+    ipset_ignoremac="--ignoremac"
+  fi
+  
+  $IPSET -N $SETNAME rahunas $ipset_opt $ipset_ignoremac 
+}
 
 ##
-# Set Default Policy
+# Cleanup set
 ##
-$IPTABLES -P INPUT DROP
-$IPTABLES -P OUTPUT ACCEPT
-$IPTABLES -P FORWARD DROP 
+cleanup_set () {
+  $IPSET -F $SETNAME
+  $IPSET -X $SETNAME
+}
 
 ##
-# Mark the connections that have been authorized to save rule check time
+# Cleanup old rules
 ##
-$IPTABLES -t mangle -A PREROUTING -m set --set rahunas_set src,dst \
-	-j CONNMARK --set-mark 0x2 
+cleanup () {
+  $IPTABLES -D INPUT -j $CHAIN_INPUT
+  $IPTABLES -D FORWARD -j $CHAIN_FORWARD
+  $IPTABLES -t mangle -D PREROUTING -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t nat -D PREROUTING -j $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat -D POSTROUTING -j $CHAIN_NAT_POSTROUTING
+  
+  $IPTABLES -F $CHAIN_INPUT
+  $IPTABLES -X $CHAIN_INPUT
+  
+  $IPTABLES -F $CHAIN_FORWARD
+  $IPTABLES -X $CHAIN_FORWARD
+  
+  $IPTABLES -t mangle -F $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -X $CHAIN_MANGLE_PREROUTING
+  
+  $IPTABLES -t nat -F $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat -X $CHAIN_NAT_PREROUTING
+  
+  $IPTABLES -t nat -F $CHAIN_NAT_POSTROUTING
+  $IPTABLES -t nat -X $CHAIN_NAT_POSTROUTING
+  
+  $IPTABLES -t nat -F $CHAIN_NAT_AUTHEN
+  $IPTABLES -t nat -X $CHAIN_NAT_AUTHEN
+}
 
 ##
-# Accept Forwarding for the authorized clients
+# Define new chains
 ##
-$IPTABLES -A FORWARD -m connmark --mark 0x2 -j ACCEPT
+new_chains () {
+  $IPTABLES -N $CHAIN_INPUT
+  $IPTABLES -N $CHAIN_FORWARD
+  $IPTABLES -t mangle -N $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t nat -N $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
+  $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
+}
 
 ##
-# Redirect unauthorized clients to login page
+# Policy
 ##
+policy () {
+  $IPTABLES -P INPUT DROP
+  $IPTABLES -P OUTPUT ACCEPT
+  $IPTABLES -P FORWARD DROP 
+}
 
-$IPTABLES -t nat -A PREROUTING -p tcp -m multiport --dports 80,8080,8088,3128 \
-	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
-	-j REDIRECT --to-port 8888
+cleanup_policy () {
+  # Assume before the script running the default policy are all ACCEPT
+  $IPTABLES -P INPUT ACCEPT
+  $IPTABLES -P OUTPUT ACCEPT
+  $IPTABLES -P FORWARD ACCEPT 
+}
+
+rules () {
+  ##
+  # Init rules
+  ##
+  $IPTABLES -I INPUT -j $CHAIN_INPUT
+  $IPTABLES -I FORWARD -j $CHAIN_FORWARD
+  $IPTABLES -t mangle -I PREROUTING -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t nat -I PREROUTING -j $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat -I POSTROUTING -j $CHAIN_NAT_POSTROUTING
+  
+  ##
+  # Allow all traffic for established and related connections
+  ##
+  
+  $IPTABLES -A $CHAIN_INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+  $IPTABLES -A $CHAIN_FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+  
+  $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_WAN -m state --state NEW \
+    -j ACCEPT
+  $IPTABLES -A $CHAIN_INPUT -i lo -j ACCEPT
+  
+  ##
+  # Allow incoming to our DNS server
+  ##
+  $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+  
+  ##
+  # Allow incoming to our HTTP server for login page
+  ##
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports 80,8443,8888 -j ACCEPT
+  
+  ##
+  # Allow incoming to our SSH server for remote maintenance access
+  ##
+  $IPTABLES -A $CHAIN_INPUT -p tcp --dport ssh -j ACCEPT
+  
+  ##
+  # Allow incoming to our DHCP
+  ##
+  $IPTABLES -I $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
+  	-p udp --dport 67:68 -j ACCEPT
+  $IPTABLES -I $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
+  	-p udp --dport 67:68 -j DROP
+  
+  ##
+  # Mark the connections that have been authorized to save rule check time
+  ##
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src,dst -j CONNMARK --set-mark 0x2 
+  
+  ##
+  # Accept Forwarding for the authorized clients
+  ##
+  $IPTABLES -A $CHAIN_FORWARD -m connmark --mark 0x2 -j ACCEPT
+  
+  ##
+  # Redirect unauthorized clients to login page (with rate limit throttle)
+  ##
+  
+  $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
+    --dports 80,8080,8088,3128 \
+  	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
+  	-j $CHAIN_NAT_AUTHEN
+  
+  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN \
+    -m recent --rcheck --seconds 15 --name AUTHEN_THROTTLE -j DROP
+  
+  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp -m hashlimit --hashlimit 5/sec \
+    --hashlimit-mode srcip --hashlimit-burst 10 \
+    --hashlimit-htable-expire 15000 --hashlimit-name authen \
+    -j REDIRECT --to-port 8888
+  
+  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -m recent --set --name AUTHEN_THROTTLE \
+    -j DROP
+  
+  ##
+  # Return to main chains
+  ##
+  $IPTABLES -A $CHAIN_INPUT -j RETURN
+  $IPTABLES -A $CHAIN_FORWARD -j RETURN
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -j RETURN
+  $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -j RETURN
+  $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN
+}
+
+start () {
+  add_set
+  new_chains
+  policy 
+  rules
+}
+
+stop () {
+  cleanup
+  cleanup_policy
+  cleanup_set
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    stop
+    start
+    ;; 
+  *)
+    echo "Usage: /etc/rahunas/firewall.sh {start|stop|restart}"
+    exit 3
+    ;;
+esac 
+
+exit 0

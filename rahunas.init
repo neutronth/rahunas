@@ -32,7 +32,9 @@ fi
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	/etc/rahunas/firewall.sh
+
+	/etc/rahunas/firewall.sh start
+
 	if [ "$RUN_DAEMON" = "yes" ]; then
 		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
 		--exec $DAEMON
@@ -43,17 +45,22 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping $DESC: "
+
+
 	start-stop-daemon --stop --oknodo --quiet --pidfile /var/run/$NAME.pid \
 		--exec $DAEMON
 	echo done 
+	/etc/rahunas/firewall.sh stop
 	;;
   restart|force-reload)
 	echo -n "Restarting $DESC: "
+
 	start-stop-daemon --stop --oknodo --quiet --pidfile \
 		/var/run/$NAME.pid --exec $DAEMON
 	sleep 1
 
-	/etc/rahunas/firewall.sh
+	/etc/rahunas/firewall.sh restart
+
 	start-stop-daemon --start --quiet --pidfile \
 		/var/run/$NAME.pid --exec $DAEMON
 	echo "$NAME."

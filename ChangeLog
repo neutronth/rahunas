@@ -1,3 +1,11 @@
+2008-11-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* rahunas.firewall:
+	  - Adjust the firewall to define new chain for easy start and stop.
+	  - The firewall now cleanly start and stop by do not disturb other rules
+	    than this script done.
+	* rahunas.init: Update respectively to rahunas.firewall changes.
+
 2008-10-24  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rahunasd.h, src/rh-xmlrpc-server.c:
