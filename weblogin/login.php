@@ -47,9 +47,15 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
 		$xmlrpc->port = $config["RAHUNAS_PORT"];
 
     try {
-  		$result = $xmlrpc->do_startsession($ip, $_POST['user'], 
-                                         $racct->session_id, 
-                                         returnMacAddress());
+      $prepareData = array (
+        "IP" => $ip,
+        "Username" => $_POST['user'],
+        "SessionID" => $racct->session_id,
+        "MAC" => returnMacAddress(),
+        "Session-Timeout" => $rauth->attributes['session_timeout'],
+        "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
+        "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up']);
+  		$result = $xmlrpc->do_startsession($prepareData);
   		if (strstr($result,"Client already login")) {
         $message = "ผู้ใช้นี้ ได้ใช้สิทธิ์เข้าใช้งานแล้ว";
   	    $forward = false;
@@ -69,6 +75,8 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
 	} else {
     if ($rauth->isLoggedIn()) {
 	    $message = "ไม่สามารถเข้าระบบได้ มีการเข้าระบบซ้ำ";
+    } else if ($rauth->isTimeout()) {
+	    $message = "ไม่สามารถเข้าระบบได้ หมดเวลาการใช้งาน";
     } else {
 	    $message = "ไม่พบผู้ใช้นี้ หรือรหัสผ่านผิด";
     }

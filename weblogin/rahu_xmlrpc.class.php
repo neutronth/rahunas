@@ -19,9 +19,10 @@ class rahu_xmlrpc_client {
 
 	}
 
-	function do_startsession($ip, $username, $sid, $mac) {
+	function do_startsession($data) {
     $client = $this->getClient(); 
-		$params = sprintf("%s|%s|%s|%s", $ip, $username, $sid, $mac);
+		$params = implode("|", $data);
+    $params .= "|";
     $result = $client->startsession($params);
 		return $result;
 	}
@@ -46,18 +47,21 @@ class rahu_xmlrpc_client {
 		   $ret[1] - username
 			 $ret[2] - session_id
 			 $ret[3] - session_start
-       $ret[4] - mac_address */
+       $ret[4] - mac_address
+       $ret[5] - session_timeout */
 		$ip = $ret[0];
 		$username = $ret[1];
 		$session_id = $ret[2];
 		$session_start = $ret[3];
 		$mac_address = $ret[4];
+    $session_timeout = $ret[5];
 
 	  $result = array("ip"=>$ip, 
 		                "username"=>$username, 
 										"session_id"=>$session_id,
 										"session_start"=>$session_start,
-                    "mac_address"=>$mac_address);
+                    "mac_address"=>$mac_address,
+                    "session_timeout"=>$session_timeout);
 		return $result;
 	}
 }

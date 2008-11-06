@@ -215,14 +215,25 @@ size_t expired_check(void *data)
   DP("Map size %d", map->size);
  
   for (i = 0; i < map->size; i++) {
-    if (test_bit(IPSET_RAHUNAS_ISSET, (void *)&table[i].flags) && 
-          (time(NULL) - table[i].timestamp) > IDLE_THRESHOLD) {
-        DP("Found IP: %s expired", idtoip(map, i));
+    if (test_bit(IPSET_RAHUNAS_ISSET, (void *)&table[i].flags)) {
+      if ((time(NULL) - table[i].timestamp) > IDLE_THRESHOLD) {
+        // Idle Timeout
+        DP("Found IP: %s idle timeout", idtoip(map, i));
         req.id = i;
         memcpy(req.mac_address, &table[i].ethernet, ETH_ALEN);
         req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
 			  send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_IDLE_TIMEOUT);
         res = rh_task_stopsess(map, &req);
+      } else if (members[i].session_timeout != 0 && 
+                   time(NULL) > members[i].session_timeout) {
+        // Session Timeout (Expired)
+        DP("Found IP: %s session timeout", idtoip(map, i));
+        req.id = i;
+        memcpy(req.mac_address, &table[i].ethernet, ETH_ALEN);
+        req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
+			  send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_SESSION_TIMEOUT);
+        res = rh_task_stopsess(map, &req);
+      }
     }
   }
 }

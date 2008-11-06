@@ -30,6 +30,9 @@ int do_startsession(GNetXmlRpcServer *server,
 	gchar *username = NULL;
 	gchar *session_id = NULL;
   gchar *mac_address = NULL;
+  gchar *session_timeout = NULL;
+  gchar *bandwidth_max_down = NULL;
+  gchar *bandwidth_max_up = NULL;
 	uint32_t id;
 
 	if (!map)
@@ -47,6 +50,9 @@ int do_startsession(GNetXmlRpcServer *server,
 	username    = rh_string_get_sep(param, "|", 2);
 	session_id  = rh_string_get_sep(param, "|", 3);
   mac_address = rh_string_get_sep(param, "|", 4);
+  session_timeout    = rh_string_get_sep(param, "|", 5);
+  bandwidth_max_down = rh_string_get_sep(param, "|", 6);
+  bandwidth_max_up   = rh_string_get_sep(param, "|", 7);
 
   if (ip == NULL || username == NULL 
         || session_id == NULL)
@@ -67,6 +73,19 @@ int do_startsession(GNetXmlRpcServer *server,
   req.session_id = session_id;
   parse_mac(mac_address, &ethernet);
   memcpy(req.mac_address, &ethernet, ETH_ALEN);
+  
+  if (session_timeout != NULL) {
+    if (atol(session_timeout) != 0)
+      req.session_timeout = time(NULL) + atol(session_timeout);
+  }
+
+  if (bandwidth_max_down != NULL) {
+    req.bandwidth_max_down = atol(bandwidth_max_down);
+     
+  }
+
+  if (bandwidth_max_up != NULL)
+    req.bandwidth_max_up = atol(bandwidth_max_up);
 
   rh_task_startsess(map, &req);
 
@@ -84,6 +103,9 @@ cleanup:
   g_free(username);
   g_free(session_id);
   g_free(mac_address);
+  g_free(session_timeout);
+  g_free(bandwidth_max_down);
+  g_free(bandwidth_max_up);
   return 0;
 }
 
@@ -205,12 +227,13 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
       return 0;
     }
     
-    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s", 
+    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d", 
                                       ip, 
 		                                  members[id].username,
 																		  members[id].session_id,
 																		  members[id].session_start,
-                                      mac_tostring(members[id].mac_address));
+                                      mac_tostring(members[id].mac_address),
+                                      members[id].session_timeout);
 		return 0;
 	}
 

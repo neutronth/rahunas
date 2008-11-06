@@ -1,3 +1,12 @@
+2008-11-06  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunas.{h,c}, src/rh-task-memset.c, rh-task.h, src/rh-xmlrpc-server.c:
+		Add Session-Timeout support
+
+	* weblogin/login.php, weblogin/logout.php, weblogin/rahu_radius.class.php,
+	  weblogin/rahu_xmlrpc.class.php:
+	  Add Session-Timeout support and prepare the WISPr-Bandwidth-Max-{Down,Up}.
+
 2008-11-03  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* rahunas.firewall:

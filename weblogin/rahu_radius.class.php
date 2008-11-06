@@ -1,6 +1,7 @@
 <?php
 require_once 'Auth/RADIUS.php';
 require_once 'Crypt/CHAP.php';
+require_once 'rahu_dictionary.php';
 
 class rahu_radius_auth {
   var $type;
@@ -14,17 +15,20 @@ class rahu_radius_auth {
 	var $attributes;
 	var $rawAttributes;
 	var $rawVendorAttributes;
-  var $isLoggedIn;
+  var $LoggedIn;
+  var $Timeout;
 
   function rahu_radius_auth($username, $password, $type = 'CHAP_MD5') {
 	  $this->type = $type;
     $this->username = $username;
     $this->password = $password;
 		$this->error = 0;
-    $this->isLoggedIn = false;
+    $this->LoggedIn = false;
 	}
 
 	function start() {
+    global $vendors;
+
 	  $type =& $this->type;
 		$username =& $this->username;
 		$password =& $this->password;
@@ -82,9 +86,21 @@ class rahu_radius_auth {
 			$this->rawAttributes = $rauth->rawAttributes;
 			$this->rawVendorAttributes = $rauth->rawVendorAttributes;
 
-      if (!empty($this->attributes['reply_message']) &&
-           strstr($this->attributes['reply_message'], "logged in")) {
-        $this->isLoggedIn = true;
+      // Extract the vendor attributes
+      foreach ($this->rawVendorAttributes as $ven_id=>$data) {
+        foreach ($data as $attr_id => $val) {
+          $get_helper = "radius_cvt_" . 
+                        $vendors[$ven_id][$attr_id]["AttributeType"];
+          $this->attributes[$vendors[$ven_id][$attr_id]["AttributeName"]] =
+            $get_helper($val);
+        }
+      }
+      
+      if (!empty($this->attributes['reply_message'])) {
+        if (strstr($this->attributes['reply_message'], "logged in"))
+          $this->LoggedIn = true;
+        else if (strstr($this->attributes['reply_message'], "Your maximum"))
+          $this->Timeout = true;
       }
     }
     
@@ -103,7 +119,11 @@ class rahu_radius_auth {
 	}
 
   function isLoggedIn() {
-    return $this->isLoggedIn;
+    return $this->LoggedIn;
+  }
+  
+  function isTimeout() {
+    return $this->Timeout;
   }
 }
 

@@ -106,6 +106,14 @@ static int startsess (struct rahunas_map *map, struct task_req *req)
 
   memcpy(&members[id].mac_address, &(req->mac_address), ETH_ALEN);
 
+  memcpy(&members[id].session_timeout, &req->session_timeout, sizeof(time_t));
+  members[id].bandwidth_max_down = req->bandwidth_max_down;
+  members[id].bandwidth_max_up = req->bandwidth_max_up;
+ 
+  DP("Session-Timeout %d", req->session_timeout);
+  DP("Bandwidth - Down: %lu, Up: %lu", req->bandwidth_max_down, 
+       req->bandwidth_max_up);
+
   logmsg(RH_LOG_NORMAL, "Session Start, User: %s, IP: %s, "
                         "Session ID: %s, MAC: %s",
                         members[id].username, 

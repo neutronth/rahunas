@@ -107,6 +107,11 @@ $valid_text = !$valid ? "" : "" .
 "	</tr>" .
 "" .
 "  <tr>" .
+"	  <td align='right'><b>User expired:</b></td>" .
+"		<td>". ($info['session_timeout'] == 0 ? "Never" : date('j F Y H:i', $info['session_timeout'])) . "</td>" .
+"	</tr>" .
+"" .
+"  <tr>" .
 "	  <td align='right'><b>Request URL:</b></td>" .
 "		<td><a href='$request_url' target='_new'>$request_url</a></td>" .
 "	</tr>" .
@@ -114,7 +119,8 @@ $valid_text = !$valid ? "" : "" .
 "<table>".
 " <tr>" .
 "	  <td>&nbsp;<input type='hidden' name='do_logout' value='yes'></td>" .
-"	  <td><input type='submit' value='Logout' id='rh_login_button'></td>" .
+"	  <td><input type='button' value='Go! Go! Go!' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
+"	  <td><input type='submit' value='Logout' id='rh_logout_button'></td>" .
 "	</tr>" .
 "</table>";
 $request_uri = $_SERVER['REQUEST_URI'];
