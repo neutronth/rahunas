@@ -1,3 +1,11 @@
+2008-11-11  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* rahunas.{default,firewall}: Add supporting for DHCP and DNS forwarding, 
+	  Proxy, Transparent-Proxy and the Natwork Address Translation (Masquerading).
+	* weblogin/templates/rahunas/*: Add new login template for rahunas, 
+	  "My inspiration" - featuring by my daughter, "Music".
+	* weblogin/{login,logout}.php: Adjust to support new template.
+
 2008-11-06  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rahunas.{h,c}, src/rh-task-memset.c, rh-task.h, src/rh-xmlrpc-server.c:

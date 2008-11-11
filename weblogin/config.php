@@ -13,6 +13,7 @@ $config = array(
   "NAS_LOGIN_PORT" => "8443",
 	"NAS_LOGIN_PROTO" => "https",
 	"NAS_PORT" => 1,
+  "NAS_LOGIN_TITLE" => "RahuNAS Network",
 	"DEFAULT_REDIRECT_URL" => "http://www.kku.ac.th",
   "UAM_TEMPLATE" => "kkuwifi"
 );

@@ -92,7 +92,7 @@ if ($forward) {
 // Login box
 $request_uri = $_SERVER['REQUEST_URI'];
 $loginbox = "<style>" .
-            "#rh_login_text { color: #000000; font-weight: bolder; }\n" .
+            "#rh_login_text { font-weight: bolder; }\n" .
             "#waiting { " .
             " position: absolute; ".
             " top: -215px;".
@@ -190,6 +190,8 @@ if ($handle) {
   fclose($handle);
 
   $html_buffer = str_replace("images/", $tpl_path."images/", $html_buffer);
+  $html_buffer = str_replace("<!-- Title -->", $config["NAS_LOGIN_TITLE"], 
+                             $html_buffer);
   $html_buffer = str_replace("<!-- Login -->", $loginbox, $html_buffer);
   $html_buffer = str_replace("<!-- JavaScript -->", $loginscript, $html_buffer);
   $html_buffer = str_replace("<body", 

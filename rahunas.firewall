@@ -31,8 +31,10 @@ fi
 
 if [ "$BRIDGE" = "yes" ]; then
   DEV_IN_PARAM="-m physdev --physdev-in"
+  DEV_OUT_PARAM="-m physdev --physdev-out"
 else
   DEV_IN_PARAM="-i"
+  DEV_OUT_PARAM="-o"
 fi
 
 # Set declaration
@@ -40,8 +42,11 @@ SETNAME="${NAME}_set"
 
 # Chains declaration
 CHAIN_INPUT="${NAME}_input"
+CHAIN_INPUT_AUTH="${NAME}_input_authorized"
 CHAIN_FORWARD="${NAME}_forward"
+CHAIN_FORWARD_AUTH="${NAME}_forward_authorized"
 CHAIN_MANGLE_PREROUTING="${NAME}_mangle_prerouting"
+CHAIN_MANGLE_POSTROUTING="${NAME}_mangle_postrouting"
 CHAIN_NAT_PREROUTING="${NAME}_nat_prerouting"
 CHAIN_NAT_POSTROUTING="${NAME}_nat_postrouting"
 CHAIN_NAT_AUTHEN="${NAME}_nat_authen"
@@ -78,20 +83,32 @@ cleanup_set () {
 # Cleanup old rules
 ##
 cleanup () {
+  $IPTABLES -D INPUT -m connmark --mark 0x02 -j $CHAIN_INPUT_AUTH
   $IPTABLES -D INPUT -j $CHAIN_INPUT
+  $IPTABLES -D FORWARD -m connmark --mark 0x02 -j $CHAIN_FORWARD_AUTH
   $IPTABLES -D FORWARD -j $CHAIN_FORWARD
   $IPTABLES -t mangle -D PREROUTING -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -D POSTROUTING -j $CHAIN_MANGLE_POSTROUTING
   $IPTABLES -t nat -D PREROUTING -j $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -D POSTROUTING -j $CHAIN_NAT_POSTROUTING
   
+  $IPTABLES -F $CHAIN_INPUT_AUTH
+  $IPTABLES -X $CHAIN_INPUT_AUTH
+
   $IPTABLES -F $CHAIN_INPUT
   $IPTABLES -X $CHAIN_INPUT
   
+  $IPTABLES -F $CHAIN_FORWARD_AUTH
+  $IPTABLES -X $CHAIN_FORWARD_AUTH
+
   $IPTABLES -F $CHAIN_FORWARD
   $IPTABLES -X $CHAIN_FORWARD
   
   $IPTABLES -t mangle -F $CHAIN_MANGLE_PREROUTING
   $IPTABLES -t mangle -X $CHAIN_MANGLE_PREROUTING
+
+  $IPTABLES -t mangle -F $CHAIN_MANGLE_POSTROUTING
+  $IPTABLES -t mangle -X $CHAIN_MANGLE_POSTROUTING
   
   $IPTABLES -t nat -F $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -X $CHAIN_NAT_PREROUTING
@@ -107,9 +124,12 @@ cleanup () {
 # Define new chains
 ##
 new_chains () {
+  $IPTABLES -N $CHAIN_INPUT_AUTH
   $IPTABLES -N $CHAIN_INPUT
+  $IPTABLES -N $CHAIN_FORWARD_AUTH
   $IPTABLES -N $CHAIN_FORWARD
   $IPTABLES -t mangle -N $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -N $CHAIN_MANGLE_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
@@ -136,8 +156,13 @@ rules () {
   # Init rules
   ##
   $IPTABLES -I INPUT -j $CHAIN_INPUT
+  $IPTABLES -I INPUT -m connmark --mark 0x02 -j $CHAIN_INPUT_AUTH
   $IPTABLES -I FORWARD -j $CHAIN_FORWARD
+  $IPTABLES -I FORWARD -m connmark --mark 0x02 -j $CHAIN_FORWARD_AUTH
+
   $IPTABLES -t mangle -I PREROUTING -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -I POSTROUTING -j $CHAIN_MANGLE_POSTROUTING
+
   $IPTABLES -t nat -I PREROUTING -j $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -I POSTROUTING -j $CHAIN_NAT_POSTROUTING
   
@@ -148,15 +173,19 @@ rules () {
   $IPTABLES -A $CHAIN_INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
   $IPTABLES -A $CHAIN_FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
   
-  $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_WAN -m state --state NEW \
-    -j ACCEPT
   $IPTABLES -A $CHAIN_INPUT -i lo -j ACCEPT
   
   ##
   # Allow incoming to our DNS server
   ##
-  $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
-  
+  if [ "$FORWARD_DNS" = "yes" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
+  else
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
+  fi 
+
   ##
   # Allow incoming to our HTTP server for login page
   ##
@@ -165,32 +194,69 @@ rules () {
   ##
   # Allow incoming to our SSH server for remote maintenance access
   ##
-  $IPTABLES -A $CHAIN_INPUT -p tcp --dport ssh -j ACCEPT
-  
+  if [ "$SSH" = "yes" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p tcp --dport ssh -j ACCEPT
+  fi
+
   ##
-  # Allow incoming to our DHCP
+  # Allow rate limited ICMP 
   ##
-  $IPTABLES -I $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
-  	-p udp --dport 67:68 -j ACCEPT
-  $IPTABLES -I $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
-  	-p udp --dport 67:68 -j DROP
+  $IPTABLES -A $CHAIN_INPUT -p icmp -m limit --limit 1/second -j ACCEPT
+
+  ##
+  # Allow incoming DHCP request
+  ##
+
+  if [ "$FORWARD_DHCP" = "yes" ]; then
+    $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
+  	  -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
+  	  -p udp --dport 67:68 -j ACCEPT
+  else
+    $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
+  	  -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -A $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
+  	  -p udp --dport 67:68 -j DROP
+  fi
+
   
   ##
   # Mark the connections that have been authorized to save rule check time
   ##
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src,dst -j CONNMARK --set-mark 0x2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set dst -j CONNMARK --set-mark 0x2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src -j CONNMARK --set-mark 0x2 
   
   ##
   # Accept Forwarding for the authorized clients
   ##
-  $IPTABLES -A $CHAIN_FORWARD -m connmark --mark 0x2 -j ACCEPT
+  $IPTABLES -A $CHAIN_FORWARD_AUTH -j ACCEPT
+
+  ##
+  # SQUID Cache-Proxy
+  ##
+  if [ "$PROXY_PORT" != "0" ]; then
+    if [ "$PROXY_HOST" = "localhost" ]; then
+      $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp --dport $PROXY_PORT -j ACCEPT
+    fi
+
+    if [ "$TRANSPARENT_PROXY" = "yes" ]; then
+      if [ "$PROXY_HOST" = "localhost" ]; then
+        $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+          -m connmark --mark 0x02 -j REDIRECT --to-ports $PROXY_PORT
+      else
+        $IPTABLES -t nat -A $CHAIN_NAT_PRETROUTING -p tcp --dport http \
+          -m connmark --mark 0x02 \
+          -j DNAT --to-destination ${PROXY_HOST}:${PROXY_PORT}
+      fi
+    fi
+  fi
   
   ##
-  # Redirect unauthorized clients to login page (with rate limit throttle)
+  # Redirect unauthorized clients to login page (with rate limited throttling)
   ##
   
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
-    --dports 80,8080,8088,3128 \
+    --dports 80,8080,8088,3128 -d ! $SERVER \
   	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
   	-j $CHAIN_NAT_AUTHEN
   
@@ -204,13 +270,24 @@ rules () {
   
   $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -m recent --set --name AUTHEN_THROTTLE \
     -j DROP
+
+  ##
+  # MASQUERADE
+  ##
+  if [ "$MASQUERADE" = "yes" ]; then
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING $DEV_OUT_PARAM $DEV_WAN \
+      -j MASQUERADE
+  fi
   
   ##
   # Return to main chains
   ##
+  $IPTABLES -A $CHAIN_INPUT_AUTH -j RETURN
   $IPTABLES -A $CHAIN_INPUT -j RETURN
+  $IPTABLES -A $CHAIN_FORWARD_AUTH -j RETURN
   $IPTABLES -A $CHAIN_FORWARD -j RETURN
   $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -j RETURN
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_POSTROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN
 }
@@ -228,6 +305,16 @@ stop () {
   cleanup_set
 }
 
+reload() {
+  # Do not cleanup set
+  cleanup
+  cleanup_policy
+
+  new_chains
+  policy 
+  rules
+}
+
 case "$1" in
   start)
     start
@@ -238,9 +325,12 @@ case "$1" in
   restart)
     stop
     start
+    ;;
+  reload)
+    reload     
     ;; 
   *)
-    echo "Usage: /etc/rahunas/firewall.sh {start|stop|restart}"
+    echo "Usage: /etc/rahunas/firewall.sh {start|stop|restart|reload}"
     exit 3
     ;;
 esac 
