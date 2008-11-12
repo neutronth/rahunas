@@ -1,3 +1,8 @@
+2008-11-12  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* weblogin/logout.php: Substring the request url to shorten the line
+	  when it length longer than 20 chars.
+
 2008-11-11  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* rahunas.{default,firewall}: Add supporting for DHCP and DNS forwarding, 

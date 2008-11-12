@@ -20,6 +20,7 @@ $forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_POR
 $forward_uri .= "/login.php?sss=" . time();
 
 $request_url = $_SESSION['request_url'];
+$request_url_text = strlen($request_url) < 20 ? $request_url : substr($request_url, 0, 20) . " ...";
 
 $ip = $_SERVER['REMOTE_ADDR'];
 $xmlrpc = new rahu_xmlrpc_client();
@@ -113,7 +114,7 @@ $valid_text = !$valid ? "" : "" .
 "" .
 "  <tr>" .
 "	  <td align='right'><b>Request URL:</b></td>" .
-"		<td><a href='$request_url' target='_new'>$request_url</a></td>" .
+"		<td><a href='$request_url' target='_new'>$request_url_text</a></td>" .
 "	</tr>" .
 "</table>".
 "<table>".
