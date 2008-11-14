@@ -44,6 +44,9 @@ int wrapped_getsockopt(void *data, socklen_t *size)
   if (res != 0)
     DP("res=%d errno=%d", res, errno);
 
+  if (shutdown(sockfd, SHUT_RDWR) != 0)
+    syslog(LOG_ERR, "Failed shutdown() socket, errno=%d", errno);
+
   if (close(sockfd) != 0)
     syslog(LOG_ERR, "Failed close() socket, errno=%d", errno);
 
@@ -62,6 +65,9 @@ int wrapped_setsockopt(void *data, socklen_t size)
   res = setsockopt(sockfd, SOL_IP, SO_IP_SET, data, size);
   if (res != 0)
     DP("res=%d errno=%d", res, errno);
+
+  if (shutdown(sockfd, SHUT_RDWR) != 0)
+    syslog(LOG_ERR, "Failed shutdown() socket, errno=%d", errno);
 
   if (close(sockfd) != 0)
     syslog(LOG_ERR, "Failed close() socket, errno=%d", errno);

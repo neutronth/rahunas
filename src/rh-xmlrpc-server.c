@@ -73,19 +73,22 @@ int do_startsession(GNetXmlRpcServer *server,
   req.session_id = session_id;
   parse_mac(mac_address, &ethernet);
   memcpy(req.mac_address, &ethernet, ETH_ALEN);
-  
+  req.session_timeout = 0;
+
   if (session_timeout != NULL) {
     if (atol(session_timeout) != 0)
       req.session_timeout = time(NULL) + atol(session_timeout);
   }
 
-  if (bandwidth_max_down != NULL) {
+  if (bandwidth_max_down != NULL)
     req.bandwidth_max_down = atol(bandwidth_max_down);
-     
-  }
+  else
+    req.bandwidth_max_down = 0;
 
   if (bandwidth_max_up != NULL)
     req.bandwidth_max_up = atol(bandwidth_max_up);
+  else
+    req.bandwidth_max_up = 0;
 
   rh_task_startsess(map, &req);
 

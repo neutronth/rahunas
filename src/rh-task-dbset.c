@@ -264,6 +264,8 @@ static int startservice (struct rahunas_map *map)
 
   free_data_list(data_list);
 
+  gda_client_close_all_connections (client);
+
   g_object_unref(G_OBJECT(client));
 
   return 0;
@@ -300,6 +302,8 @@ static int startsess (struct rahunas_map *map, struct task_req *req)
 
   execute_sql(connection, startsess_cmd);
 
+  gda_client_close_all_connections (client);
+
   g_object_unref(G_OBJECT(client)); 
 
   return 0;
@@ -328,6 +332,8 @@ static int stopsess (struct rahunas_map *map, struct task_req *req)
   DP("SQL: %s", stopsess_cmd);
 
   execute_sql(connection, stopsess_cmd);
+
+  gda_client_close_all_connections (client);
 
   g_object_unref(G_OBJECT(client)); 
 
