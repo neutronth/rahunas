@@ -25,14 +25,6 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause) {
 	
 	members = map->members;
 
-  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL, 
-	                                XMLSERVICE_PORT);
-
-  if (!client) {
-    logmsg(RH_LOG_ERROR, "Could not connect to XML-RPC service");
-    return (-1);
-  }
-	
 	params = g_strdup_printf("%s|%s|%s|%d|%s|%d", 
                            idtoip(map, id),
 	                         members[id].username,
@@ -43,7 +35,15 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause) {
 
   if (params == NULL)
     return (-1);
-  
+
+  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL, 
+	                                XMLSERVICE_PORT);
+
+  if (!client) {
+    logmsg(RH_LOG_ERROR, "Could not connect to XML-RPC service");
+    return (-1);
+  }
+	
   if (gnet_xmlrpc_client_call(client, "stopacct", params, &reply) == 0)
     {
       DP("stopacct reply = %s", reply);
@@ -54,7 +54,9 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause) {
       DP("%s", "Failed executing stopacct!");
       return (-1);
     }
-	
+
+  gnet_xmlrpc_client_delete(client);	
+
 	g_free(params);
 
   return 0;
