@@ -44,11 +44,8 @@ int wrapped_getsockopt(void *data, socklen_t *size)
   if (res != 0)
     DP("res=%d errno=%d", res, errno);
 
-  if (shutdown(sockfd, SHUT_RDWR) != 0)
-    syslog(LOG_ERR, "Failed shutdown() socket, errno=%d", errno);
-
-  if (close(sockfd) != 0)
-    syslog(LOG_ERR, "Failed close() socket, errno=%d", errno);
+  shutdown(sockfd, SHUT_RDWR);
+  close(sockfd);
 
   return res;
 }
@@ -66,11 +63,8 @@ int wrapped_setsockopt(void *data, socklen_t size)
   if (res != 0)
     DP("res=%d errno=%d", res, errno);
 
-  if (shutdown(sockfd, SHUT_RDWR) != 0)
-    syslog(LOG_ERR, "Failed shutdown() socket, errno=%d", errno);
-
-  if (close(sockfd) != 0)
-    syslog(LOG_ERR, "Failed close() socket, errno=%d", errno);
+  shutdown(sockfd, SHUT_RDWR);
+  close(sockfd);
 
   return res; 
 }

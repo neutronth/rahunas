@@ -1,3 +1,8 @@
+2008-11-18  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-ipset.c: 
+	  Do not warning in syslog when the shutdown() and close() socket, fix syslog 	  flooding.
+
 2008-11-14  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-ipset.c: 
