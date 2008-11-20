@@ -17,6 +17,7 @@ CLIENTS_RANGE_START="192.168.0.2"
 CLIENTS_RANGE_END="192.168.0.254"
 CLIENTS_NETWORK=""
 CLIENTS_IGNORE_MAC=no
+EXCLUDED=""
 
 # Get configuration
 if [ -r /etc/default/rahunas ]; then
@@ -209,14 +210,14 @@ rules () {
 
   if [ "$FORWARD_DHCP" = "yes" ]; then
     $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
-  	  -p udp --dport 67:68 -j DROP 
+      -p udp --dport 67:68 -j DROP 
     $IPTABLES -A $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
-  	  -p udp --dport 67:68 -j ACCEPT
+      -p udp --dport 67:68 -j ACCEPT
   else
     $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
-  	  -p udp --dport 67:68 -j ACCEPT 
+      -p udp --dport 67:68 -j ACCEPT 
     $IPTABLES -A $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
-  	  -p udp --dport 67:68 -j DROP
+      -p udp --dport 67:68 -j DROP
   fi
 
   
@@ -257,8 +258,8 @@ rules () {
   
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
     --dports 80,8080,8088,3128 -d ! $SERVER \
-  	$DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
-  	-j $CHAIN_NAT_AUTHEN
+    $DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
+    -j $CHAIN_NAT_AUTHEN
   
   $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN \
     -m recent --rcheck --seconds 15 --name AUTHEN_THROTTLE -j DROP
@@ -278,8 +279,19 @@ rules () {
     $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING $DEV_OUT_PARAM $DEV_WAN \
       -j MASQUERADE
   fi
-  
+
   ##
+  # Excluded IP
+  ##
+  for excluded in $EXCLUDED;
+  do
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded -j CONNMARK --s
+et-mark 0x2
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded -j CONNMARK --s
+et-mark 0x2
+  done 
+  
+  #
   # Return to main chains
   ##
   $IPTABLES -A $CHAIN_INPUT_AUTH -j RETURN

@@ -1,3 +1,7 @@
+2008-11-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* rahunas.firewall: Add excluded IP support.
+
 2008-11-19  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-xmlrpc-cmd.c: Fixed half-close socket, cause of the socket stay in 
