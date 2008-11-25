@@ -8,6 +8,8 @@
 #include "rh-task.h"
 #include "rh-task-memset.h"
 #include "rh-task-ipset.h"
+#include "rh-task-dbset.h"
+#include "rh-task-bandwidth.h"
 
 void task_register(struct task *task)
 {
@@ -62,6 +64,7 @@ void rh_task_init(void)
   rh_task_ipset_reg();
   rh_task_memset_reg();
   rh_task_dbset_reg();
+  rh_task_bandwidth_reg();
 
   /* Call each init */
   rh_task_call_init();

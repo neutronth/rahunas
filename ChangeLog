@@ -1,3 +1,39 @@
+2008-11-25  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* rahunas.default: 
+	  Add bandwidth shaping support by using the IMQ and iproute2.
+	* rahunas.firewall: 
+	  Adjust to prevent the re-init firewall that cause the failure on the 
+		stop process.
+	* rahunas.init: 
+	  Adjust the firewall script caller.
+	* +rahunas.bandwidth: Add the rahunas bandwidth wrapper script.
+
+	* src/rh-task-bandwidth.{h,c}: Add bandwidth shaping task which response to
+	  the WISPr-Bandwidth-Max-{Up,Down} that reply from RADIUS.
+	* src/rahunasd.h: Add bandwidth_slot_id into members structure.
+	* src/rh-task-dbset.c: 
+	  - Add bandwidth_* into dbset_row structure.
+	  - Add insert, fetch and restore code of bandwidth_* from DB into dbset_row 
+	    structure.
+	  - Change task priority to 10. (Lowest priority now).
+	* src/rh-task-ipset.c: 
+	  Change task priority to 30. 
+	* src/rh-task-memset.c: 
+	  Change task priority to 40. (Highest priority).
+	* src/rh-task.c: 
+	  Include and register new task, bandwidth task.
+	* src/rh-task.h: 
+	  Change the bandwidth_max_* type from long to unsigned long.
+	* src/Makefile.am: 
+	  Update accordingly to bandwidth task implementation.
+	* weblogin/logout.php: 
+	  Update CSS style for loginbox background.
+	* weblogin/templates/kkulogin/kkulogin.html: 
+	  Update KKU-Login template.
+	* data/rahunas.db: 
+	  Alter the schema of dbset table to support bandwidth fields.
+
 2008-11-20  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* rahunas.firewall: Add excluded IP support.

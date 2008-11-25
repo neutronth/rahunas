@@ -18,8 +18,8 @@ struct task_req {
   unsigned char mac_address[ETH_ALEN];
 	time_t session_start;
   time_t session_timeout;
-  long bandwidth_max_down;
-  long bandwidth_max_up;
+  unsigned long bandwidth_max_down;
+  unsigned long bandwidth_max_up;
   unsigned short req_opt;
 };
 

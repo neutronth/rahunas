@@ -32,6 +32,8 @@ rahunasd_SOURCES = \
 	rh-task-memset.h \
 	rh-task-dbset.c \
 	rh-task-dbset.h \
+  rh-task-bandwidth.c \
+  rh-task-bandwidth.h \
   rh-radius.h \
 	rh-config.h
 

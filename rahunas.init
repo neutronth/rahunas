@@ -14,6 +14,7 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/bin/rahunasd
+FIREWALL=/etc/rahunas/firewall.sh
 NAME=rahunasd
 DESC="rahunasd: Rahu Network Access Server"
 
@@ -21,6 +22,7 @@ DESC="rahunasd: Rahu Network Access Server"
 RUN_DAEMON=no
 
 test -f $DAEMON || exit 0
+test -f $FIREWALL || exit 0
 
 set -e
 
@@ -33,7 +35,7 @@ case "$1" in
   start)
 	echo -n "Starting $DESC: "
 
-	/etc/rahunas/firewall.sh start
+  $FIREWALL start
 
 	if [ "$RUN_DAEMON" = "yes" ]; then
 		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
@@ -46,11 +48,10 @@ case "$1" in
   stop)
 	echo -n "Stopping $DESC: "
 
-
 	start-stop-daemon --stop --oknodo --quiet --pidfile /var/run/$NAME.pid \
 		--exec $DAEMON
 	echo done 
-	/etc/rahunas/firewall.sh stop
+	$FIREWALL stop
 	;;
   restart|force-reload)
 	echo -n "Restarting $DESC: "
@@ -59,7 +60,7 @@ case "$1" in
 		/var/run/$NAME.pid --exec $DAEMON
 	sleep 1
 
-	/etc/rahunas/firewall.sh restart
+	$FIREWALL restart
 
 	start-stop-daemon --start --quiet --pidfile \
 		/var/run/$NAME.pid --exec $DAEMON

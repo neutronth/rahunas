@@ -59,6 +59,7 @@ struct rahunas_member {
   time_t session_timeout;
   long bandwidth_max_down;
   long bandwidth_max_up;
+  unsigned short bandwidth_slot_id;
 	char *username;
   char *session_id;
   unsigned char mac_address[ETH_ALEN];

@@ -128,7 +128,7 @@ static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
 
 static struct task task_ipset = {
   .taskname = "IPSET",
-  .taskprio = 2,
+  .taskprio = 30,
   .init = &init,
   .cleanup = &cleanup,
   .startservice = &startservice,

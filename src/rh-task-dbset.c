@@ -19,6 +19,10 @@ struct dbset_row {
   gchar *ip;
   gchar *mac;
   time_t session_start;
+  time_t session_timeout;
+  unsigned short bandwidth_slot_id; 
+  long bandwidth_max_down;
+  long bandwidth_max_up;
 };
 
 gboolean get_errors (GdaConnection * connection)
@@ -82,7 +86,17 @@ gboolean *parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
         strptime(str, "%s", &tm);
         time = mktime(&tm);
         memcpy(&row->session_start, &time, sizeof(time_t));
-      } 
+      } else if (strncmp("session_timeout", title, 15) == 0) {
+        strptime(str, "%s", &tm);
+        time = mktime(&tm);
+        memcpy(&row->session_timeout, &time, sizeof(time_t));
+      } else if (strncmp("bandwidth_slot_id", title, 17) == 0) {
+        row->bandwidth_slot_id = atoi(str);
+      } else if (strncmp("bandwidth_max_down", title, 18) == 0) {
+        row->bandwidth_max_down = atol(str);
+      } else if (strncmp("bandwidth_max_up", title, 18) == 0) {
+        row->bandwidth_max_up = atol(str);
+      }
     }
   }
   
@@ -207,6 +221,10 @@ gboolean restore_set(GList **data_list, struct rahunas_map *map)
     members[id].username   = g_strdup(row->username);
     parse_mac(row->mac, &members[id].mac_address); 
     memcpy(&row->session_start, &members[id].session_start, sizeof(time_t));
+    memcpy(&row->session_timeout, &members[id].session_timeout, sizeof(time_t));
+    members[id].bandwidth_slot_id = row->bandwidth_slot_id;
+    members[id].bandwidth_max_down = row->bandwidth_max_down;
+    members[id].bandwidth_max_up = row->bandwidth_max_up;
 
     // IPSET
     set_adtip(rahunas_set, row->ip, row->mac, IP_SET_OP_ADD_IP);
@@ -286,17 +304,24 @@ static int startsess (struct rahunas_map *map, struct task_req *req)
   gint res;
   char startsess_cmd[256];
   char time_str[32];
+  char time_str2[32];
 
   client = gda_client_new ();
   connection = gda_client_open_connection (client, PROGRAM, NULL, NULL,
                  GDA_CONNECTION_OPTIONS_NONE, NULL);
   
   strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
+  strftime(&time_str2, sizeof time_str2, "%s", 
+    localtime(&req->session_timeout));
+
   sprintf(startsess_cmd, "INSERT INTO dbset"
-         "(session_id,username,ip,mac,session_start) "
-         "VALUES('%s','%s','%s','%s',%s)",
+         "(session_id,username,ip,mac,session_start,session_timeout,"
+         "bandwidth_slot_id,bandwidth_max_down,bandwidth_max_up) "
+         "VALUES('%s','%s','%s','%s',%s,%s,%u,%lu,%lu)",
          req->session_id, req->username, idtoip(map, req->id), 
-         mac_tostring(req->mac_address), time_str);
+         mac_tostring(req->mac_address), time_str, time_str2,
+         map->members[req->id].bandwidth_slot_id, req->bandwidth_max_down,
+         req->bandwidth_max_up);
 
   DP("SQL: %s", startsess_cmd);
 
@@ -366,7 +391,7 @@ static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
 
 static struct task task_dbset = {
   .taskname = "DBSET",
-  .taskprio = 1,
+  .taskprio = 10,
   .init = &init,
   .cleanup = &cleanup,
   .startservice = &startservice,

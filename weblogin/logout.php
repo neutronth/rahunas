@@ -126,7 +126,7 @@ $valid_text = !$valid ? "" : "" .
 "</table>";
 $request_uri = $_SERVER['REQUEST_URI'];
 $loginbox = "<style>" .
-            "#bg { background: #000000; width: 80%;}".
+            "#bg { color: #FFFFFF; background: #000000; width: 80%;}".
             "#rh_login_text { font-weight: bolder; }\n" .
             "#waiting { " .
             " position: absolute; ".

@@ -34,6 +34,10 @@ CLIENTS_RANGE_END=""
 CLIENTS_NETWORK="172.30.0.0/22"
 CLIENTS_IGNORE_MAC=no
 
+# Enable Bandwidth shaping using IMQ and iproute2
+# BANDWIDTH_SHAPE_IMQ=[yes|no]
+BANDWIDTH_SHAPE_IMQ=yes
+
 # Enable DHCP Forwarding
 # FORWARD_DHCP=[yes|no]
 FORWARD_DHCP=no

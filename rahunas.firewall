@@ -7,6 +7,7 @@ IPTABLES=/sbin/iptables
 IPSET=/usr/sbin/ipset
 
 NAME="rahunas"
+RUN=/var/run/rahunas-firewall
 
 # These values are overriden in /etc/default/rahunas if they exist
 RUN_DAEMON=no
@@ -226,6 +227,7 @@ rules () {
   ##
   $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set dst -j CONNMARK --set-mark 0x2 
   $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src -j CONNMARK --set-mark 0x2 
+
   
   ##
   # Accept Forwarding for the authorized clients
@@ -291,7 +293,17 @@ et-mark 0x2
 et-mark 0x2
   done 
   
-  #
+  ##
+  # Bandwidth Shaping: IMQ - Intermediate Queueing Device
+  ##
+  if [ "$BANDWIDTH_SHAPE_IMQ" = "yes" ]; then
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_POSTROUTING $DEV_OUT_PARAM $DEV_LAN \
+      -j IMQ --todev 0
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING $DEV_IN_PARAM $DEV_LAN \
+      -j IMQ --todev 1
+  fi
+
+  ##
   # Return to main chains
   ##
   $IPTABLES -A $CHAIN_INPUT_AUTH -j RETURN
@@ -305,26 +317,38 @@ et-mark 0x2
 }
 
 start () {
+  test ! -f $RUN || exit 0
+
   add_set
   new_chains
   policy 
   rules
+
+  touch $RUN
 }
 
 stop () {
+  test -f $RUN || exit 0
+
   cleanup
   cleanup_policy
   cleanup_set
+ 
+  rm -f $RUN
 }
 
 reload() {
+  test -f $RUN || exit 0
+
   # Do not cleanup set
   cleanup
   cleanup_policy
+  rm -f $RUN
 
   new_chains
   policy 
   rules
+  touch $RUN
 }
 
 case "$1" in

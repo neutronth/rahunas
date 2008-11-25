@@ -1,0 +1,153 @@
+#!/bin/sh
+# File: bandwidth.sh
+# Description: The bandwidth shaper wrapper script for RahuNAS
+
+TC=/sbin/tc
+IP=/sbin/ip
+
+RUN=/var/run/rahunas-bandwidth
+
+# Unclassified clients' bandwidth (Kbit)
+DOWN_UNCLASS=256
+UP_UNCLASS=256
+
+SHAPING_DOWN_INF=imq0
+SHAPING_UP_INF=imq1
+
+# Get configuration
+if [ -r /etc/default/rahunas ]; then
+  . /etc/default/rahunas
+fi
+
+if [ "$RUN_DAEMON" = "no" ]; then
+  exit 0
+fi
+
+start () {
+  # Downlink
+  $TC qdisc add dev $SHAPING_DOWN_INF root handle 1: htb default 9999
+  $TC class add dev $SHAPING_DOWN_INF parent 1: classid 1:9999 htb \
+    rate ${DOWN_UNCLASS}Kbit
+
+  # Uplink
+  $TC qdisc add dev $SHAPING_UP_INF root handle 2: htb default 9999 
+  $TC class add dev $SHAPING_UP_INF parent 2: classid 2:9999 htb \
+    rate ${UP_UNCLASS}Kbit
+
+  echo "Start OK"
+}
+
+stop () {
+  # Downlink
+  $TC qdisc del dev $SHAPING_DOWN_INF root
+
+  # Uplink
+  $TC qdisc del dev $SHAPING_UP_INF root
+
+  echo "Stop OK"
+}
+
+usage_add() {
+  echo "Usage: $1 add ID IP DOWNSPEED UPSPEED"
+  echo "         ID - ID number from 1 to 9998"
+  echo "         IP - IPv4 Address"
+  echo "  DOWNSPEED - Download speed (bits/s)"
+  echo "    UPSPEED - Upload speed (bits/s)"
+}
+
+usage_del() {
+  echo "Usage: $1 del ID"
+  echo "         ID - ID number from 1 to 9998"
+}
+
+usage() {
+  echo "Usage: $1 {start|stop|restart|add|del}"
+  echo "       $1 add --help"
+  echo "       $1 del --help"
+}
+
+bw_add() {
+  ID=$1
+  IP=$2
+  DOWNSPEED=$3
+  UPSPEED=$4
+  echo "Add shaping slot id: $ID for $IP with D/U=$DOWNSPEED/$UPSPEED bits/s"
+
+  # Downlink
+  $TC class add dev $SHAPING_DOWN_INF parent 1: classid 1:${ID} htb \
+    rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit
+  $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 1 \
+    u32 match ip dst ${IP}/32 flowid 1:${ID}
+
+  # Uplink
+  $TC class add dev $SHAPING_UP_INF parent 2: classid 2:${ID} htb \
+    rate ${UPSPEED}bit ceil ${UPSPEED}bit
+  $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 1 \
+    u32 match ip src ${IP}/32 flowid 2:${ID}
+}
+
+bw_del() {
+  ID=$1
+  echo "Delete shaping slot id: $ID"
+
+  # Filter Removal
+  # Downlink/Uplink
+  $TC filter del dev $SHAPING_DOWN_INF parent 1: protocol ip prio 1 u32 \
+    flowid 1:${ID}
+  $TC filter del dev $SHAPING_UP_INF parent 2: protocol ip prio 1 u32 \
+    flowid 2:${ID}
+
+  # Class Removal
+  # Downlink/Uplink
+  $TC class del dev $SHAPING_DOWN_INF parent 1: classid 1:${ID}
+  $TC class del dev $SHAPING_UP_INF parent 2: classid 2:${ID}
+}
+
+case "$1" in
+  start)
+    test -e $RUN || start
+    touch $RUN
+    ;;
+  stop)
+    test ! -e $RUN || stop
+    rm -f $RUN
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  add)
+    if [ "$2" = "--help" ]; then
+      usage_add $0
+      exit 3
+    fi
+
+    if [ $# != 5 ]; then
+      echo "Error: too few arguments"
+      usage_add $0
+      exit 1
+    fi
+
+    bw_add $2 $3 $4 $5
+    ;;
+  del)
+    if [ "$2" = "--help" ]; then
+      usage_del $0
+      exit 3
+    fi
+
+    if [ $# != 2 ]; then
+      echo "Error: too few arguments"
+      usage_del $0
+      exit 1
+    fi
+
+    bw_del $2
+    ;;
+  *)
+    usage $0
+    exit 3
+    ;;
+esac 
+
+exit 0
