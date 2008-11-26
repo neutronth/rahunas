@@ -11,7 +11,9 @@ AM_CFLAGS = \
 	-DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
 	-DPROGRAM=\"$(PROGRAM)\" \
 	-DIPSET_VERSION=\"$(IPSET_VERSION)\" \
-	-DRAHUNAS_CONF_DIR=\"$(sysconfdir)/rahunas/\"
+	-DRAHUNAS_CONF_DIR=\"$(sysconfdir)/rahunas/\" \
+  -DRAHUNAS_LOG_DIR=\"$(localstatedir)/log/rahunas/\" \
+  -DRAHUNAS_RUN_DIR=\"$(localstatedir)/run/\"
 
 rahunasd_SOURCES = \
 	rahunasd.c \
@@ -35,9 +37,11 @@ rahunasd_SOURCES = \
   rh-task-bandwidth.c \
   rh-task-bandwidth.h \
   rh-radius.h \
+  rh-config.c \
 	rh-config.h
 
 rahunasd_LDADD =  \
 	$(top_builddir)/xmlrpc/libgnetxmlrpc.a \
+  $(top_builddir)/lcfg/liblcfg.a \
 	$(LIBGNET_LIBS) \
 	$(LIBGDA_LIBS)

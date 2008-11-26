@@ -31,6 +31,7 @@ int getline(int fd, char *buf, size_t size);
 size_t expired_check(void *data);
 
 /* Declaration */
+struct rahunas_config rh_config;
 struct rahunas_map *map = NULL;
 struct set *rahunas_set = NULL;
 
@@ -216,7 +217,7 @@ size_t expired_check(void *data)
  
   for (i = 0; i < map->size; i++) {
     if (test_bit(IPSET_RAHUNAS_ISSET, (void *)&table[i].flags)) {
-      if ((time(NULL) - table[i].timestamp) > IDLE_THRESHOLD) {
+      if ((time(NULL) - table[i].timestamp) > rh_config.idle_threshold) {
         // Idle Timeout
         DP("Found IP: %s idle timeout", idtoip(map, i));
         req.id = i;
@@ -243,7 +244,7 @@ void rh_exit()
   syslog(LOG_ALERT, "Child Exiting ..");
   rh_task_stopservice(map);
   rh_task_cleanup();
-  rh_closelog(DEFAULT_LOG);
+  rh_closelog(rh_config.log_file);
 }
 
 static void
@@ -353,14 +354,22 @@ int main(int argc, char **argv)
 	GNetXmlRpcServer *server = NULL;
 	GMainLoop* main_loop     = NULL;
 
+   
+
   signal(SIGTERM, rh_sighandler);
   signal(SIGKILL, rh_sighandler);
 
 	watch_child(argv);
 
+  /* Get configuration from config file */
+  if (config_init(&rh_config) < 0) {
+	  syslog(LOG_ERR, "Could not open config file %s", CONFIG_FILE);
+    exit(EXIT_FAILURE);
+  }
+
   /* Open log file */
- 	if ((fd_log = rh_openlog(DEFAULT_LOG)) == (-1)) {
-    syslog(LOG_ERR, "Could not open log file %s", DEFAULT_LOG);
+ 	if ((fd_log = rh_openlog(rh_config.log_file)) < 0) {
+    syslog(LOG_ERR, "Could not open log file %s", rh_config.log_file);
     exit(EXIT_FAILURE);
   }
 
@@ -399,7 +408,7 @@ int main(int argc, char **argv)
 	   																   do_getsessioninfo, 
 			  															 map);
 
-  g_timeout_add_seconds (POLLING, polling, map);
+  g_timeout_add_seconds (rh_config.polling_interval, polling, map);
 
   rh_task_startservice(map);
 

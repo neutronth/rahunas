@@ -55,6 +55,7 @@ AC_CHECK_FUNCS([dup2])
 AC_CONFIG_FILES([
 	Makefile
 	xmlrpc/Makefile
+  lcfg/Makefile
 	src/Makefile
 	data/Makefile
   src/include/linux/netfilter_ipv4/Makefile

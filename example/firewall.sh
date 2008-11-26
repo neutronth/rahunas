@@ -3,34 +3,49 @@
 # the clients and redirect them to the login page to get the authorization to 
 # access the network.
 
+set -e
+
 IPTABLES=/sbin/iptables
 IPSET=/usr/sbin/ipset
 
 NAME="rahunas"
+INIT=/etc/default/rahunas
 RUN=/var/run/rahunas-firewall
 
-# These values are overriden in /etc/default/rahunas if they exist
 RUN_DAEMON=no
-DEV_WAN="eth0"
-DEV_LAN="eth1"
-BRIDGE=""
-CLIENTS_RANGE_START="192.168.0.2"
-CLIENTS_RANGE_END="192.168.0.254"
-CLIENTS_NETWORK=""
-CLIENTS_IGNORE_MAC=no
-EXCLUDED=""
+
+test -f $INIT || exit 0 
+. $INIT
+
+test "$RUN_DAEMON" = "yes" || exit 0
+test -f $RAHUNAS_CONFIG || exit 1
+
+get_config_value () {
+  key=$1
+  cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's: ::g' | sed 's:"::g'
+}
 
 # Get configuration
-if [ -r /etc/default/rahunas ]; then
-  . /etc/default/rahunas
-fi
-
-if [ "$RUN_DAEMON" = "no" ]; then
-  exit 0
-fi
+DEV_WAN=`get_config_value dev_wan`
+DEV_LAN=`get_config_value dev_lan`
+BRIDGE=`get_config_value bridge`
+MASQUERADE=`get_config_value masquerade`
+SERVER=`get_config_value server`
+CLIENTS_RANGE_START=`get_config_value clients_range_start`
+CLIENTS_RANGE_END=`get_config_value clients_range_end`
+CLIENTS_NETWORK=`get_config_value clients_network`
+EXCLUDED=`get_config_value excluded`
+IGNORE_MAC=`get_config_value ignore_mac`
+BANDWIDTH_SHAPE_IMQ=`get_config_value bandwidth_shape_imq`
+FORWARD_DHCP=`get_config_value forward_dhcp`
+FORWARD_DNS=`get_config_value forward_dns`
+PROXY_PORT=`get_config_value proxy_port`
+PROXY_HOST=`get_config_value proxy_host`
+TRANSPARENT_PROXY=`get_config_value transparent_proxy`
+SSH=`get_config_value ssh`
+BITTORRENT_BLOCK=`get_config_value bittorrent_block`
 
 # Bridge config
-
 if [ "$BRIDGE" = "yes" ]; then
   DEV_IN_PARAM="-m physdev --physdev-in"
   DEV_OUT_PARAM="-m physdev --physdev-out"
@@ -66,7 +81,7 @@ add_set () {
     ipset_opt="--from $CLIENTS_RANGE_START --to $CLIENTS_RANGE_END"
   fi
   
-  if [ "$CLIENTS_IGNORE_MAC" = "yes" ]; then
+  if [ "$IGNORE_MAC" = "yes" ]; then
     ipset_ignoremac="--ignoremac"
   fi
   
@@ -221,6 +236,16 @@ rules () {
       -p udp --dport 67:68 -j DROP
   fi
 
+  ##
+  # Bittorrent Blocking (layer7 module in kernel is needed)
+  # Note: 
+  #   bittorrent-announce is custom pattern defined may warning with official
+  #   pattern downloaded from l7-filter site.
+  ##
+  if [ "$BITTORRENT_BLOCK" = "yes" ]; then
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
+  fi
   
   ##
   # Mark the connections that have been authorized to save rule check time

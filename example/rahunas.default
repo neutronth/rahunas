@@ -4,56 +4,5 @@
 # Set to "yes" to have the init script start rahunas.
 RUN_DAEMON=no
 
-# External Interface
-DEV_WAN="eth0"
-
-# Internal Interface
-DEV_LAN="eth1"
-
-# Running in bridge mode - [yes|no]
-BRIDGE=no
-
-# MASQUERADE
-# MASQUERADE=[yes|no]
-MASQUERADE=yes
-
-# Server
-# SERVER=[hostname|IP]
-SERVER=172.30.0.1
-
-# Clients IP 
-# CLIENTS_RANGE_START and CLENTS_RANGE_END are [single ip].
-# CLIENTS_NETWORK is [network_address/netmask].
-# CLIENTS_IGNORE_MAC is [yes|no].
-#
-# Note: The CLIENTS_NETWORK will be used and overide 
-# the CLIENTS_RANGE_{START,STOP}.
-
-CLIENTS_RANGE_START=""
-CLIENTS_RANGE_END=""
-CLIENTS_NETWORK="172.30.0.0/22"
-CLIENTS_IGNORE_MAC=no
-
-# Enable Bandwidth shaping using IMQ and iproute2
-# BANDWIDTH_SHAPE_IMQ=[yes|no]
-BANDWIDTH_SHAPE_IMQ=yes
-
-# Enable DHCP Forwarding
-# FORWARD_DHCP=[yes|no]
-FORWARD_DHCP=no
-
-# Enable DNS Forwarding 
-# FORWARD_DNS=[yes|no]
-FORWARD_DNS=no
-
-# Enable SQUID Cache-Proxy 
-# PROXY_PORT=[0 = disable]
-# PROXY_HOST=[hostname/IP]
-# TRANSPARENT_PROXY=[yes|no]
-
-PROXY_PORT=3128
-PROXY_HOST=localhost
-TRANSPARENT_PROXY=no
-
-# SSH - Secure Shell for maintenance
-SSH=yes
+# RahuNAS config file
+RAHUNAS_CONFIG=/etc/rahunas/rahunas.conf

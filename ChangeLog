@@ -1,3 +1,23 @@
+2008-11-27  Neutron Soutmun <neo.neutron@gmail.com>
+
+	[ Suriya Soutmun ]
+	* +lcfg/lcfg_static.{h,c}, +lcfg/Makefile.am, +src/rh-config.c,
+	  src/rahunasd.{h,c}:
+	  Add liblcfg and their implementation to satisfy RahuNAS requirement.
+	* Makefile.am, configure.ac, src/Makefile.am: 
+	  Add the lcfg and their implementation to build config and makefile.
+
+	[ Neutron Soutmun ]
+	* +example/rahunas.conf: Add example config file.
+	* -example/rahunas.firewall, -example/rahunas.bandwidth,
+	  +example/firewall.sh, +example/bandwidth.sh:
+	  - Rename the wrapper script.
+	  - Adjust the firewall.sh to satisfy the config implementation.
+	* example/rahunas.default: 
+	  Remove the parts the moved to the config file.
+	* src/rh-ipset.c, src/rh-task-ipset.c, src/rh-xmlrpc-cmd.c:
+	  Update accordingly to new config implementation.
+
 2008-11-26  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/rahunas.bandwidth: Fix the script delete all filters rather than 

@@ -36,8 +36,9 @@ int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause) {
   if (params == NULL)
     return (-1);
 
-  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL, 
-	                                XMLSERVICE_PORT);
+  client = gnet_xmlrpc_client_new(rh_config.xml_serv_host, 
+                                  rh_config.xml_serv_url, 
+	                                rh_config.xml_serv_port);
 
   if (!client) {
     logmsg(RH_LOG_ERROR, "Could not connect to XML-RPC service");

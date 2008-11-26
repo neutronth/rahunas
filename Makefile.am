@@ -1,1 +1,1 @@
-SUBDIRS = xmlrpc src data
+SUBDIRS = xmlrpc lcfg src data

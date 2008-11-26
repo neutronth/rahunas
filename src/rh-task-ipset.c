@@ -46,7 +46,7 @@ static void init (void)
 {
   logmsg(RH_LOG_NORMAL, "Task IPSET init..");  
 
-  rahunas_set = set_adt_get(SET_NAME);
+  rahunas_set = set_adt_get(rh_config.set_name);
 
   DP("getsetname: %s", rahunas_set->name);
   DP("getsetid: %d", rahunas_set->id);
@@ -57,7 +57,7 @@ static void init (void)
 static void cleanup (void)
 {
   logmsg(RH_LOG_NORMAL, "Task IPSET cleanup..");  
-  set_flush(SET_NAME);
+  set_flush(rh_config.set_name);
 
   rh_free(&rahunas_set);
 }
@@ -66,7 +66,7 @@ static void cleanup (void)
 static int startservice (struct rahunas_map *map)
 {
   /* Ensure the set is empty */
-  set_flush(SET_NAME);
+  set_flush(rh_config.set_name);
 }
 
 /* Stop service task */

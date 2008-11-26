@@ -357,7 +357,7 @@ int get_header_from_set (struct rahunas_map *map)
  	in_addr_t first_ip;
 	in_addr_t last_ip;
 
-  size = req_size = load_set_list(SET_NAME, &idx, 
+  size = req_size = load_set_list(rh_config.set_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 
   DP("Get Set Size: %d", size);
@@ -401,7 +401,7 @@ int walk_through_set (int (*callback)(void *))
   socklen_t size, req_size;
   int res = 0;
 
-  size = req_size = load_set_list(SET_NAME, &idx, 
+  size = req_size = load_set_list(rh_config.set_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 
   DP("Get Set Size: %d", size);
