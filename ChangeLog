@@ -1,5 +1,10 @@
 2008-11-26  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* example/rahunas.bandwidth: Fix the script delete all filters rather than 
+	  the specified flowid.
+
+2008-11-26  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* -rahunas.{init,default,firewall,bandwidth},
 	  +example/rahunas.{init,default,firewall,bandwidth}:
 	  Move rahunas.* wrapper scripts to example dir.

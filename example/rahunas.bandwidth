@@ -92,10 +92,12 @@ bw_del() {
 
   # Filter Removal
   # Downlink/Uplink
-  $TC filter del dev $SHAPING_DOWN_INF parent 1: protocol ip prio 1 u32 \
-    flowid 1:${ID}
-  $TC filter del dev $SHAPING_UP_INF parent 2: protocol ip prio 1 u32 \
-    flowid 2:${ID}
+  DOWN_HANDLE=`$TC filter show dev $SHAPING_DOWN_INF | grep -w "flowid 1:${ID} " | awk '{print $10}'`
+  UP_HANDLE=`$TC filter show dev $SHAPING_UP_INF | grep -w "flowid 2:${ID} " | awk '{print $10}'`
+  $TC filter del dev $SHAPING_DOWN_INF parent 1: \
+    prio 1 handle ${DOWN_HANDLE} u32
+  $TC filter del dev $SHAPING_UP_INF parent 2: \
+    prio 1 handle ${UP_HANDLE} u32
 
   # Class Removal
   # Downlink/Uplink
