@@ -6,7 +6,6 @@ m4_define(minor, 1)
 m4_define(micro, 1)
 
 AC_PREREQ(2.61)
-RAHUNAS_VERSION=0.1.1
 AC_INIT([RahuNAS], major.minor.micro,[neo.neutron@gmail.com] )
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE

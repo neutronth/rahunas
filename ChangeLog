@@ -1,3 +1,8 @@
+2008-11-26  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* configure.ac: Remove old RAHUNAS_VERSION which now replaced by 
+	  AC_SUBST(RAHUNAS_VERSION, major.minor.micro). 
+
 2008-11-25  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* rahunas.default: 
