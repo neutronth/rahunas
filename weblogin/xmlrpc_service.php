@@ -11,7 +11,7 @@ function do_stopacct($method_name, $params, $app_data)
   $ip =& $GLOBALS["ip"];
   $username =& $GLOBALS["username"];
   $session_id =& $GLOBALS["session_id"];
-	$session_start =& $GLOBALS["session_start"];
+  $session_start =& $GLOBALS["session_start"];
   $mac_address =& $GLOBALS["mac_address"];
   $cause =& $GLOBALS["cause"];
 
@@ -23,22 +23,22 @@ function do_stopacct($method_name, $params, $app_data)
   // parsing[5] - cause  
  
   //return $params[0];
-	$parsing = explode("|", $params[0]);
+  $parsing = explode("|", $params[0]);
   $ip = $parsing[0];
-	$username   = $parsing[1];
-	$session_id = $parsing[2];
-	$session_start = intval($parsing[3]);
-	$mac_address = $parsing[4];
+  $username   = $parsing[1];
+  $session_id = $parsing[2];
+  $session_start = intval($parsing[3]);
+  $mac_address = $parsing[4];
   $cause = intval($parsing[5]);
 
-	if (!empty($username) && !empty($session_id)) {
-	  $GLOBALS["task"] = "do_stopacct";
+  if (!empty($username) && !empty($session_id)) {
+    $GLOBALS["task"] = "do_stopacct";
   } else {
-	  $GLOBALS["task"] = "";
-	}
+    $GLOBALS["task"] = "";
+  }
 
 //  return "Recieve: IP=$ip, Username=$username, Session-ID=$session_id, Session-Start=$session_start, MAC=$mac_address";
-	return "[RESULT]";
+  return "[RESULT]";
 }
 
 $xmlrpc_server = xmlrpc_server_create();
@@ -53,7 +53,7 @@ if ($GLOBALS["task"] == "do_stopacct") {
   $ip =& $GLOBALS["ip"];
   $username =& $GLOBALS["username"];
   $session_id =& $GLOBALS["session_id"];
-	$session_start =& $GLOBALS["session_start"];
+  $session_start =& $GLOBALS["session_start"];
   $mac_address =& $GLOBALS["mac_address"];
   $cause =& $GLOBALS["cause"];
 
@@ -71,9 +71,9 @@ if ($GLOBALS["task"] == "do_stopacct") {
   $racct->session_start = $session_start;
   if ($racct->acctStop() === true) {
     $response = str_replace ("[RESULT]", "OK", $response);
-	} else {
+  } else {
     $response = str_replace ("[RESULT]", "FAIL", $response);
-	}
+  }
 }
 
 print $response;

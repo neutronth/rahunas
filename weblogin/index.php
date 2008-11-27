@@ -22,7 +22,7 @@ a {
 
 a:hover {
   font-weight: bolder;
-	color: #FF0000;
+  color: #FF0000;
 }
 </style>
 </head>

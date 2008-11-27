@@ -36,7 +36,7 @@ if (is_array($retinfo)) {
   $ip =& $retinfo["ip"];
   $username =& $retinfo["username"];
   $session_id =& $retinfo["session_id"];
-	$session_start =& $retinfo["session_start"];
+  $session_start =& $retinfo["session_start"];
   $mac_address =& $retinfo["mac_address"];
   $isinfo = true;
 } else {
@@ -45,16 +45,16 @@ if (is_array($retinfo)) {
 
 if (!empty($_POST['do_logout'])) {
   if ($isinfo) {
-	  $result = $xmlrpc->do_stopsession($ip, returnMacAddress());
-	  if ($result === true) {
+    $result = $xmlrpc->do_stopsession($ip, returnMacAddress());
+    if ($result === true) {
       $valid = false;
-		  $message = "ทำการ 'Logout' สำเร็จ";
+      $message = "ทำการ 'Logout' สำเร็จ";
       $isstopacct = true;
-   	} else {
+    } else {
       $valid = false;
-		  $message = "ไม่สามารถ 'เลิกใช้งาน' ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
-		  $show_info = true;
-	  }
+      $message = "ไม่สามารถ 'เลิกใช้งาน' ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
+      $show_info = true;
+    }
   }
 
   if ($isstopacct) {
@@ -78,15 +78,15 @@ if (!empty($_POST['do_logout'])) {
 }
 
 if ($show_info) {
-	$result = $xmlrpc->do_getsessioninfo($ip);
-	if (is_array($result)) {
-	  if (!empty($result['session_id'])) {
+  $result = $xmlrpc->do_getsessioninfo($ip);
+  if (is_array($result)) {
+    if (!empty($result['session_id'])) {
       $valid = true;
-			$info = $result;
-		} else {
+      $info = $result;
+    } else {
       $message = "คุณยังไม่ได้เข้าใช้งานในระบบ";
-		}
-	}
+    }
+  }
 }
 ?>
 
@@ -95,34 +95,34 @@ if ($show_info) {
 $valid_text = !$valid ? "" : "" . 
 "  <table id='bg'>" .
 "  <tr>" .
-"	  <td align='right'><b>Username:</b></td>" .
-"	  <td>". $info['username']."</td>" .
-"	</tr>" .
+"   <td align='right'><b>Username:</b></td>" .
+"   <td>". $info['username']."</td>" .
+" </tr>" .
 "  <tr>" .
-"	  <td align='right'><b>Session Start:</b></td>" .
-"		<td>". date('j F Y H:i', $info['session_start']) . "</td>" .
-"	</tr>" .
+"   <td align='right'><b>Session Start:</b></td>" .
+"   <td>". date('j F Y H:i', $info['session_start']) . "</td>" .
+" </tr>" .
 "  <tr>" .
-"	  <td align='right'><b>Session Time:</b></td>" .
-"		<td>" . (time() - $info['session_start']) . " seconds</td>" .
-"	</tr>" .
+"   <td align='right'><b>Session Time:</b></td>" .
+"   <td>" . (time() - $info['session_start']) . " seconds</td>" .
+" </tr>" .
 "" .
 "  <tr>" .
-"	  <td align='right'><b>User expired:</b></td>" .
-"		<td>". ($info['session_timeout'] == 0 ? "Never" : date('j F Y H:i', $info['session_timeout'])) . "</td>" .
-"	</tr>" .
+"   <td align='right'><b>User expired:</b></td>" .
+"   <td>". ($info['session_timeout'] == 0 ? "Never" : date('j F Y H:i', $info['session_timeout'])) . "</td>" .
+" </tr>" .
 "" .
 "  <tr>" .
-"	  <td align='right'><b>Request URL:</b></td>" .
-"		<td><a href='$request_url' target='_new'>$request_url_text</a></td>" .
-"	</tr>" .
+"   <td align='right'><b>Request URL:</b></td>" .
+"   <td><a href='$request_url' target='_new'>$request_url_text</a></td>" .
+" </tr>" .
 "</table>".
 "<table>".
 " <tr>" .
-"	  <td>&nbsp;<input type='hidden' name='do_logout' value='yes'></td>" .
-"	  <td><input type='button' value='Go! Go! Go!' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
-"	  <td><input type='submit' value='Logout' id='rh_logout_button'></td>" .
-"	</tr>" .
+"   <td>&nbsp;<input type='hidden' name='do_logout' value='yes'></td>" .
+"   <td><input type='button' value='Go! Go! Go!' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
+"   <td><input type='submit' value='Logout' id='rh_logout_button'></td>" .
+" </tr>" .
 "</table>";
 $request_uri = $_SERVER['REQUEST_URI'];
 $loginbox = "<style>" .
@@ -167,7 +167,7 @@ $loginscript = "<script>" .
                "if (ns4)" .
                "  msg=document.message;\n" .
                "else if (ns6)" .
-	             "  msg=document.getElementById('message').style;\n" .
+               "  msg=document.getElementById('message').style;\n" .
                "else if (ie4)" .
                "  msg=document.all.message.style;\n\n" .
                "var wt=(document.all);\n" .  

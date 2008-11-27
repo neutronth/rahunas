@@ -1,5 +1,15 @@
 2008-11-27  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* weblogin/config.php: 
+	  - Adjust the weblogin config value to satisfy the default settings of 
+	    RahuNAS.
+	  - Set rahunas theme to be default theme.
+	* weblogin/{indedx,login,logout}.php,
+	  weblogin/{rahu_radius.class,rahu_xmlrpc.class,xmlrpc_service}.php:
+	  - Convert tab to 2 spaces (Beautify code for text editor compatibility).
+
+2008-11-27  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* -example/rahunas.{default,init,conf}, -example/{firewall,bandwidth}.sh
 	  +example/rahunas.{default,init,conf}.in, 
 	  +example/{firewall,bandwidth}.sh.in:

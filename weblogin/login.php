@@ -9,42 +9,42 @@ require_once 'header.php';
 
 if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
   $ip = $_SERVER['REMOTE_ADDR'];
-	$forward = false;
+  $forward = false;
   $LogoutURL  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
   $LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
-	$LogoutURL .= "/logout.php";
+  $LogoutURL .= "/logout.php";
 
   $RequestURL = empty($_GET['request_url']) ? 
-	                 $config['DEFAULT_REDIRECT_URL']
-	               : urldecode($_GET['request_url']);
-	$_SESSION['request_url'] = $RequestURL;
+                   $config['DEFAULT_REDIRECT_URL']
+                 : urldecode($_GET['request_url']);
+  $_SESSION['request_url'] = $RequestURL;
   $message = "";
   $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'], $config['RADIUS_ENCRYPT']);
   $rauth->host = $config["RADIUS_HOST"];
-	$rauth->port = $config["RADIUS_AUTH_PORT"];
-	$rauth->secret = $config["RADIUS_SECRET"];
-	$rauth->start();
+  $rauth->port = $config["RADIUS_AUTH_PORT"];
+  $rauth->secret = $config["RADIUS_SECRET"];
+  $rauth->start();
 
-	if ($rauth->isError()) {
-	  $message = "ไม่สามารถเชื่อมต่อ กับเครื่องตรวจสอบสิทธิ์ได้";
-	} else if ($rauth->isAccept()) {
-	  $message = "ผู้ใช้ ผ่านการตรวจสอบสิทธิ์ รอสักครู่ ";
-	  $forward = true;
-		$racct = new rahu_radius_acct ($_POST['user']);
+  if ($rauth->isError()) {
+    $message = "ไม่สามารถเชื่อมต่อ กับเครื่องตรวจสอบสิทธิ์ได้";
+  } else if ($rauth->isAccept()) {
+    $message = "ผู้ใช้ ผ่านการตรวจสอบสิทธิ์ รอสักครู่ ";
+    $forward = true;
+    $racct = new rahu_radius_acct ($_POST['user']);
     $racct->host = $config["RADIUS_HOST"];
-	  $racct->port = $config["RADIUS_ACCT_PORT"];
-	  $racct->secret = $config["RADIUS_SECRET"];
-		$racct->nas_identifier = $config["NAS_IDENTIFIER"];
+    $racct->port = $config["RADIUS_ACCT_PORT"];
+    $racct->secret = $config["RADIUS_SECRET"];
+    $racct->nas_identifier = $config["NAS_IDENTIFIER"];
     $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
     $racct->nas_port = $config["NAS_PORT"];
     $racct->framed_ip_address  = $_SERVER['REMOTE_ADDR'];
     $racct->calling_station_id = returnMacAddress();
-		$racct->gen_session_id();
+    $racct->gen_session_id();
 
-		// Verify if the user already login
-		$xmlrpc = new rahu_xmlrpc_client();
-		$xmlrpc->host = $config["RAHUNAS_HOST"];
-		$xmlrpc->port = $config["RAHUNAS_PORT"];
+    // Verify if the user already login
+    $xmlrpc = new rahu_xmlrpc_client();
+    $xmlrpc->host = $config["RAHUNAS_HOST"];
+    $xmlrpc->port = $config["RAHUNAS_PORT"];
 
     try {
       $prepareData = array (
@@ -55,32 +55,32 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
         "Session-Timeout" => $rauth->attributes['session_timeout'],
         "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
         "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up']);
-  		$result = $xmlrpc->do_startsession($prepareData);
-  		if (strstr($result,"Client already login")) {
+      $result = $xmlrpc->do_startsession($prepareData);
+      if (strstr($result,"Client already login")) {
         $message = "ผู้ใช้นี้ ได้ใช้สิทธิ์เข้าใช้งานแล้ว";
-  	    $forward = false;
-  		} else if (strstr($result, "Greeting")) {
+        $forward = false;
+      } else if (strstr($result, "Greeting")) {
         $racct->acctStart();
-  		} else if (strstr($result, "Invalid IP Address")) {
+      } else if (strstr($result, "Invalid IP Address")) {
         $message = "หมายเลข IP Address ประจำเครื่อง ไม่ถูกต้อง";
-  	    $forward = false;
-  		}
+        $forward = false;
+      }
     } catch (XML_RPC2_FaultException $e) {
       $message = "ผิดพลาด! ไม่สามารถเชื่อมต่อเครื่องแม่ข่ายได้";
-  	  $forward = false;
+      $forward = false;
     } catch (Exception $e) {
       $message = "ผิดพลาด! ไม่สามารถเชื่อมต่อเครื่องแม่ข่ายได้";
-  	  $forward = false;
+      $forward = false;
     }
-	} else {
+  } else {
     if ($rauth->isLoggedIn()) {
-	    $message = "ไม่สามารถเข้าระบบได้ มีการเข้าระบบซ้ำ";
+      $message = "ไม่สามารถเข้าระบบได้ มีการเข้าระบบซ้ำ";
     } else if ($rauth->isTimeout()) {
-	    $message = "ไม่สามารถเข้าระบบได้ หมดเวลาการใช้งาน";
+      $message = "ไม่สามารถเข้าระบบได้ หมดเวลาการใช้งาน";
     } else {
-	    $message = "ไม่พบผู้ใช้นี้ หรือรหัสผ่านผิด";
+      $message = "ไม่พบผู้ใช้นี้ หรือรหัสผ่านผิด";
     }
-	}
+  }
 }
 
 if ($forward) {
@@ -140,7 +140,7 @@ $loginscript = "<script>" .
                "if (ns4)" .
                "  msg=document.message;\n" .
                "else if (ns6)" .
-	             "  msg=document.getElementById('message').style;\n" .
+               "  msg=document.getElementById('message').style;\n" .
                "else if (ie4)" .
                "  msg=document.all.message.style;\n\n" .
                "var wt=(document.all);\n" .  
