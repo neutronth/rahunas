@@ -1,4 +1,6 @@
 <?php
+  require_once "config.php";
+  
   function explode_querystring($query_string) {
     // Explode the query string into array
     $query_string = explode("&", $query_string);
@@ -47,6 +49,9 @@
   }
 
   echo "<div id='rh_language'>Language: " . implode(" | ", $lang_list) . "</div>";
+
+  if (empty($_SESSION['language']))
+    $_SESSION['language'] = $config['DEFAULT_LANGUAGE'];
 
   if (!empty($_GET['language']))
     $_SESSION['language'] = $_GET['language'];

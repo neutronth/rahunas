@@ -1,5 +1,9 @@
 2008-11-28  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* weblogin/config.php, weblogin/locale.php: Add default language setting.
+
+2008-11-28  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rh-ipset.c: Fix mem free by replace free() with rh_free() for the 
 	  variable allocated memory by rh_malloc() which prevent the double free.
 

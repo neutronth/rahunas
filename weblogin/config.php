@@ -15,6 +15,7 @@ $config = array(
   "NAS_PORT" => 1,
   "NAS_LOGIN_TITLE" => "RahuNAS Network",
   "DEFAULT_REDIRECT_URL" => "http://www.kku.ac.th",
+  "DEFAULT_LANGUAGE" => "Thai",
   "UAM_TEMPLATE" => "rahunas"
 );
 ?>
