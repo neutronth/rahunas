@@ -247,7 +247,7 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
 			break;   
     }
 
-  free(data);
+  rh_free(&data);
 
   return res;
 }
@@ -281,10 +281,12 @@ size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
 		    name);
 	
 tryagain:
-	if (set_list) {
+	if (set_list != NULL) {
 		for (i = 0; i < max_sets; i++)
-			if (set_list[i])
+			if (set_list[i] != NULL) {
 				free(set_list[i]);
+        set_list[i] = NULL;
+      }
 		free(set_list);
 		set_list = NULL;
 	}
@@ -317,7 +319,7 @@ tryagain:
 	res = kernel_getfrom_handleerrno(data, &size);
 
 	if (res != 0 || size != req_size) {
-		free(data);
+		rh_free(&data);
 		if (repeated++ < LIST_TRIES)
 			goto tryagain;
 
@@ -341,7 +343,7 @@ tryagain:
 	}
 	/* Size to get set members, bindings */
 	size = ((struct ip_set_req_setnames *)data)->size;
-	free(data);
+	rh_free(&data);
 	
 	return size;
 }
@@ -370,7 +372,7 @@ int get_header_from_set (struct rahunas_map *map)
     DP("get_lists getsockopt() res=%d errno=%d", res, errno);
 
     if (res != 0 || size != req_size) {
-      free(data);
+      rh_free(&data);
       return -EAGAIN;
     }
     size = 0;
@@ -414,7 +416,7 @@ int walk_through_set (int (*callback)(void *))
     DP("get_lists getsockopt() res=%d errno=%d", res, errno);
 
     if (res != 0 || size != req_size) {
-      free(data);
+      rh_free(&data);
       return -EAGAIN;
     }
     size = 0;

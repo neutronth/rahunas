@@ -1,5 +1,10 @@
 2008-11-28  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rh-ipset.c: Fix mem free by replace free() with rh_free() for the 
+	  variable allocated memory by rh_malloc() which prevent the double free.
+
+2008-11-28  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* weblogin/locale.php, weblogin/locale/*, +weblogin/messages.php,
 	  weblogin/login.php, weblogin/logout.php: 
 	  Add multilingual weblogin base on PHP gettext, now supported languages are 
