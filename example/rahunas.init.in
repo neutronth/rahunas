@@ -12,11 +12,16 @@
 # Description:       Starts, stops the rahunas daemon. 
 ### END INIT INFO
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/bin/rahunasd
-FIREWALL=/etc/rahunas/firewall.sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+DAEMON=@bindir@/rahunasd
+INIT=@sysconfdir@/default/rahunas
+FIREWALL=@sysconfdir@/rahunas/firewall.sh
 NAME=rahunasd
-DESC="rahunasd: Rahu Network Access Server"
+DESC="RahuNAS: Rahu Network Access Server"
+
 
 # This value is overriden in /etc/default/rahunas if it exists
 RUN_DAEMON=no
@@ -26,10 +31,8 @@ test -f $FIREWALL || exit 0
 
 set -e
 
-# Get configuration
-if [ -r /etc/default/rahunas ]; then
-  . /etc/default/rahunas
-fi
+test -f $INIT || exit 0 
+. $INIT 
 
 case "$1" in
   start)
@@ -38,7 +41,7 @@ case "$1" in
   $FIREWALL start
 
 	if [ "$RUN_DAEMON" = "yes" ]; then
-		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+		start-stop-daemon --start --quiet --pidfile @localstatedir@/run/$NAME.pid \
 		--exec $DAEMON
 		echo done
 	else
@@ -48,7 +51,7 @@ case "$1" in
   stop)
 	echo -n "Stopping $DESC: "
 
-	start-stop-daemon --stop --oknodo --quiet --pidfile /var/run/$NAME.pid \
+	start-stop-daemon --stop --oknodo --quiet --pidfile @localstatedir@/run/$NAME.pid \
 		--exec $DAEMON
 	echo done 
 	$FIREWALL stop
@@ -57,17 +60,17 @@ case "$1" in
 	echo -n "Restarting $DESC: "
 
 	start-stop-daemon --stop --oknodo --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON
+		@localstatedir@/run/$NAME.pid --exec $DAEMON
 	sleep 1
 
 	$FIREWALL restart
 
 	start-stop-daemon --start --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON
+		@localstatedir@/run/$NAME.pid --exec $DAEMON
 	echo "$NAME."
 	;;
   *)
-	N=/etc/init.d/$NAME
+	N=@sysconfdir@/init.d/$NAME
 	echo "Usage: $N {start|stop|restart|force-reload}" >&2
 	exit 1
 	;;

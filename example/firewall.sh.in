@@ -3,14 +3,16 @@
 # the clients and redirect them to the login page to get the authorization to 
 # access the network.
 
-set -e
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
 IPTABLES=/sbin/iptables
 IPSET=/usr/sbin/ipset
 
 NAME="rahunas"
-INIT=/etc/default/rahunas
-RUN=/var/run/rahunas-firewall
+INIT=@sysconfdir@/default/rahunas
+RUN=@localstatedir@/run/rahunas-firewall
 
 RUN_DAEMON=no
 
@@ -19,6 +21,8 @@ test -f $INIT || exit 0
 
 test "$RUN_DAEMON" = "yes" || exit 0
 test -f $RAHUNAS_CONFIG || exit 1
+
+set -e
 
 get_config_value () {
   key=$1
@@ -391,7 +395,8 @@ case "$1" in
     reload     
     ;; 
   *)
-    echo "Usage: /etc/rahunas/firewall.sh {start|stop|restart|reload}"
+    N = @sysconfdir@/rahunas/firewall.sh
+    echo "Usage: $N {start|stop|restart|reload}"
     exit 3
     ;;
 esac 

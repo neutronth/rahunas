@@ -29,7 +29,7 @@
 // idle_threshold = "600"
 
 //// Log file
-log_file = "/var/log/rahunas/rahunas.log"
+log_file = "@prefix@/var/log/rahunas/rahunas.log"
 
 /////////////////////////
 // Start-Up            //

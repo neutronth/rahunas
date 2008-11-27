@@ -2,10 +2,15 @@
 # File: bandwidth.sh
 # Description: The bandwidth shaper wrapper script for RahuNAS
 
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
 TC=/sbin/tc
 IP=/sbin/ip
 
-RUN=/var/run/rahunas-bandwidth
+INIT=@sysconfdir@/default/rahunas
+RUN=@localstatedir@/run/rahunas-bandwidth
 
 # Unclassified clients' bandwidth (Kbit)
 DOWN_UNCLASS=256
@@ -14,14 +19,10 @@ UP_UNCLASS=256
 SHAPING_DOWN_INF=imq0
 SHAPING_UP_INF=imq1
 
-# Get configuration
-if [ -r /etc/default/rahunas ]; then
-  . /etc/default/rahunas
-fi
+test -f $INIT || exit 0
+. $INIT
 
-if [ "$RUN_DAEMON" = "no" ]; then
-  exit 0
-fi
+test "$RUN_DAEMON" = "yes" || exit 0
 
 start () {
   # Downlink
@@ -105,6 +106,8 @@ bw_del() {
   $TC class del dev $SHAPING_UP_INF parent 2: classid 2:${ID}
 }
 
+N=@sysconfdir@/rahunas/bandwidth.sh
+
 case "$1" in
   start)
     test -e $RUN || start
@@ -120,13 +123,13 @@ case "$1" in
     ;;
   add)
     if [ "$2" = "--help" ]; then
-      usage_add $0
+      usage_add $N
       exit 3
     fi
 
     if [ $# != 5 ]; then
       echo "Error: too few arguments"
-      usage_add $0
+      usage_add $N
       exit 1
     fi
 
@@ -134,20 +137,20 @@ case "$1" in
     ;;
   del)
     if [ "$2" = "--help" ]; then
-      usage_del $0
+      usage_del $N
       exit 3
     fi
 
     if [ $# != 2 ]; then
       echo "Error: too few arguments"
-      usage_del $0
+      usage_del $N
       exit 1
     fi
 
     bw_del $2
     ;;
   *)
-    usage $0
+    usage $N
     exit 3
     ;;
 esac 
