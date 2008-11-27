@@ -1,0 +1,105 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Neutron Soutmun
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: RahuNAS Weblogin 0.1.1\n"
+"Report-Msgid-Bugs-To: neo.neutron@gmail.com\n"
+"POT-Creation-Date: 2008-11-27 22:18+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../weblogin/login.php:115 ../../weblogin/logout.php:100
+msgid "Username"
+msgstr ""
+
+#: ../../weblogin/login.php:117
+msgid "Password"
+msgstr ""
+
+#: ../../weblogin/login.php:120
+msgid "Login"
+msgstr ""
+
+#: ../../weblogin/logout.php:104
+msgid "Session Start"
+msgstr ""
+
+#: ../../weblogin/logout.php:108
+msgid "Session Time"
+msgstr ""
+
+#: ../../weblogin/logout.php:109
+msgid "seconds"
+msgstr ""
+
+#: ../../weblogin/logout.php:113
+msgid "Expired"
+msgstr ""
+
+#: ../../weblogin/logout.php:114
+msgid "Never"
+msgstr ""
+
+#: ../../weblogin/logout.php:118
+msgid "Request URL"
+msgstr ""
+
+#: ../../weblogin/logout.php:125
+msgid "Go! Go! Go!"
+msgstr ""
+
+#: ../../weblogin/logout.php:126
+msgid "Logout"
+msgstr ""
+
+#: ../../weblogin/messages.php:3
+msgid "Error! Could not connect to the server"
+msgstr ""
+
+#: ../../weblogin/messages.php:4
+msgid "Error! Could not connect to the authenticator server"
+msgstr ""
+
+#: ../../weblogin/messages.php:5
+msgid "Error! User has been reach the maximum login"
+msgstr ""
+
+#: ../../weblogin/messages.php:6
+msgid "Error! User already login"
+msgstr ""
+
+#: ../../weblogin/messages.php:7
+msgid "Error! User expired"
+msgstr ""
+
+#: ../../weblogin/messages.php:8
+msgid "Error! Invalid IP address"
+msgstr ""
+
+#: ../../weblogin/messages.php:10
+msgid "Error! Invalid username or password"
+msgstr ""
+
+#: ../../weblogin/messages.php:11
+msgid "Error! Logout failed! please try again"
+msgstr ""
+
+#: ../../weblogin/messages.php:12
+msgid "Error! Please login"
+msgstr ""
+
+#: ../../weblogin/messages.php:15
+msgid "Success! User has been authorized, please wait a moment"
+msgstr ""
+
+#: ../../weblogin/messages.php:16
+msgid "Success! User has been logout"
+msgstr ""

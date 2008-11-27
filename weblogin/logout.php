@@ -6,6 +6,8 @@ require_once 'rahu_xmlrpc.class.php';
 require_once 'getmacaddr.php';
 require_once 'config.php';
 require_once 'header.php';
+require_once 'locale.php';
+require_once 'messages.php';
 
 $current_url = $_SERVER['REQUEST_URI'];
 $interval = 60;
@@ -48,11 +50,11 @@ if (!empty($_POST['do_logout'])) {
     $result = $xmlrpc->do_stopsession($ip, returnMacAddress());
     if ($result === true) {
       $valid = false;
-      $message = "ทำการ 'Logout' สำเร็จ";
+      $message = get_message('OK_USER_LOGOUT');
       $isstopacct = true;
     } else {
       $valid = false;
-      $message = "ไม่สามารถ 'เลิกใช้งาน' ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
+      $message = get_message('ERR_LOGOUT_FAILED');
       $show_info = true;
     }
   }
@@ -84,7 +86,7 @@ if ($show_info) {
       $valid = true;
       $info = $result;
     } else {
-      $message = "คุณยังไม่ได้เข้าใช้งานในระบบ";
+      $message = get_message('ERR_PLEASE_LOGIN');
     }
   }
 }
@@ -93,61 +95,39 @@ if ($show_info) {
 <?php
 // Login box
 $valid_text = !$valid ? "" : "" . 
-"  <table id='bg'>" .
-"  <tr>" .
-"   <td align='right'><b>Username:</b></td>" .
-"   <td>". $info['username']."</td>" .
-" </tr>" .
-"  <tr>" .
-"   <td align='right'><b>Session Start:</b></td>" .
-"   <td>". date('j F Y H:i', $info['session_start']) . "</td>" .
-" </tr>" .
-"  <tr>" .
-"   <td align='right'><b>Session Time:</b></td>" .
-"   <td>" . (time() - $info['session_start']) . " seconds</td>" .
-" </tr>" .
-"" .
-"  <tr>" .
-"   <td align='right'><b>User expired:</b></td>" .
-"   <td>". ($info['session_timeout'] == 0 ? "Never" : date('j F Y H:i', $info['session_timeout'])) . "</td>" .
-" </tr>" .
-"" .
-"  <tr>" .
-"   <td align='right'><b>Request URL:</b></td>" .
-"   <td><a href='$request_url' target='_new'>$request_url_text</a></td>" .
-" </tr>" .
-"</table>".
-"<table>".
-" <tr>" .
-"   <td>&nbsp;<input type='hidden' name='do_logout' value='yes'></td>" .
-"   <td><input type='button' value='Go! Go! Go!' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
-"   <td><input type='submit' value='Logout' id='rh_logout_button'></td>" .
-" </tr>" .
-"</table>";
+  "  <table id='rh_bg'>" .
+  "  <tr>" .
+  "   <td align='right'><b>" . _("Username") . ":</b></td>" .
+  "   <td>". $info['username']."</td>" .
+  " </tr>" .
+  "  <tr>" .
+  "   <td align='right'><b>" . _("Session Start") . ":</b></td>" .
+  "   <td>". strftime('%e %B %Y %H:%M:%S', $info['session_start']) . "</td>" .
+  " </tr>" .
+  "  <tr>" .
+  "   <td align='right'><b>" . _("Session Time") . ":</b></td>" .
+  "   <td>" . (time() - $info['session_start']) . " ". _("seconds") . "</td>" .
+  " </tr>" .
+  "" .
+  "  <tr>" .
+  "   <td align='right'><b>" . _("Expired") . ":</b></td>" .
+  "   <td>". ($info['session_timeout'] == 0 ? _("Never") : strftime('%e %B %Y %H:%M:%S', $info['session_timeout']) . "</td>") .
+  " </tr>" .
+  "" .
+  "  <tr>" .
+  "   <td align='right'><b>" . _("Request URL") . ":</b></td>" .
+  "   <td><a href='$request_url' target='_new'>$request_url_text</a></td>" .
+  " </tr>" .
+  "</table>".
+  "<table>".
+  " <tr>" .
+  "   <td>&nbsp;<input type='hidden' name='do_logout' value='yes'></td>" .
+  "   <td><input type='button' value='" . _("Go! Go! Go!") . "' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
+  "   <td><input type='submit' value='" . _("Logout") . "' id='rh_logout_button'></td>" .
+  " </tr>" .
+  "</table>";
 $request_uri = $_SERVER['REQUEST_URI'];
-$loginbox = "<style>" .
-            "#bg { color: #FFFFFF; background: #000000; width: 80%;}".
-            "#rh_login_text { font-weight: bolder; }\n" .
-            "#waiting { " .
-            " position: absolute; ".
-            " top: -215px;".
-            " left: 170px;".
-            "}".
-            "#message { " .
-            "  color: #000000;" .
-            "  font-weight: bolder; ".
-            "  padding: 2px;" .
-            "  width: 80%;" .
-            "  text-align: center;" .
-            "  background: #FFFF99;" .
-            "}\n" .
-            "#rh_login_button {" .
-            "  color: #000000;" .
-            "  padding: 3px 10px 3px 10px;" .
-            "  cursor: pointer;" .
-            "}\n" .
-            "</style>" . 
-            "<form name='login' action='$request_uri' method='post'>" .
+$loginbox = "<form name='login' action='$request_uri' method='post'>" .
             "  $valid_text ". 
             "</form>";
 
@@ -165,18 +145,18 @@ $loginscript = "<script>" .
                "var ns6=document.getElementById&&!document.all;\n" .
                "var ie4=document.all;\n" .
                "if (ns4)" .
-               "  msg=document.message;\n" .
+               "  msg=document.rh_message;\n" .
                "else if (ns6)" .
-               "  msg=document.getElementById('message').style;\n" .
+               "  msg=document.getElementById('rh_message').style;\n" .
                "else if (ie4)" .
-               "  msg=document.all.message.style;\n\n" .
+               "  msg=document.all.rh_message.style;\n\n" .
                "var wt=(document.all);\n" .  
                "if (ns4)" .
-               "  wt=document.waiting;\n" .
+               "  wt=document.rh_waiting;\n" .
                "else if (ns6)" .
-               "  wt=document.getElementById('waiting').style;\n" .
+               "  wt=document.getElementById('rh_waiting').style;\n" .
                "else if (ie4)" .
-               "  wt=document.all.waiting.style;\n\n" .
+               "  wt=document.all.rh_waiting.style;\n\n" .
                "function visible_hide(obj, type)\n" .
                "{\n" .
                "  if(type == 'show') {\n" .
@@ -198,8 +178,8 @@ $loginscript = "<script>" .
                "</script>";
 $watting_script="";
 
-$waiting  = "<div id='waiting'><img src='loading.gif'></div>";
-$loginmsg = "<div id='message'>$message</div>";
+$waiting  = "<div id='rh_waiting'><img src='loading.gif'></div>";
+$loginmsg = "<div id='rh_message'>$message</div>";
 $loginbox .= $waiting;
 $loginbox .= $loginmsg;
 ?>
@@ -211,12 +191,17 @@ $tpl_file = $tpl_path . $config['UAM_TEMPLATE'] . ".html";
 $handle = @fopen($tpl_file, "r");
 $html_buffer = "";
 if ($handle) {  
+  $css = "<link rel='stylesheet' type='text/css' href='" . $tpl_path . "rahunas.css'>";
+  $loginbox = $css . $loginbox;
+
   while (!feof($handle)) {
     $html_buffer .= fgets($handle, 4096);
   }
   fclose($handle);
 
   $html_buffer = str_replace("images/", $tpl_path."images/", $html_buffer);
+  $html_buffer = str_replace("<!-- Title -->", $config["NAS_LOGIN_TITLE"], 
+                             $html_buffer);
   $html_buffer = str_replace("<!-- Login -->", $loginbox, $html_buffer);
   $html_buffer = str_replace("<!-- JavaScript -->", $loginscript, $html_buffer);
   print $html_buffer;

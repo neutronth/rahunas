@@ -1,3 +1,17 @@
+2008-11-28  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* weblogin/locale.php, weblogin/locale/*, +weblogin/messages.php,
+	  weblogin/login.php, weblogin/logout.php: 
+	  Add multilingual weblogin base on PHP gettext, now supported languages are 
+	  Thai and English.
+	* weblogin/loading.gif, weblogin/note.txt: 
+	  Change the loading animation picture which now is the hourclass spinning 
+	  downloaded from www.clipartpoint.com. (Free to use it on website)
+	* -weblogin/rahu-{loading,waiting}.gif: Remove unused pictures.
+	* weblogin/templates/*/rahunas.css: Add new customized CSS for each template
+	  which now can customized independently from the core.
+	* weblogin/templates/rahunas/rahunas.html: Adjust the rahunas template.
+
 2008-11-27  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* weblogin/config.php: 

@@ -6,18 +6,39 @@ require_once 'rahu_xmlrpc.class.php';
 require_once 'getmacaddr.php';
 require_once 'config.php';
 require_once 'header.php';
+require_once 'locale.php';
+require_once 'messages.php';
+
+$ip = $_SERVER['REMOTE_ADDR'];
+$forward = false;
+$LogoutURL  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
+$LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ? 
+                ":" . $config['NAS_LOGIN_PORT'] : "";
+$LogoutURL .= "/logout.php";
+$RequestURL = empty($_GET['request_url']) ? 
+                $config['DEFAULT_REDIRECT_URL']
+                : urldecode($_GET['request_url']);
+$_SESSION['request_url'] = $RequestURL;
+
+// Verify if the user already login
+$xmlrpc = new rahu_xmlrpc_client();
+$xmlrpc->host = $config["RAHUNAS_HOST"];
+$xmlrpc->port = $config["RAHUNAS_PORT"];
+try {
+  $retinfo = $xmlrpc->do_getsessioninfo($ip);
+  if (is_array($retinfo) && !empty($retinfo['session_id'])) {
+    $forward = true;
+  }
+} catch (XML_RPC2_FaultException $e) {
+  $message = get_message('ERR_CONNECT_SERVER');
+  $forward = false;
+} catch (Exception $e) {
+  $message = get_message('ERR_CONNECT_SERVER');
+  $forward = false;
+}
 
 if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
-  $ip = $_SERVER['REMOTE_ADDR'];
-  $forward = false;
-  $LogoutURL  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
-  $LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
-  $LogoutURL .= "/logout.php";
 
-  $RequestURL = empty($_GET['request_url']) ? 
-                   $config['DEFAULT_REDIRECT_URL']
-                 : urldecode($_GET['request_url']);
-  $_SESSION['request_url'] = $RequestURL;
   $message = "";
   $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'], $config['RADIUS_ENCRYPT']);
   $rauth->host = $config["RADIUS_HOST"];
@@ -26,9 +47,9 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
   $rauth->start();
 
   if ($rauth->isError()) {
-    $message = "ไม่สามารถเชื่อมต่อ กับเครื่องตรวจสอบสิทธิ์ได้";
+    $message = get_message('ERR_CONNECT_RADIUS');
   } else if ($rauth->isAccept()) {
-    $message = "ผู้ใช้ ผ่านการตรวจสอบสิทธิ์ รอสักครู่ ";
+    $message = get_message('OK_USER_AUTHORIZED');
     $forward = true;
     $racct = new rahu_radius_acct ($_POST['user']);
     $racct->host = $config["RADIUS_HOST"];
@@ -41,10 +62,6 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
     $racct->calling_station_id = returnMacAddress();
     $racct->gen_session_id();
 
-    // Verify if the user already login
-    $xmlrpc = new rahu_xmlrpc_client();
-    $xmlrpc->host = $config["RAHUNAS_HOST"];
-    $xmlrpc->port = $config["RAHUNAS_PORT"];
 
     try {
       $prepareData = array (
@@ -57,28 +74,28 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
         "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up']);
       $result = $xmlrpc->do_startsession($prepareData);
       if (strstr($result,"Client already login")) {
-        $message = "ผู้ใช้นี้ ได้ใช้สิทธิ์เข้าใช้งานแล้ว";
+        $message = get_message('ERR_ALREADY_LOGIN');
         $forward = false;
       } else if (strstr($result, "Greeting")) {
         $racct->acctStart();
       } else if (strstr($result, "Invalid IP Address")) {
-        $message = "หมายเลข IP Address ประจำเครื่อง ไม่ถูกต้อง";
+        $message = get_message('ERR_INVALID_IP');
         $forward = false;
       }
     } catch (XML_RPC2_FaultException $e) {
-      $message = "ผิดพลาด! ไม่สามารถเชื่อมต่อเครื่องแม่ข่ายได้";
+      $message = get_message('ERR_CONNECT_SERVER');
       $forward = false;
     } catch (Exception $e) {
-      $message = "ผิดพลาด! ไม่สามารถเชื่อมต่อเครื่องแม่ข่ายได้";
+      $message = get_message('ERR_CONNECT_SERVER');
       $forward = false;
     }
   } else {
     if ($rauth->isLoggedIn()) {
-      $message = "ไม่สามารถเข้าระบบได้ มีการเข้าระบบซ้ำ";
+      $message = get_message('ERR_MAXIMUM_LOGIN');
     } else if ($rauth->isTimeout()) {
-      $message = "ไม่สามารถเข้าระบบได้ หมดเวลาการใช้งาน";
+      $message = get_message('ERR_USER_EXPIRED');
     } else {
-      $message = "ไม่พบผู้ใช้นี้ หรือรหัสผ่านผิด";
+      $message = get_message('ERR_INVALID_USERNAME_OR_PASSWORD');
     }
   }
 }
@@ -91,35 +108,15 @@ if ($forward) {
 <?php
 // Login box
 $request_uri = $_SERVER['REQUEST_URI'];
-$loginbox = "<style>" .
-            "#rh_login_text { font-weight: bolder; }\n" .
-            "#waiting { " .
-            " position: absolute; ".
-            " top: -215px;".
-            " left: 170px;".
-            "}".
-            "#message { " .
-            "  color: #000000;" .
-            "  font-weight: bolder; ".
-            "  padding: 2px;" .
-            "  width: 80%;" .
-            "  text-align: center;" .
-            "  background: #FFFF99;" .
-            "}\n" .
-            "#rh_login_button {" .
-            "  color: #000000;" .
-            "  padding: 3px 10px 3px 10px;" .
-            "  cursor: pointer;" .
-            "}\n" .
-            "</style>" . 
-            "<form name='login' action='$request_uri' method='post'>" .
+
+$loginbox = "<form name='login' action='$request_uri' method='post'>" .
             "<table>" .
-            "<tr><td id='rh_login_text'>Username</td>" .
+            "<tr><td id='rh_login_text'>" . _("Username") . "</td>" .
             "<td><input type='text' name='user' size='22'></td></tr>" .
-            "<tr><td id='rh_login_text'>Password</td>" .
+            "<tr><td id='rh_login_text'>" . _("Password") . "</td>" .
             "<td><input type='password' name='passwd' size='22'></td></tr>" .
             "<tr><td>&nbsp;</td>" .
-            "<td><input type='submit' value='Login' id='rh_login_button'>" .
+            "<td><input type='submit' value='" . _("Login") . "' id='rh_login_button'>" .
             "</td></tr>" .
             "</table>" .
             "</form>";
@@ -131,6 +128,8 @@ $waiting_show  = $forward ? "visible_hide(wt, 'show');"
 $message_show  = !empty($message) ? "visible_hide(msg, 'show');" 
                                   : "visible_hide(msg, 'hide');";
 $hide_wait = !empty($message) ? "setTimeout('hide_wait();', 2000);\n" : "";
+$force_forward = $hide_wait == "" && $forward ? 
+                   "self.location.replace('$LogoutURL');" : "";
 
 $loginscript = "<script>" .
                "var msg=(document.all);\n" .  
@@ -138,18 +137,18 @@ $loginscript = "<script>" .
                "var ns6=document.getElementById&&!document.all;\n" .
                "var ie4=document.all;\n" .
                "if (ns4)" .
-               "  msg=document.message;\n" .
+               "  msg=document.rh_message;\n" .
                "else if (ns6)" .
-               "  msg=document.getElementById('message').style;\n" .
+               "  msg=document.getElementById('rh_message').style;\n" .
                "else if (ie4)" .
-               "  msg=document.all.message.style;\n\n" .
+               "  msg=document.all.rh_message.style;\n\n" .
                "var wt=(document.all);\n" .  
                "if (ns4)" .
-               "  wt=document.waiting;\n" .
+               "  wt=document.rh_waiting;\n" .
                "else if (ns6)" .
-               "  wt=document.getElementById('waiting').style;\n" .
+               "  wt=document.getElementById('rh_waiting').style;\n" .
                "else if (ie4)" .
-               "  wt=document.all.waiting.style;\n\n" .
+               "  wt=document.all.rh_waiting.style;\n\n" .
                "function visible_hide(obj, type)\n" .
                "{\n" .
                "  if(type == 'show') {\n" .
@@ -168,11 +167,12 @@ $loginscript = "<script>" .
                "  $message_show \n".
                "  $waiting_show \n".
                "  $hide_wait \n".
+               "  $force_forward \n".
                "</script>";
 $watting_script="";
 
-$waiting  = "<div id='waiting'><img src='loading.gif'></div>";
-$loginmsg = "<div id='message'>$message</div>";
+$waiting  = "<div id='rh_waiting'><img src='loading.gif'></div>";
+$loginmsg = "<div id='rh_message'>$message</div>";
 $loginbox .= $waiting;
 $loginbox .= $loginmsg;
 ?>
@@ -184,6 +184,9 @@ $tpl_file = $tpl_path . $config['UAM_TEMPLATE'] . ".html";
 $handle = @fopen($tpl_file, "r");
 $html_buffer = "";
 if ($handle) {  
+  $css = "<link rel='stylesheet' type='text/css' href='" . $tpl_path . "rahunas.css'>";
+  $loginbox = $css . $loginbox;
+
   while (!feof($handle)) {
     $html_buffer .= fgets($handle, 4096);
   }
@@ -199,7 +202,6 @@ if ($handle) {
                              $html_buffer);
   print $html_buffer;
 }
-
 
 ob_end_flush();
 ?>
