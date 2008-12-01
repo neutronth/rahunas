@@ -1,3 +1,12 @@
+2008-12-01  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/firewall.sh.in:
+	  - Fix the syntax error in excluded ip rules.
+	  - Fix the malfunction of whitespace trim in the get_config_value() by
+	    only left and right trim rather than trim every whitespace. This error
+	    affect the excluded value which have many values whitespace separated.
+	  - Fix $N malform declaration cause of the Usage message never show.
+
 2008-11-28  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* weblogin/config.php, weblogin/locale.php: Add default language setting.

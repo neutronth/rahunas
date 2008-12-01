@@ -26,7 +26,7 @@ set -e
 
 get_config_value () {
   key=$1
-  cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's: ::g' | sed 's:"::g'
+  cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's/^ *\(.*[^ ]\) *$/\1/' | sed 's/"//g'
 }
 
 # Get configuration
@@ -316,10 +316,10 @@ rules () {
   ##
   for excluded in $EXCLUDED;
   do
-    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded -j CONNMARK --s
-et-mark 0x2
-    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded -j CONNMARK --s
-et-mark 0x2
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded \
+      -j CONNMARK --set-mark 0x2
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded \
+      -j CONNMARK --set-mark 0x2
   done 
   
   ##
@@ -395,7 +395,7 @@ case "$1" in
     reload     
     ;; 
   *)
-    N = @sysconfdir@/rahunas/firewall.sh
+    N=@sysconfdir@/rahunas/firewall.sh
     echo "Usage: $N {start|stop|restart|reload}"
     exit 3
     ;;
