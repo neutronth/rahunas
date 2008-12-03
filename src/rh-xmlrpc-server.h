@@ -10,20 +10,20 @@
 
 int do_startsession(GNetXmlRpcServer *server,
                     const gchar *command,
-										const gchar *param,
-										gpointer user_data,
-										gchar **reply_string);
+                    const gchar *param,
+                    gpointer user_data,
+                    gchar **reply_string);
 
 int do_stopsession(GNetXmlRpcServer *server,
                    const gchar *command,
-									 const gchar *param,
-									 gpointer user_data,
-									 gchar **reply_string);
+                   const gchar *param,
+                   gpointer user_data,
+                   gchar **reply_string);
 
 int do_getsessioninfo(GNetXmlRpcServer *server,
                       const gchar *command,
-									    const gchar *param,
-									    gpointer user_data,
-									    gchar **reply_string);
+                      const gchar *param,
+                      gpointer user_data,
+                      gchar **reply_string);
 
 #endif // __RH_XMLRPC_SERVER_H

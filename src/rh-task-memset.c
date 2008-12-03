@@ -31,19 +31,19 @@ static void init (void)
 
   size = map->size == 0 ? MAX_MEMBERS : map->size;
 
-	members = 
+  members = 
     (struct rahunas_member*)(rh_malloc(sizeof(struct rahunas_member)*size));
 
-	memset(members, 0, sizeof(struct rahunas_member)*size);
+  memset(members, 0, sizeof(struct rahunas_member)*size);
 
-	map->members = members;
+  map->members = members;
 }
 
 /* Cleanup */
 static void cleanup (void)
 {
   struct rahunas_member *members = NULL;
-	int i;
+  int i;
   int end;
 
   logmsg(RH_LOG_NORMAL, "Task MEMSET cleanup..");  
@@ -56,13 +56,13 @@ static void cleanup (void)
       end = 0;
     }  
 
-	  for (i=0; i < end; i++) {
-			  rh_free_member(&members[i]);
-		}
+    for (i=0; i < end; i++) {
+        rh_free_member(&members[i]);
+    }
 
-		rh_free(&(map->members));
-		rh_free(&map);
-	}
+    rh_free(&(map->members));
+    rh_free(&map);
+  }
 
   return 0;
 }
@@ -83,7 +83,7 @@ static int stopservice  (struct rahunas_map *map)
 /* Start session task */
 static int startsess (struct rahunas_map *map, struct task_req *req)
 {
-	struct rahunas_member *members = map->members;
+  struct rahunas_member *members = map->members;
   uint32_t id = req->id;
 
   members[id].flags = 1;
@@ -101,7 +101,7 @@ static int startsess (struct rahunas_map *map, struct task_req *req)
   if (!members[id].session_id)
     members[id].session_id = termstring;
 
-	time(&(members[id].session_start));
+  time(&(members[id].session_start));
   memcpy(&req->session_start, &members[id].session_start, sizeof(time_t));
 
   memcpy(&members[id].mac_address, &(req->mac_address), ETH_ALEN);
@@ -126,7 +126,7 @@ static int startsess (struct rahunas_map *map, struct task_req *req)
 /* Stop session task */
 static int stopsess  (struct rahunas_map *map, struct task_req *req)
 {
-	struct rahunas_member *members = map->members;
+  struct rahunas_member *members = map->members;
   uint32_t id = req->id;
   char cause[16] = "";
   switch (req->req_opt) {

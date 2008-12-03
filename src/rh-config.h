@@ -12,9 +12,9 @@
 #define IDLE_THRESHOLD 600
 #define POLLING 60 
 #define SET_NAME "rahunas_set"
-#define XMLSERVICE_HOST	"localhost"
-#define XMLSERVICE_PORT	8888
-#define XMLSERVICE_URL	"/xmlrpc_service.php"
+#define XMLSERVICE_HOST "localhost"
+#define XMLSERVICE_PORT 8888
+#define XMLSERVICE_URL  "/xmlrpc_service.php"
 
 #define CONFIG_FILE RAHUNAS_CONF_DIR "rahunas.conf"
 #define DEFAULT_PID RAHUNAS_RUN_DIR "rahunasd.pid"

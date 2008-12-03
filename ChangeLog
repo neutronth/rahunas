@@ -1,3 +1,10 @@
+2008-12-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunasd.{c,h}, src/rh-config.h, src/rh-ipset.{c,h}, 
+	  src/rh-task-ipset.c, src/rh-task-memset.c, src/rh-task.h, 
+	  src/rh-xmlrpc-cmd.c, src/rh-xmlrpc-server.{c,h}:
+	  Use :retab to convert tab to 2 spaces.
+
 2008-12-01  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/firewall.sh.in:

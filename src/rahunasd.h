@@ -30,8 +30,8 @@ extern const char *termstring;
 
 enum RH_LOG {
   RH_LOG_DEBUG,
-	RH_LOG_NORMAL,
-	RH_LOG_ERROR
+  RH_LOG_NORMAL,
+  RH_LOG_ERROR
 };
 
 #define RH_LOG_LEVEL RH_LOG_NORMAL
@@ -48,20 +48,20 @@ enum RH_LOG {
 
 struct rahunas_map {
   struct rahunas_member *members;
-	in_addr_t first_ip;
-	in_addr_t last_ip;
-	unsigned int size;
+  in_addr_t first_ip;
+  in_addr_t last_ip;
+  unsigned int size;
 };
 
 struct rahunas_member {
   unsigned short flags; 
   unsigned short expired;
-	time_t session_start;
+  time_t session_start;
   time_t session_timeout;
   long bandwidth_max_down;
   long bandwidth_max_up;
   unsigned short bandwidth_slot_id;
-	char *username;
+  char *username;
   char *session_id;
   unsigned char mac_address[ETH_ALEN];
 };

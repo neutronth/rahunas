@@ -35,7 +35,7 @@ size_t nas_stopservice(void *data)
       req.id = i;
       memcpy(req.mac_address, &table[i].ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_NAS_REBOOT;
-			send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_NAS_REBOOT);
+      send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_NAS_REBOOT);
       rh_task_stopsess(map, &req);
     }
   }

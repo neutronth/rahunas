@@ -221,30 +221,30 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
            sizeof(struct ip_set_req_rahunas));
 
   if (kernel_sendto_handleerrno(op, data, size) == -1)
- 		switch (op) {
-		case IP_SET_OP_ADD_IP:
-		  DP("%s:%s is already in set", ip_tostring(adtip), mac_tostring(adtmac));
+    switch (op) {
+    case IP_SET_OP_ADD_IP:
+      DP("%s:%s is already in set", ip_tostring(adtip), mac_tostring(adtmac));
       res = RH_IS_IN_SET;
-			break;
-		case IP_SET_OP_DEL_IP:
+      break;
+    case IP_SET_OP_DEL_IP:
       DP("%s:%s is not in set", ip_tostring(adtip), mac_tostring(adtmac));
       res = RH_IS_NOT_IN_SET; 
-			break;
-		case IP_SET_OP_TEST_IP:
+      break;
+    case IP_SET_OP_TEST_IP:
       DP("%s:%s is in set", ip_tostring(adtip), mac_tostring(adtmac));
       res = RH_IS_IN_SET;
-			break;
-		default:
-			break;
-		}
-	else
-		switch (op) {
-		case IP_SET_OP_TEST_IP:
+      break;
+    default:
+      break;
+    }
+  else
+    switch (op) {
+    case IP_SET_OP_TEST_IP:
       DP("%s:%s is not in set", ip_tostring(adtip), mac_tostring(adtmac));
       res = RH_IS_NOT_IN_SET;
-			break;
-		default:
-			break;   
+      break;
+    default:
+      break;   
     }
 
   rh_free(&data);
@@ -264,88 +264,88 @@ void set_flush(const char *name)
 }
 
 size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
-			    ip_set_id_t *idx,
-			    unsigned op, unsigned cmd)
+          ip_set_id_t *idx,
+          unsigned op, unsigned cmd)
 {
-	void *data = NULL;
-	struct ip_set_req_max_sets req_max_sets;
-	struct ip_set_name_list *name_list;
-	struct set *set;
-	ip_set_id_t i;
-	socklen_t size, req_size;
-	int repeated = 0, res = 0;
+  void *data = NULL;
+  struct ip_set_req_max_sets req_max_sets;
+  struct ip_set_name_list *name_list;
+  struct set *set;
+  ip_set_id_t i;
+  socklen_t size, req_size;
+  int repeated = 0, res = 0;
 
-	DP("%s %s", cmd == CMD_MAX_SETS ? "MAX_SETS"
-		    : cmd == CMD_LIST_SIZE ? "LIST_SIZE"
-		    : "SAVE_SIZE",
-		    name);
-	
+  DP("%s %s", cmd == CMD_MAX_SETS ? "MAX_SETS"
+        : cmd == CMD_LIST_SIZE ? "LIST_SIZE"
+        : "SAVE_SIZE",
+        name);
+  
 tryagain:
-	if (set_list != NULL) {
-		for (i = 0; i < max_sets; i++)
-			if (set_list[i] != NULL) {
-				free(set_list[i]);
+  if (set_list != NULL) {
+    for (i = 0; i < max_sets; i++)
+      if (set_list[i] != NULL) {
+        free(set_list[i]);
         set_list[i] = NULL;
       }
-		free(set_list);
-		set_list = NULL;
-	}
-	/* Get max_sets */
-	req_max_sets.op = IP_SET_OP_MAX_SETS;
-	req_max_sets.version = IP_SET_PROTOCOL_VERSION;
-	strcpy(req_max_sets.set.name, name);
-	size = sizeof(req_max_sets);
-	kernel_getfrom(&req_max_sets, &size);
+    free(set_list);
+    set_list = NULL;
+  }
+  /* Get max_sets */
+  req_max_sets.op = IP_SET_OP_MAX_SETS;
+  req_max_sets.version = IP_SET_PROTOCOL_VERSION;
+  strcpy(req_max_sets.set.name, name);
+  size = sizeof(req_max_sets);
+  kernel_getfrom(&req_max_sets, &size);
 
-	DP("got MAX_SETS: sets %d, max_sets %d",
-	   req_max_sets.sets, req_max_sets.max_sets);
+  DP("got MAX_SETS: sets %d, max_sets %d",
+     req_max_sets.sets, req_max_sets.max_sets);
 
-	max_sets = req_max_sets.max_sets;
-	set_list = rh_malloc(max_sets * sizeof(struct set *));
-	memset(set_list, 0, max_sets * sizeof(struct set *));
-	*idx = req_max_sets.set.index;
+  max_sets = req_max_sets.max_sets;
+  set_list = rh_malloc(max_sets * sizeof(struct set *));
+  memset(set_list, 0, max_sets * sizeof(struct set *));
+  *idx = req_max_sets.set.index;
 
-	if (req_max_sets.sets == 0)
-		/* No sets in kernel */
-		return 0;
+  if (req_max_sets.sets == 0)
+    /* No sets in kernel */
+    return 0;
 
-	/* Get setnames */
-	size = req_size = sizeof(struct ip_set_req_setnames) 
-			  + req_max_sets.sets * sizeof(struct ip_set_name_list);
-	data = rh_malloc(size);
-	((struct ip_set_req_setnames *) data)->op = op;
-	((struct ip_set_req_setnames *) data)->index = *idx;
+  /* Get setnames */
+  size = req_size = sizeof(struct ip_set_req_setnames) 
+        + req_max_sets.sets * sizeof(struct ip_set_name_list);
+  data = rh_malloc(size);
+  ((struct ip_set_req_setnames *) data)->op = op;
+  ((struct ip_set_req_setnames *) data)->index = *idx;
 
-	res = kernel_getfrom_handleerrno(data, &size);
+  res = kernel_getfrom_handleerrno(data, &size);
 
-	if (res != 0 || size != req_size) {
-		rh_free(&data);
-		if (repeated++ < LIST_TRIES)
-			goto tryagain;
+  if (res != 0 || size != req_size) {
+    rh_free(&data);
+    if (repeated++ < LIST_TRIES)
+      goto tryagain;
 
-		DP("Tried to get sets from kernel %d times"
-			   " and failed. Please try again when the load on"
-			   " the sets has gone down.", LIST_TRIES);
+    DP("Tried to get sets from kernel %d times"
+         " and failed. Please try again when the load on"
+         " the sets has gone down.", LIST_TRIES);
     return -1;
-	}
-		
-	/* Load in setnames */
-	size = sizeof(struct ip_set_req_setnames);			
-	while (size + sizeof(struct ip_set_name_list) <= req_size) {
-		name_list = (struct ip_set_name_list *)
-			(data + size);
-		set = rh_malloc(sizeof(struct set));
-		strcpy(set->name, name_list->name);
-		set->index = name_list->index;
-		set->id = name_list->id;
-		set_list[name_list->index] = set;
-		size += sizeof(struct ip_set_name_list);
-	}
-	/* Size to get set members, bindings */
-	size = ((struct ip_set_req_setnames *)data)->size;
-	rh_free(&data);
-	
-	return size;
+  }
+    
+  /* Load in setnames */
+  size = sizeof(struct ip_set_req_setnames);      
+  while (size + sizeof(struct ip_set_name_list) <= req_size) {
+    name_list = (struct ip_set_name_list *)
+      (data + size);
+    set = rh_malloc(sizeof(struct set));
+    strcpy(set->name, name_list->name);
+    set->index = name_list->index;
+    set->id = name_list->id;
+    set_list[name_list->index] = set;
+    size += sizeof(struct ip_set_name_list);
+  }
+  /* Size to get set members, bindings */
+  size = ((struct ip_set_req_setnames *)data)->size;
+  rh_free(&data);
+  
+  return size;
 }
 
 int get_header_from_set (struct rahunas_map *map)
@@ -356,8 +356,8 @@ int get_header_from_set (struct rahunas_map *map)
   socklen_t size, req_size;
   size_t offset;
   int res = 0;
- 	in_addr_t first_ip;
-	in_addr_t last_ip;
+  in_addr_t first_ip;
+  in_addr_t last_ip;
 
   size = req_size = load_set_list(rh_config.set_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
@@ -386,11 +386,11 @@ int get_header_from_set (struct rahunas_map *map)
   
   memcpy(&map->first_ip, &first_ip, sizeof(in_addr_t));
   memcpy(&map->last_ip, &last_ip, sizeof(in_addr_t));
-	map->size = ntohl(map->last_ip) - ntohl(map->first_ip) + 1;
+  map->size = ntohl(map->last_ip) - ntohl(map->first_ip) + 1;
 
-	logmsg(RH_LOG_NORMAL, "First IP: %s", ip_tostring(ntohl(map->first_ip)));
-	logmsg(RH_LOG_NORMAL, "Last  IP: %s", ip_tostring(ntohl(map->last_ip)));
-	logmsg(RH_LOG_NORMAL, "Set Size: %lu", map->size);
+  logmsg(RH_LOG_NORMAL, "First IP: %s", ip_tostring(ntohl(map->first_ip)));
+  logmsg(RH_LOG_NORMAL, "Last  IP: %s", ip_tostring(ntohl(map->last_ip)));
+  logmsg(RH_LOG_NORMAL, "Set Size: %lu", map->size);
 
   rh_free(&data);
   return res;

@@ -20,11 +20,11 @@ extern ip_set_id_t max_sets;
 
 /* The view of an ipset in userspace */
 struct set {
-	char name[IP_SET_MAXNAMELEN];		/* Name of the set */
-	ip_set_id_t id;				/* Unique set id */
-	ip_set_id_t index;			/* Array index */
-	unsigned ref;				/* References in kernel */
-	struct settype *settype;		/* Pointer to set type functions */
+  char name[IP_SET_MAXNAMELEN];   /* Name of the set */
+  ip_set_id_t id;       /* Unique set id */
+  ip_set_id_t index;      /* Array index */
+  unsigned ref;       /* References in kernel */
+  struct settype *settype;    /* Pointer to set type functions */
 };
 
 enum rh_adt_result {
@@ -34,34 +34,34 @@ enum rh_adt_result {
 
 /* Commands */
 enum set_commands {
-	CMD_NONE,
-	CMD_CREATE,		/* -N */
-	CMD_DESTROY,		/* -X */
-	CMD_FLUSH,		/* -F */
-	CMD_RENAME,		/* -E */
-	CMD_SWAP,		/* -W */
-	CMD_LIST,		/* -L */
-	CMD_SAVE,		/* -S */
-	CMD_RESTORE,		/* -R */
-	CMD_ADD,		/* -A */
-	CMD_DEL,		/* -D */
-	CMD_TEST,		/* -T */
-	CMD_BIND,		/* -B */
-	CMD_UNBIND,		/* -U */
-	CMD_HELP,		/* -H */
-	CMD_VERSION,		/* -V */
-	NUMBER_OF_CMD = CMD_VERSION,
-	/* Internal commands */
-	CMD_MAX_SETS,
-	CMD_LIST_SIZE,
-	CMD_SAVE_SIZE,
-	CMD_ADT_GET,
+  CMD_NONE,
+  CMD_CREATE,   /* -N */
+  CMD_DESTROY,    /* -X */
+  CMD_FLUSH,    /* -F */
+  CMD_RENAME,   /* -E */
+  CMD_SWAP,   /* -W */
+  CMD_LIST,   /* -L */
+  CMD_SAVE,   /* -S */
+  CMD_RESTORE,    /* -R */
+  CMD_ADD,    /* -A */
+  CMD_DEL,    /* -D */
+  CMD_TEST,   /* -T */
+  CMD_BIND,   /* -B */
+  CMD_UNBIND,   /* -U */
+  CMD_HELP,   /* -H */
+  CMD_VERSION,    /* -V */
+  NUMBER_OF_CMD = CMD_VERSION,
+  /* Internal commands */
+  CMD_MAX_SETS,
+  CMD_LIST_SIZE,
+  CMD_SAVE_SIZE,
+  CMD_ADT_GET,
 };
 
 enum exittype {
-	OTHER_PROBLEM = 1,
-	PARAMETER_PROBLEM,
-	VERSION_PROBLEM
+  OTHER_PROBLEM = 1,
+  PARAMETER_PROBLEM,
+  VERSION_PROBLEM
 };
 
 int kernel_getsocket(void);
@@ -81,8 +81,8 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
 void set_flush(const char *name);
 
 size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
-			    ip_set_id_t *idx,
-			    unsigned op, unsigned cmd);
+          ip_set_id_t *idx,
+          unsigned op, unsigned cmd);
 
 int get_header_from_set (struct rahunas_map *map);
 
