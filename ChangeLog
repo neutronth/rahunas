@@ -1,5 +1,10 @@
 2008-12-03  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* src/rahunasd.c: Fix the malfunction rh_sighandler(), handle only SIGTERM and
+	  adjust the code to let the program really exit gracefully.
+
+2008-12-03  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rahunasd.c: Fix the worst case that the pid < 0 (fail) is parsed into 
 	  the rh_sighandler() which the program must ignore this trigger.
 

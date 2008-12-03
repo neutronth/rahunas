@@ -153,16 +153,15 @@ void rh_sighandler(int sig)
 {
   switch (sig) {
     case SIGTERM:
-    case SIGKILL:
       if (pid == 0) {
         rh_exit();
-        syslog(LOG_NOTICE, "Exit Gracefully", pid);
         exit(EXIT_SUCCESS);
-      }
-
-      if (pid > 0) {
+      } else if (pid > 0) {
         syslog(LOG_NOTICE, "Kill Child PID %d", pid);
-        kill(pid, SIGKILL);
+        kill(pid, SIGTERM);
+      } else {
+        syslog(LOG_ERR, "Invalid PID");
+        exit(EXIT_FAILURE);
       }
       break;
   }
@@ -241,7 +240,6 @@ size_t expired_check(void *data)
 
 void rh_exit()
 {
-  syslog(LOG_ALERT, "Child Exiting ..");
   rh_task_stopservice(map);
   rh_task_cleanup();
   rh_closelog(rh_config.log_file);
@@ -294,19 +292,23 @@ watch_child(char *argv[])
 
 
   while(1) {
-
-    if ((pid = fork()) == 0) {
+    pid = fork();
+    if (pid == 0) {
       /* child */
       prog = strdup(argv[0]);
       argv[0] = strdup("(rahunasd)");
       execvp(prog, argv);
       syslog(LOG_ALERT, "execvp failed");
+    } else if (pid < 0) {
+      syslog(LOG_ERR, "Could not fork the child process");   
+      exit(EXIT_FAILURE);
     }
   
+    /* parent */
     syslog(LOG_NOTICE, "RahuNASd Parent: child process %d started", pid);   
 
     time(&start);
-    /* parent */
+
     pid = waitpid(-1, &status, 0);
     time(&stop);
 
@@ -332,10 +334,10 @@ watch_child(char *argv[])
       exit(EXIT_FAILURE);
     }
   
-  
-    if (WIFEXITED(status))
-      if (WEXITSTATUS(status) == 0)
+    if (WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
+        syslog(LOG_NOTICE, "Exit Gracefully");
         exit(EXIT_SUCCESS);
+    }
     
     sleep(3);
   }
@@ -353,10 +355,7 @@ int main(int argc, char **argv)
   GNetXmlRpcServer *server = NULL;
   GMainLoop* main_loop     = NULL;
 
-   
-
   signal(SIGTERM, rh_sighandler);
-  signal(SIGKILL, rh_sighandler);
 
   watch_child(argv);
 
