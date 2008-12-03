@@ -152,17 +152,17 @@ int logmsg(int priority, const char *msg, ...)
 void rh_sighandler(int sig)
 {
   switch (sig) {
-    case SIGINT:
     case SIGTERM:
     case SIGKILL:
       if (pid == 0) {
         rh_exit();
+        syslog(LOG_NOTICE, "Exit Gracefully", pid);
         exit(EXIT_SUCCESS);
       }
 
-      if (pid != 0) {
+      if (pid > 0) {
         syslog(LOG_NOTICE, "Kill Child PID %d", pid);
-        kill(pid, SIGTERM);
+        kill(pid, SIGKILL);
       }
       break;
   }
