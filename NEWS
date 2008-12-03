@@ -1,0 +1,29 @@
+RahuNAS
+
+0.1.1 (2008-12-03)
+=====
+- First release of the ready to use Network Access Server which provides:
+
+  * The server that can handle the users login session with 
+    [/] idle timeout and session timeout checking.
+    [/] setup the bandwidth shaping for downloading and uploading each user.
+    [/] integrated with the SQLite for the users session backup.
+    [/] more reliability of the network handling with the good concept of
+        ipset (http://ipset.netfilter.org). 
+    [/] do the normal IP packets traversal with the most capability that the
+        Linux kernel could do, no need any tunneling interfaces like other 
+        projects do.
+    [/] IPv4 with MAC address support. (IPv6 not support now)
+
+  * Do the AAA (Authentication, Authorization and Accouting) with RADIUS.
+    Tested with FreeRADIUS as well.
+
+  * The multilingual web login page (English, Thai) which included the 
+    login, logout and also user's login session information page.
+
+  * Pre-configure example to do the simple Network Access Server.
+
+0.1.0 (2008-08-19)
+=====
+- Initial (internal test) release
+- Simple implemention of the ipset command wrapper
