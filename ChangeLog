@@ -1,5 +1,10 @@
 2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* weblogin/Makefile.am: Change my mind, do not install weblogin only 
+	  distribute it in the tarball.
+
+2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* weblogin/Makefile.am: Rewrite makefile to install weblogin properly.
 
 2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
