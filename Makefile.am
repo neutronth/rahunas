@@ -1,1 +1,1 @@
-SUBDIRS = xmlrpc lcfg src data
+SUBDIRS = xmlrpc lcfg src data weblogin
