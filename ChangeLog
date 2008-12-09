@@ -1,5 +1,9 @@
 2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* weblogin/Makefile.am: Rewrite makefile to install weblogin properly.
+
+2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* +weblogin/Makefile.am: Add makefile for weblogin to install with package.
 	* configure.ac, Makefile.am: Update accordingly to weblogin/Makefile.am.
 	* NEWS: Change release date to 2008-12-09 due to forgot to install weblogin.
