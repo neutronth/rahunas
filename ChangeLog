@@ -1,10 +1,5 @@
 2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
 
-	* weblogin/Makefile.am: Change from EXTRA_DIST to noinst_HEADERS which only
-	  pack it in the distribution tarball, do not install it anyway.
-
-2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
-
 	* +weblogin/Makefile.am: Add makefile for weblogin to install with package.
 	* configure.ac, Makefile.am: Update accordingly to weblogin/Makefile.am.
 	* NEWS: Change release date to 2008-12-09 due to forgot to install weblogin.

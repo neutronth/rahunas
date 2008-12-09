@@ -1,5 +1,6 @@
-# Rahunas web base login
-noinst_HEADERS = \
+# Rahunas configuration and database file
+weblogindir = $(datadir)/rahunas
+weblogin_DATA = \
     config.php \
 		logout.php \
 		templates \
@@ -49,3 +50,6 @@ noinst_HEADERS = \
 		messages.php \
 		xmlrpc_service.php \
 		rahu_xmlrpc.class.php
+
+EXTRA_DIST = $(weblogin_DATA)
+
