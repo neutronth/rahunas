@@ -64,7 +64,6 @@ AC_CONFIG_FILES([
   example/rahunas.conf
   example/firewall.sh
   example/bandwidth.sh
-  weblogin/Makefile
 ])
 
 AC_OUTPUT

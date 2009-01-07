@@ -1,3 +1,9 @@
+2009-01-07  Suriya Soutmun <darksolar@gmail.com>
+
+	* configure.ac, Makefile.am: Add weblogin to EXTRA_DIST to distribute the 
+		whole weblogin dir.
+	* -weblogin/Makfile.am: Removed unnecessary now.
+
 2008-12-09  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* weblogin/Makefile.am: Change my mind, do not install weblogin only 
