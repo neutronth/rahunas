@@ -1,4 +1,5 @@
 <?php
+require_once 'rahu_radius.class.php';
 require_once 'XML/RPC2/Client.php';
 require_once 'XML/RPC2/Value.php';
 
@@ -27,9 +28,9 @@ class rahu_xmlrpc_client {
     return $result;
   }
 
-  function do_stopsession($ip, $mac) {
+  function do_stopsession($ip, $mac, $cause = RADIUS_TERM_USER_REQUEST) {
     $client = $this->getClient(); 
-    $params = sprintf("%s|%s", $ip, $mac);
+    $params = sprintf("%s|%s|%s", $ip, $mac, $cause);
     $result = $client->stopsession($params);
     if (strstr($result, "was removed"))
       return true;

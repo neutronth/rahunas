@@ -47,7 +47,8 @@ if (is_array($retinfo)) {
 
 if (!empty($_POST['do_logout'])) {
   if ($isinfo) {
-    $result = $xmlrpc->do_stopsession($ip, returnMacAddress());
+    $result = $xmlrpc->do_stopsession($ip, returnMacAddress(), 
+                                      RADIUS_TERM_USER_REQUEST);
     if ($result === true) {
       $valid = false;
       $message = get_message('OK_USER_LOGOUT');

@@ -133,11 +133,17 @@ static int stopsess  (struct rahunas_map *map, struct task_req *req)
     case RH_RADIUS_TERM_IDLE_TIMEOUT :
       strcpy(cause, "idle timeout");
       break;
+    case RH_RADIUS_TERM_SESSION_TIMEOUT :
+      strcpy(cause, "session timeout");
+      break;
     case RH_RADIUS_TERM_USER_REQUEST :
       strcpy(cause, "user request");
       break;
     case RH_RADIUS_TERM_NAS_REBOOT :
       strcpy(cause, "nas reboot");
+      break;
+    case RH_RADIUS_TERM_ADMIN_RESET :
+      strcpy(cause, "admin reset");
       break;
   }
   if (!members[id].username)

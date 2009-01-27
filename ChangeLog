@@ -1,3 +1,10 @@
+2008-01-27  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-task-memset.c, src/rh-xmlrpc-server.c: Add the XMLRPC interface for
+	  admin to reset user and other termination cuase support by parsing cause id.
+	* weblogin/rahu_xmlrpc.class.php, weblogin/logout.php:
+	  Implement the new XMLRPC interface changes.
+
 2009-01-07  Suriya Soutmun <darksolar@gmail.com>
 
 	* configure.ac, Makefile.am: Add weblogin to EXTRA_DIST to distribute the 

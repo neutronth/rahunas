@@ -123,6 +123,8 @@ int do_stopsession(GNetXmlRpcServer *server,
   struct task_req req;
   gchar *ip = NULL;
   gchar *mac_address = NULL;
+  gchar *cause = NULL;
+  int cause_id = 0;
   uint32_t   id;
   int res = 0;
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
@@ -142,6 +144,7 @@ int do_stopsession(GNetXmlRpcServer *server,
 
   ip          = rh_string_get_sep(param, "|", 1);
   mac_address = rh_string_get_sep(param, "|", 2);
+  cause       = rh_string_get_sep(param, "|", 3);
 
   if (ip == NULL)
     goto out;
@@ -162,7 +165,18 @@ int do_stopsession(GNetXmlRpcServer *server,
   if (members[id].flags) {
     if (memcmp(&ethernet, &members[id].mac_address, ETH_ALEN) == 0) {
       req.id = id;
-      req.req_opt = RH_RADIUS_TERM_USER_REQUEST;
+      
+      if (cause == NULL) {
+        req.req_opt = RH_RADIUS_TERM_USER_REQUEST;
+      } else {
+        cause_id = atoi(cause);
+        if (cause_id >= RH_RADIUS_TERM_USER_REQUEST && 
+            cause_id <= RH_RADIUS_TERM_HOST_REQUEST) {
+          req.req_opt = cause_id;
+        } else {
+          req.req_opt = RH_RADIUS_TERM_USER_REQUEST;
+        }
+      }
 
       res = rh_task_stopsess(map, &req);
       if (res == 0) {
@@ -186,6 +200,7 @@ out:
 cleanup:
   g_free(ip);
   g_free(mac_address);
+  g_free(cause);
   return 0;
 }
 
