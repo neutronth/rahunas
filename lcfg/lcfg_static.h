@@ -1,6 +1,6 @@
 /*
  * liblcfg - lightweight configuration file library
- * Copyright (C) 2007  Paul Baecher
+ * Copyright (c) 2007--2009  Paul Baecher
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,14 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *    $Id: lcfg.h 995 2007-05-07 01:49:42Z dp $
+ *    $Id: lcfg.h 1446 2009-01-15 22:44:36Z dp $
  * 
  */
 
 #ifndef LCFG_H
 #define LCFG_H
+
+#include <stdlib.h>
 
 struct lcfg;
 
@@ -53,3 +55,61 @@ void                 lcfg_delete(struct lcfg *);
 
 
 #endif
+/*
+ * liblcfg - lightweight configuration file library
+ * Copyright (c) 2007--2009  Paul Baecher
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *    $Id$
+ * 
+ */
+
+#ifndef LCFGX_TREE_H
+#define LCFGX_TREE_H
+
+
+enum lcfgx_type
+{
+	lcfgx_string,
+	lcfgx_list,
+	lcfgx_map,
+};
+
+struct lcfgx_tree_node
+{
+	enum lcfgx_type type;
+	char *key; /* NULL for root node */
+	
+	union
+	{
+		struct
+		{
+			void *data;
+			size_t len;
+		} string;
+		struct lcfgx_tree_node *elements; /* in case of list or map type */
+	} value;
+
+	struct lcfgx_tree_node *next;
+};
+
+struct lcfgx_tree_node *lcfgx_tree_new(struct lcfg *);
+
+void lcfgx_tree_delete(struct lcfgx_tree_node *);
+
+
+#endif
+

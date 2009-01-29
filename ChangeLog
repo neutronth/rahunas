@@ -1,4 +1,8 @@
-2008-01-27  Neutron Soutmun <neo.neutron@gmail.com>
+2009-01-29  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* lcfg/lcfg_static.{h,c}: New upstream release 0.2.0 of liblcfg.  
+
+2009-01-27  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-task-memset.c, src/rh-xmlrpc-server.c: Add the XMLRPC interface for
 	  admin to reset user and other termination cuase support by parsing cause id.
