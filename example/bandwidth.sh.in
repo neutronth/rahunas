@@ -12,45 +12,104 @@ IP=/sbin/ip
 INIT=@sysconfdir@/default/rahunas
 RUN=@localstatedir@/run/rahunas-bandwidth
 
-# Unclassified clients' bandwidth (Kbit)
-DOWN_UNCLASS=256
-UP_UNCLASS=256
+# Interface Speed (Kbit), Default: 100 Mbps
+INTERFACE_SPEED=102400
+
+DOWN_P2P=512
+UP_P2P=512 
 
 SHAPING_DOWN_INF=imq0
 SHAPING_UP_INF=imq1
+
+INTERFACE_ID=9999
+P2P_ID=9998
 
 test -f $INIT || exit 0
 . $INIT
 
 test "$RUN_DAEMON" = "yes" || exit 0
+test -f $RAHUNAS_CONFIG || exit 1
+
+set -e
+
+get_config_value () {
+  key=$1
+  cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's/^ *\(.*[^ ]\) *$/\1/' | sed 's/"//g'
+}
+
+BANDWIDTH_SHAPE_IMQ=`get_config_value bandwidth_shape_imq`
+BITTORRENT_BLOCK=`get_config_value bittorrent_block`
+
+test "$BANDWIDTH_SHAPE_IMQ" = "yes" || exit 0 
+
+interface_setting () {
+  case "$1" in
+    start)
+      # Interface Downlink
+      $TC qdisc add dev $SHAPING_DOWN_INF root handle 1: htb \
+        default ${INTERFACE_ID} 
+      $TC class add dev $SHAPING_DOWN_INF parent 1: classid 1:${INTERFACE_ID} \
+        htb rate ${INTERFACE_SPEED}Kbit
+
+      # Interface Uplink
+      $TC qdisc add dev $SHAPING_UP_INF root handle 2: htb \
+        default ${INTERFACE_ID} 
+      $TC class add dev $SHAPING_UP_INF parent 2: classid 2:${INTERFACE_ID} \
+        htb rate ${INTERFACE_SPEED}Kbit
+      ;;
+  stop)
+      # Interface Downlink
+      $TC qdisc del dev $SHAPING_DOWN_INF root
+
+      # Interface Uplink
+      $TC qdisc del dev $SHAPING_UP_INF root
+      ;;
+  esac
+}
+
+p2p_setting () {
+  case "$1" in
+    start)
+      # P2P Download throttling
+      $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
+        classid 1:${P2P_ID} htb rate ${DOWN_P2P}Kbit
+      $TC qdisc add dev $SHAPING_DOWN_INF parent 1:${P2P_ID} \
+        handle ${P2P_ID}: sfq perturb 10
+      $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 5 \
+        handle 0x3 fw classid 1:${P2P_ID}
+
+      # P2P Upload throttling
+      $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
+        classid 2:${P2P_ID} htb rate ${DOWN_P2P}Kbit
+      $TC qdisc add dev $SHAPING_UP_INF parent 2:${P2P_ID} \
+        handle ${P2P_ID}: sfq perturb 10
+      $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 5 \
+        handle 0x3 fw classid 2:${P2P_ID}
+      ;;
+    stop)
+      ;;
+  esac
+}
 
 start () {
-  # Downlink
-  $TC qdisc add dev $SHAPING_DOWN_INF root handle 1: htb default 9999
-  $TC class add dev $SHAPING_DOWN_INF parent 1: classid 1:9999 htb \
-    rate ${DOWN_UNCLASS}Kbit
-
-  # Uplink
-  $TC qdisc add dev $SHAPING_UP_INF root handle 2: htb default 9999 
-  $TC class add dev $SHAPING_UP_INF parent 2: classid 2:9999 htb \
-    rate ${UP_UNCLASS}Kbit
+  interface_setting start
+  
+  test "$BITTORRENT_BLOCK" = "throttle" && p2p_setting start
 
   echo "Start OK"
 }
 
 stop () {
-  # Downlink
-  $TC qdisc del dev $SHAPING_DOWN_INF root
+  interface_setting stop
 
-  # Uplink
-  $TC qdisc del dev $SHAPING_UP_INF root
+  test "$BITTORRENT_BLOCK" = "throttle" && p2p_setting stop
 
   echo "Stop OK"
 }
 
 usage_add() {
   echo "Usage: $1 add ID IP DOWNSPEED UPSPEED"
-  echo "         ID - ID number from 1 to 9998"
+  echo "         ID - ID number from 1 to 9900"
   echo "         IP - IPv4 Address"
   echo "  DOWNSPEED - Download speed (bits/s)"
   echo "    UPSPEED - Upload speed (bits/s)"
@@ -58,7 +117,7 @@ usage_add() {
 
 usage_del() {
   echo "Usage: $1 del ID"
-  echo "         ID - ID number from 1 to 9998"
+  echo "         ID - ID number from 1 to 9900"
 }
 
 usage() {
@@ -75,16 +134,16 @@ bw_add() {
   echo "Add shaping slot id: $ID for $IP with D/U=$DOWNSPEED/$UPSPEED bits/s"
 
   # Downlink
-  $TC class add dev $SHAPING_DOWN_INF parent 1: classid 1:${ID} htb \
-    rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit
-  $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 1 \
-    u32 match ip dst ${IP}/32 flowid 1:${ID}
+  $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
+    classid 1:${ID} htb rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit
+  $TC filter add dev $SHAPING_DOWN_INF parent 1: \
+    protocol ip prio 1 u32 match ip dst ${IP}/32 flowid 1:${ID}
 
   # Uplink
-  $TC class add dev $SHAPING_UP_INF parent 2: classid 2:${ID} htb \
-    rate ${UPSPEED}bit ceil ${UPSPEED}bit
-  $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 1 \
-    u32 match ip src ${IP}/32 flowid 2:${ID}
+  $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
+    classid 2:${ID} htb rate ${UPSPEED}bit ceil ${UPSPEED}bit
+  $TC filter add dev $SHAPING_UP_INF parent 2: \
+    protocol ip prio 1 u32 match ip src ${IP}/32 flowid 2:${ID}
 }
 
 bw_del() {
@@ -102,8 +161,8 @@ bw_del() {
 
   # Class Removal
   # Downlink/Uplink
-  $TC class del dev $SHAPING_DOWN_INF parent 1: classid 1:${ID}
-  $TC class del dev $SHAPING_UP_INF parent 2: classid 2:${ID}
+  $TC class del dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} classid 1:${ID}
+  $TC class del dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} classid 2:${ID}
 }
 
 N=@sysconfdir@/rahunas/bandwidth.sh

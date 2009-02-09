@@ -67,10 +67,23 @@ CHAIN_INPUT_AUTH="${NAME}_input_authorized"
 CHAIN_FORWARD="${NAME}_forward"
 CHAIN_FORWARD_AUTH="${NAME}_forward_authorized"
 CHAIN_MANGLE_PREROUTING="${NAME}_mangle_prerouting"
+CHAIN_MANGLE_FORWARD="${NAME}_mangle_forward"
 CHAIN_MANGLE_POSTROUTING="${NAME}_mangle_postrouting"
 CHAIN_NAT_PREROUTING="${NAME}_nat_prerouting"
 CHAIN_NAT_POSTROUTING="${NAME}_nat_postrouting"
 CHAIN_NAT_AUTHEN="${NAME}_nat_authen"
+
+# P2P checking chains declaration
+CHAIN_P2P_DETECT="${NAME}_p2p_detect"
+CHAIN_P2P_RECHECK="${NAME}_p2p_recheck"
+CHAIN_P2P_CHECK="${NAME}_p2p_check"
+P2P_SET="rahunas_p2p"
+
+# Allow incoming to server
+SERVER_PORTS_ALLOW="80,443,8443,8888"
+
+# Intercept requesting ports
+SERVER_PORTS_INTERCEPT="80,8080,8088,3128"
 
 ##
 # Add set
@@ -90,6 +103,10 @@ add_set () {
   fi
   
   $IPSET -N $SETNAME rahunas $ipset_opt $ipset_ignoremac 
+
+  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+    $IPSET -N $P2P_SET iphash
+  fi
 }
 
 ##
@@ -98,17 +115,23 @@ add_set () {
 cleanup_set () {
   $IPSET -F $SETNAME
   $IPSET -X $SETNAME
+
+  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+    $IPSET -F $P2P_SET
+    $IPSET -X $P2P_SET 
+  fi
 }
 
 ##
 # Cleanup old rules
 ##
 cleanup () {
-  $IPTABLES -D INPUT -m connmark --mark 0x02 -j $CHAIN_INPUT_AUTH
+  $IPTABLES -D INPUT -m connmark --mark 2/2 -j $CHAIN_INPUT_AUTH
   $IPTABLES -D INPUT -j $CHAIN_INPUT
-  $IPTABLES -D FORWARD -m connmark --mark 0x02 -j $CHAIN_FORWARD_AUTH
+  $IPTABLES -D FORWARD -m connmark --mark 2/2 -j $CHAIN_FORWARD_AUTH
   $IPTABLES -D FORWARD -j $CHAIN_FORWARD
   $IPTABLES -t mangle -D PREROUTING -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -D FORWARD -j $CHAIN_MANGLE_FORWARD
   $IPTABLES -t mangle -D POSTROUTING -j $CHAIN_MANGLE_POSTROUTING
   $IPTABLES -t nat -D PREROUTING -j $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -D POSTROUTING -j $CHAIN_NAT_POSTROUTING
@@ -134,11 +157,25 @@ cleanup () {
   $IPTABLES -t nat -F $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -X $CHAIN_NAT_PREROUTING
   
+  $IPTABLES -t mangle -F $CHAIN_MANGLE_FORWARD
+  $IPTABLES -t mangle -X $CHAIN_MANGLE_FORWARD
+
   $IPTABLES -t nat -F $CHAIN_NAT_POSTROUTING
   $IPTABLES -t nat -X $CHAIN_NAT_POSTROUTING
   
   $IPTABLES -t nat -F $CHAIN_NAT_AUTHEN
   $IPTABLES -t nat -X $CHAIN_NAT_AUTHEN
+
+  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+    $IPTABLES -t mangle -F $CHAIN_P2P_CHECK
+    $IPTABLES -t mangle -X $CHAIN_P2P_CHECK
+
+    $IPTABLES -t mangle -F $CHAIN_P2P_RECHECK
+    $IPTABLES -t mangle -X $CHAIN_P2P_RECHECK
+
+    $IPTABLES -t mangle -F $CHAIN_P2P_DETECT
+    $IPTABLES -t mangle -X $CHAIN_P2P_DETECT
+  fi
 }
 
 ##
@@ -150,10 +187,17 @@ new_chains () {
   $IPTABLES -N $CHAIN_FORWARD_AUTH
   $IPTABLES -N $CHAIN_FORWARD
   $IPTABLES -t mangle -N $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -N $CHAIN_MANGLE_FORWARD
   $IPTABLES -t mangle -N $CHAIN_MANGLE_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
+
+  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+    $IPTABLES -t mangle -N $CHAIN_P2P_CHECK
+    $IPTABLES -t mangle -N $CHAIN_P2P_RECHECK
+    $IPTABLES -t mangle -N $CHAIN_P2P_DETECT
+  fi
 }
 
 ##
@@ -177,11 +221,12 @@ rules () {
   # Init rules
   ##
   $IPTABLES -I INPUT -j $CHAIN_INPUT
-  $IPTABLES -I INPUT -m connmark --mark 0x02 -j $CHAIN_INPUT_AUTH
+  $IPTABLES -I INPUT -m connmark --mark 2/2 -j $CHAIN_INPUT_AUTH
   $IPTABLES -I FORWARD -j $CHAIN_FORWARD
-  $IPTABLES -I FORWARD -m connmark --mark 0x02 -j $CHAIN_FORWARD_AUTH
+  $IPTABLES -I FORWARD -m connmark --mark 2/2 -j $CHAIN_FORWARD_AUTH
 
   $IPTABLES -t mangle -I PREROUTING -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -I FORWARD -j $CHAIN_MANGLE_FORWARD
   $IPTABLES -t mangle -I POSTROUTING -j $CHAIN_MANGLE_POSTROUTING
 
   $IPTABLES -t nat -I PREROUTING -j $CHAIN_NAT_PREROUTING
@@ -210,7 +255,7 @@ rules () {
   ##
   # Allow incoming to our HTTP server for login page
   ##
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports 80,8443,8888 -j ACCEPT
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW -j ACCEPT
   
   ##
   # Allow incoming to our SSH server for remote maintenance access
@@ -252,12 +297,36 @@ rules () {
   fi
   
   ##
-  # Mark the connections that have been authorized to save rule check time
+  # Mark the connections that have been authorized
   ##
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set dst -j CONNMARK --set-mark 0x2 
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src -j CONNMARK --set-mark 0x2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set dst -j CONNMARK --set-mark 2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src -j CONNMARK --set-mark 2 
 
-  
+  ##
+  # P2P Throttle
+  ##
+  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m connmark --mark 2/2 -j $CHAIN_P2P_CHECK
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m set --set $P2P_SET src -j MARK --set-mark 3
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m set --set $P2P_SET dst -j MARK --set-mark 3
+
+
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -m layer7 --l7proto bittorrent -j $CHAIN_P2P_DETECT
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -m layer7 --l7proto bittorrent-announce -j $CHAIN_P2P_DETECT
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -m set --set $P2P_SET src -j $CHAIN_P2P_RECHECK
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -j RETURN
+
+
+    $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -m recent --name $P2P_SET --update --seconds 600 -j RETURN
+    $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -j SET --add-set $P2P_SET src
+    $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -m recent --name $P2P_SET --set -j RETURN
+
+
+    $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -m recent --name $P2P_SET --rcheck --seconds 600 -j RETURN
+    $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -j SET --del-set $P2P_SET src
+    $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -m recent --name $P2P_SET --remove -j RETURN 
+  fi
+   
   ##
   # Accept Forwarding for the authorized clients
   ##
@@ -274,10 +343,10 @@ rules () {
     if [ "$TRANSPARENT_PROXY" = "yes" ]; then
       if [ "$PROXY_HOST" = "localhost" ]; then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
-          -m connmark --mark 0x02 -j REDIRECT --to-ports $PROXY_PORT
+          -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
       else
         $IPTABLES -t nat -A $CHAIN_NAT_PRETROUTING -p tcp --dport http \
-          -m connmark --mark 0x02 \
+          -m connmark --mark 2/2 \
           -j DNAT --to-destination ${PROXY_HOST}:${PROXY_PORT}
       fi
     fi
@@ -288,8 +357,8 @@ rules () {
   ##
   
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
-    --dports 80,8080,8088,3128 -d ! $SERVER \
-    $DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 0x2 \
+    --dports $SERVER_PORTS_INTERCEPT -d ! $SERVER \
+    $DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 2/2 \
     -j $CHAIN_NAT_AUTHEN
   
   $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN \
@@ -317,9 +386,9 @@ rules () {
   for excluded in $EXCLUDED;
   do
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded \
-      -j CONNMARK --set-mark 0x2
+      -j CONNMARK --set-mark 2
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded \
-      -j CONNMARK --set-mark 0x2
+      -j CONNMARK --set-mark 2
   done 
   
   ##
@@ -340,6 +409,7 @@ rules () {
   $IPTABLES -A $CHAIN_FORWARD_AUTH -j RETURN
   $IPTABLES -A $CHAIN_FORWARD -j RETURN
   $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -j RETURN
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -j RETURN
   $IPTABLES -t mangle -A $CHAIN_MANGLE_POSTROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN

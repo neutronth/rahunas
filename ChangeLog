@@ -1,3 +1,13 @@
+2009-02-09  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/{bandwidth,firewall}.sh.in: 
+		- Redesign the firewall rules and the bandwidth management to support the 
+		  bandwidth of the network interface.
+		- Reduce the bandwidth slots from 9998 to 9900, 100 slots approximately, 
+		  reserved for the other purposes than the users bandwidth shapping.
+	* src/rh-task-bandwidth.c: Reduce the maximum slots respectively to 
+		  new changes.
+
 2009-01-29  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* lcfg/lcfg_static.{h,c}: New upstream release 0.2.0 of liblcfg.  

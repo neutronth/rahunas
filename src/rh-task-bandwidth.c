@@ -23,9 +23,9 @@
      PAGE_SIZE = sizeof(short) * 8
 */
 
-#define MAX_SLOT_ID    9998
+#define MAX_SLOT_ID    9900
 #define PAGE_SIZE      16
-#define MAX_SLOT_PAGE  625
+#define MAX_SLOT_PAGE  619
 
 #define BANDWIDTH_WRAPPER "/etc/rahunas/bandwidth.sh"
 
