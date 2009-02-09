@@ -1,5 +1,9 @@
 2009-02-09  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* configure.ac: Bump version to 0.1.2 (forgot for a long time)
+
+2009-02-09  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* example/{bandwidth,firewall}.sh.in: 
 		- Redesign the firewall rules and the bandwidth management to support the 
 		  bandwidth of the network interface.
