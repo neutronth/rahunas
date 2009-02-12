@@ -22,8 +22,6 @@ test -f $INIT || exit 0
 test "$RUN_DAEMON" = "yes" || exit 0
 test -f $RAHUNAS_CONFIG || exit 1
 
-set -e
-
 get_config_value () {
   key=$1
   cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's/^ *\(.*[^ ]\) *$/\1/' | sed 's/"//g'
@@ -255,7 +253,17 @@ rules () {
   ##
   # Allow incoming to our HTTP server for login page
   ##
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW -j ACCEPT
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW \
+    -m recent --rcheck --seconds 15 --name INCOMING_THROTTLE -j DROP
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW \
+    -m hashlimit --hashlimit 5/sec \
+    --hashlimit-mode srcip --hashlimit-burst 10 \
+    --hashlimit-htable-expire 15000 --hashlimit-name incoming \
+    -j ACCEPT
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW \
+    -m recent --set --name INCOMING_THROTTLE -j DROP
   
   ##
   # Allow incoming to our SSH server for remote maintenance access
@@ -361,16 +369,7 @@ rules () {
     $DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 2/2 \
     -j $CHAIN_NAT_AUTHEN
   
-  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN \
-    -m recent --rcheck --seconds 15 --name AUTHEN_THROTTLE -j DROP
-  
-  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp -m hashlimit --hashlimit 5/sec \
-    --hashlimit-mode srcip --hashlimit-burst 10 \
-    --hashlimit-htable-expire 15000 --hashlimit-name authen \
-    -j REDIRECT --to-port 8888
-  
-  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -m recent --set --name AUTHEN_THROTTLE \
-    -j DROP
+  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp -j REDIRECT --to-port 8888
 
   ##
   # MASQUERADE

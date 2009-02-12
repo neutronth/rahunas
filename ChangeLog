@@ -1,3 +1,13 @@
+2009-02-12  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/firewall.sh.in: 
+		- Fix the iptables-1.4.2 and/or later warning of the using filter rules 
+	    ACCEPT, DROP, REJECT in the nat table by move and adjust the filter rules
+			in nat table to the filter table (INPUT).
+		- Remove the "set -e" from script to let the script running even though the
+		  script has some errors. (prevent the unpredictable event when the new 
+			user table was added)
+
 2009-02-09  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/{bandwidth,firewall}.sh.in: 
