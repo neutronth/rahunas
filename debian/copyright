@@ -1,0 +1,29 @@
+Format-Specification: http://wiki.debian.org/Proposals/CopyrightFormat?action=recall&rev=384
+Upstream-Name: rahunas
+Upstream-Maintainer: Neutron Soutmun <neo.neutron@gmail.com>
+Upstream-Source: ftp://ftp://neutron.debianclub.com/rahunas/release
+
+Files: debian/*
+Copyright: Copyright 2008 Neutron Soutmun <neo.neutron@gmail.com>
+License: GPL-2+
+ On Debian systems, the complete text of the GNU General Public License,
+ version 2, can be found in /usr/share/common-licenses/GPL-2
+
+Files: *
+Copyright: Copyright 2008 Neutron Soutmun <neo.neutron@gmail.com>
+                          Suriya Soutmun <darksolar@gmail.com>
+License: GPL-2+
+ On Debian systems, the complete text of the GNU General Public License,
+ version 2, can be found in /usr/share/common-licenses/GPL-2
+
+Files: xmlrpc/*
+Copyright: Copyright 2006 Dov Grobgeld <dov.grobgeld@gmail.com>
+License: LGPL-2+
+ On Debian systems, the complete text of the GNU Lesser General Public License,
+ version 2, can be found in /usr/share/common-licenses/LGPL-2
+
+Files: lcfg/*
+Copyright: Copyright 2007 Paul Baecher
+License: GPL-2+
+ On Debian systems, the complete text of the GNU General Public License,
+ version 2, can be found in /usr/share/common-licenses/GPL-2
