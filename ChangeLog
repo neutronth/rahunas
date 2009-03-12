@@ -1,3 +1,13 @@
+2009-03-12  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* weblogin/{config.php, header.php, index.php, locale.php, login.php, 
+	  logout.php, messages.php, rahu_dictionary.php, rahu_radius.class.php,
+	  rahu_xmlrpc.class.php, xmlrpc_service.php}:
+	  - Add the license text, consider to use the BSD License to respect the PHP 
+	    and PEAR community.
+	  - Beautify the code by remove unnecessary leading spaces to conform the
+	    code style of the whole project.
+
 2009-02-12  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/firewall.sh.in: 
