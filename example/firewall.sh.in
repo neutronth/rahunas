@@ -316,14 +316,11 @@ rules () {
   ##
   if [ "$BITTORRENT_BLOCK" = "yes" -o -n "$BITTORRENT_ALLOW" ]; then
     if [ -n "$BITTORRENT_ALLOW" ]; then
-      BITTORRENT_ALLOW_OPTIONS="-m set ! --set $P2P_ALLOW_SET"
+      BITTORRENT_ALLOW_OPTIONS="$DEV_IN_PARAM $DEV_LAN -m set ! --set $P2P_ALLOW_SET"
 
       # Source host
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS src -j DROP
-
-      # Destination host
-      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS dst -j DROP
 
     else
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP

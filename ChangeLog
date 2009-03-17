@@ -1,5 +1,9 @@
 2009-03-17  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* example/firewall.sh.in: Fix the allow ip list could not using Bittorrent due	  to the wrong rules.
+
+2009-03-17  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* weblogin/*.php: Fix the copyright year from 2007-2008 to 2008-2009, 
 	  crazy me forgot even the year.
 	* weblogin/squid_helper.php: Add the license text as same as the whole 
