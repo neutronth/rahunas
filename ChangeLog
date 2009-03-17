@@ -1,5 +1,11 @@
 2009-03-17  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* weblogin/squid_helper.php: 
+	  - Add squid helper to get the username from rahunasd via XMLRPC, 
+	    using the squid external_acl_type config option to archeive the point.
+
+2009-03-17  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* example/firewall.sh.in, example/rahunas.conf.in:
 	  - Add the bittorrent allow list in config file and according support 
 	    firewall script
