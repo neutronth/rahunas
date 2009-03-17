@@ -1,3 +1,9 @@
+2009-03-17  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/firewall.sh.in, example/rahunas.conf.in:
+	  - Add the bittorrent allow list in config file and according support 
+	    firewall script
+
 2009-03-12  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* TODO: Update TODO list.

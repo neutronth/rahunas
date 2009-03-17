@@ -46,6 +46,7 @@ PROXY_HOST=`get_config_value proxy_host`
 TRANSPARENT_PROXY=`get_config_value transparent_proxy`
 SSH=`get_config_value ssh`
 BITTORRENT_BLOCK=`get_config_value bittorrent_block`
+BITTORRENT_ALLOW=`get_config_value bittorrent_allow`
 
 # Bridge config
 if [ "$BRIDGE" = "yes" ]; then
@@ -76,6 +77,7 @@ CHAIN_P2P_DETECT="${NAME}_p2p_detect"
 CHAIN_P2P_RECHECK="${NAME}_p2p_recheck"
 CHAIN_P2P_CHECK="${NAME}_p2p_check"
 P2P_SET="rahunas_p2p"
+P2P_ALLOW_SET="rahunas_allow_p2p"
 
 # Allow incoming to server
 SERVER_PORTS_ALLOW="80,443,8443,8888"
@@ -105,6 +107,14 @@ add_set () {
   if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
     $IPSET -N $P2P_SET iphash
   fi
+
+  if [ -n "$BITTORRENT_ALLOW" ]; then
+    $IPSET -N $P2P_ALLOW_SET iphash 
+    for ip in $BITTORRENT_ALLOW
+    do
+      $IPSET -A $P2P_ALLOW_SET $ip
+    done
+  fi
 }
 
 ##
@@ -117,6 +127,11 @@ cleanup_set () {
   if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
     $IPSET -F $P2P_SET
     $IPSET -X $P2P_SET 
+  fi
+
+  if [ -n "$BITTORRENT_ALLOW" ]; then
+    $IPSET -F $P2P_ALLOW_SET
+    $IPSET -X $P2P_ALLOW_SET 
   fi
 }
 
@@ -299,9 +314,21 @@ rules () {
   #   bittorrent-announce is custom pattern defined may warning with official
   #   pattern downloaded from l7-filter site.
   ##
-  if [ "$BITTORRENT_BLOCK" = "yes" ]; then
-    $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
-    $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
+  if [ "$BITTORRENT_BLOCK" = "yes" -o -n "$BITTORRENT_ALLOW" ]; then
+    if [ -n "$BITTORRENT_ALLOW" ]; then
+      BITTORRENT_ALLOW_OPTIONS="-m set ! --set $P2P_ALLOW_SET"
+
+      # Source host
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS src -j DROP
+
+      # Destination host
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS dst -j DROP
+
+    else
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
+    fi
   fi
   
   ##
@@ -443,6 +470,7 @@ reload() {
   cleanup_policy
   rm -f $RUN
 
+  add_set
   new_chains
   policy 
   rules

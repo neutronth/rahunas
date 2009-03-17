@@ -98,3 +98,4 @@ ssh = "yes"
 
 //// Enable Bittorrent blocking
 bittorrent_block = "no"
+bittorrent_allow = ""
