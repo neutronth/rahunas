@@ -1,6 +1,6 @@
 <?php
 /*
-  Copyright (c) 2007-2008, Neutron Soutmun <neo.neutron@gmail.com>
+  Copyright (c) 2008-2009, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
