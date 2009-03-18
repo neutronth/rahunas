@@ -15,9 +15,6 @@ RUN=@localstatedir@/run/rahunas-bandwidth
 # Interface Speed (Kbit), Default: 100 Mbps
 INTERFACE_SPEED=102400
 
-DOWN_P2P=512
-UP_P2P=512 
-
 SHAPING_DOWN_INF=imq0
 SHAPING_UP_INF=imq1
 
@@ -39,6 +36,8 @@ get_config_value () {
 
 BANDWIDTH_SHAPE_IMQ=`get_config_value bandwidth_shape_imq`
 BITTORRENT_BLOCK=`get_config_value bittorrent_block`
+DOWN_P2P=`get_config_value bittorrent_download_max`
+UP_P2P=`get_config_value bittorrent_upload_max` 
 
 test "$BANDWIDTH_SHAPE_IMQ" = "yes" || exit 0 
 
@@ -80,7 +79,7 @@ p2p_setting () {
 
       # P2P Upload throttling
       $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
-        classid 2:${P2P_ID} htb rate ${DOWN_P2P}Kbit
+        classid 2:${P2P_ID} htb rate ${UP_P2P}Kbit
       $TC qdisc add dev $SHAPING_UP_INF parent 2:${P2P_ID} \
         handle ${P2P_ID}: sfq perturb 10
       $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 5 \

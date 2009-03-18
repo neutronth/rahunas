@@ -1,3 +1,9 @@
+2009-03-18  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/bandwidth.sh.in, example/rahunas.conf.in:
+	  - Fix P2P upload slot that miss config to use P2P download.
+	  - Move P2P shaping config from bandwidth.sh.in to rahunas.conf.in.
+
 2009-03-17  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/firewall.sh.in: Fix the allow ip list could not using Bittorrent due	  to the wrong rules.

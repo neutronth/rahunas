@@ -99,3 +99,5 @@ ssh = "yes"
 //// Enable Bittorrent blocking
 bittorrent_block = "no"
 bittorrent_allow = ""
+bittorrent_download_max = "512"
+bittorrent_upload_max = "256"
