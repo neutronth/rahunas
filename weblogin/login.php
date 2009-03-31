@@ -40,8 +40,12 @@ require_once 'config.php';
 require_once 'header.php';
 require_once 'locale.php';
 require_once 'messages.php';
+require_once 'networkchk.php';
 
 $ip = $_SERVER['REMOTE_ADDR'];
+$config = get_config_by_network($ip, $config_list);
+$vserver_id = $config["VSERVER_ID"];
+
 $forward = false;
 $LogoutURL  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
 $LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ? 
@@ -57,7 +61,7 @@ $xmlrpc = new rahu_xmlrpc_client();
 $xmlrpc->host = $config["RAHUNAS_HOST"];
 $xmlrpc->port = $config["RAHUNAS_PORT"];
 try {
-  $retinfo = $xmlrpc->do_getsessioninfo($ip);
+  $retinfo = $xmlrpc->do_getsessioninfo($vserver_id, $ip);
   if (is_array($retinfo) && !empty($retinfo['session_id'])) {
     $forward = true;
   }
@@ -104,7 +108,7 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
         "Session-Timeout" => $rauth->attributes['session_timeout'],
         "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
         "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up']);
-      $result = $xmlrpc->do_startsession($prepareData);
+      $result = $xmlrpc->do_startsession($vserver_id, $prepareData);
       if (strstr($result,"Client already login")) {
         $message = get_message('ERR_ALREADY_LOGIN');
         $forward = false;

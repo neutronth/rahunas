@@ -55,17 +55,18 @@ class rahu_xmlrpc_client {
 
   }
 
-  function do_startsession($data) {
+  function do_startsession($vserver_id, $data) {
     $client = $this->getClient(); 
     $params = implode("|", $data);
-    $params .= "|";
+    $params = sprintf("%s|%s", $params, $vserver_id);
     $result = $client->startsession($params);
     return $result;
   }
 
-  function do_stopsession($ip, $mac, $cause = RADIUS_TERM_USER_REQUEST) {
+  function do_stopsession($vserver_id, $ip, $mac, 
+                          $cause = RADIUS_TERM_USER_REQUEST) {
     $client = $this->getClient(); 
-    $params = sprintf("%s|%s|%s", $ip, $mac, $cause);
+    $params = sprintf("%s|%s|%s|%s", $ip, $mac, $cause, $vserver_id);
     $result = $client->stopsession($params);
     if (strstr($result, "was removed"))
       return true;
@@ -73,10 +74,10 @@ class rahu_xmlrpc_client {
       return false;
   }
 
-  function do_getsessioninfo($ip) {
+  function do_getsessioninfo($vserver_id, $ip) {
     $client = $this->getClient(); 
-    $params = sprintf("%s", $ip);
-    $result = $client->getsessioninfo($ip);
+    $params = sprintf("%s|%s", $ip, $vserver_id);
+    $result = $client->getsessioninfo($params);
     $ret = explode("|", $result);
 
     /* $ret[0] - ip
@@ -101,5 +102,4 @@ class rahu_xmlrpc_client {
     return $result;
   }
 }
-
 ?>

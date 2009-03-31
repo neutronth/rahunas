@@ -7,41 +7,43 @@
 #include "../xmlrpc/xmlrpc.h"
 #include "rahunasd.h"
 #include "rh-xmlrpc-cmd.h"
+#include "rh-task-memset.h"
 
-int send_xmlrpc_stopacct(struct rahunas_map *map, uint32_t id, int cause) {
-  struct rahunas_member *members = NULL;
+int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
   GNetXmlRpcClient *client = NULL;
   gchar *reply  = NULL;
   gchar *params = NULL;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
 
-  if (!map)
+  if (!vs)
     return (-1);
 
-  if (!map->members)
+  if (id < 0 || id > (vs->v_map->size - 1))
     return (-1);
 
-  if (id < 0 || id > (map->size - 1))
+  member_node = member_get_node_by_id(vs, id);
+  if (member_node == NULL)
     return (-1);
   
-  members = map->members;
-
+  member = (struct rahunas_member *)member_node->data;
   params = g_strdup_printf("%s|%s|%s|%d|%s|%d", 
-                           idtoip(map, id),
-                           members[id].username,
-                           members[id].session_id,
-                           members[id].session_start,
-                           mac_tostring(members[id].mac_address),
+                           idtoip(vs->v_map, id),
+                           member->username,
+                           member->session_id,
+                           member->session_start,
+                           mac_tostring(member->mac_address),
                            cause);
 
   if (params == NULL)
     return (-1);
 
-  client = gnet_xmlrpc_client_new(rh_config.xml_serv_host, 
-                                  rh_config.xml_serv_url, 
-                                  rh_config.xml_serv_port);
+  client = gnet_xmlrpc_client_new(vs->vserver_config->xml_serv_host, 
+                                  vs->vserver_config->xml_serv_url, 
+                                  vs->vserver_config->xml_serv_port);
 
   if (!client) {
-    logmsg(RH_LOG_ERROR, "Could not connect to XML-RPC service");
+    logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);
     return (-1);
   }
   

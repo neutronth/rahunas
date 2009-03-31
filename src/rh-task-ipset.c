@@ -14,114 +14,121 @@
 
 size_t nas_stopservice(void *data)
 {
-  struct ip_set_list *setlist = (struct ip_set_list *) data;
-  struct set *set = set_list[setlist->index];
+  struct processing_set *process = (struct processing_set *) data;
+  struct ip_set_list *setlist = (struct ip_set_list *) process->list;
   size_t offset;
   struct ip_set_rahunas *table = NULL;
-  struct rahunas_member *members = map->members;
   struct task_req req;
-  unsigned int i;
+  unsigned int id;
   char *ip = NULL;
   int res  = 0;
+  GList *runner = g_list_first(process->vs->v_map->members);
+  struct rahunas_member *member = NULL;
+
+  if (process == NULL)
+    return (-1);
 
   offset = sizeof(struct ip_set_list) + setlist->header_size;
-  table = (struct ip_set_rahunas *)(data + offset);
+  table = (struct ip_set_rahunas *)(process->list + offset);
 
-  DP("Map size %d", map->size);
- 
-  for (i = 0; i < map->size; i++) {
-    if (test_bit(IPSET_RAHUNAS_ISSET, (void *)&table[i].flags)) {
-      DP("Found IP: %s in set, try logout", idtoip(map, i));
-      req.id = i;
-      memcpy(req.mac_address, &table[i].ethernet, ETH_ALEN);
-      req.req_opt = RH_RADIUS_TERM_NAS_REBOOT;
-      send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_NAS_REBOOT);
-      rh_task_stopsess(map, &req);
-    }
+  while (runner != NULL) {
+    member = (struct rahunas_member *) runner->data;
+    id = member->id;
+
+    DP("Found IP: %s in set, try logout", idtoip(process->vs->v_map, id));
+    req.id = id;
+    memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
+    req.req_opt = RH_RADIUS_TERM_NAS_REBOOT;
+    send_xmlrpc_stopacct(process->vs, id, RH_RADIUS_TERM_NAS_REBOOT);
+    rh_task_stopsess(process->vs, &req);
+
+    runner = g_list_next(runner);
   }
 }
 
 /* Initialize */
-static void init (void)
+static void init (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "Task IPSET init..");  
+  vs->v_set = set_adt_get(vs->vserver_config->vserver_name);
+  logmsg(RH_LOG_NORMAL, "[%s] Task IPSET init..",
+         vs->vserver_config->vserver_name);  
 
-  rahunas_set = set_adt_get(rh_config.set_name);
-
-  DP("getsetname: %s", rahunas_set->name);
-  DP("getsetid: %d", rahunas_set->id);
-  DP("getsetindex: %d", rahunas_set->index);
+  DP("getsetname: %s", vs->v_set->name);
+  DP("getsetid: %d", vs->v_set->id);
+  DP("getsetindex: %d", vs->v_set->index);
 }
 
 /* Cleanup */
-static void cleanup (void)
+static void cleanup (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "Task IPSET cleanup..");  
-  set_flush(rh_config.set_name);
+  logmsg(RH_LOG_NORMAL, "[%s] Task IPSET cleanup..",
+         vs->vserver_config->vserver_name);  
+  set_flush(vs->vserver_config->vserver_name);
 
-  rh_free(&rahunas_set);
+  rh_free(&(vs->v_set));
 }
 
 /* Start service task */
-static int startservice (struct rahunas_map *map)
+static int startservice (struct vserver *vs)
 {
   /* Ensure the set is empty */
-  set_flush(rh_config.set_name);
+  set_flush(vs->vserver_config->vserver_name);
 }
 
 /* Stop service task */
-static int stopservice  (struct rahunas_map *map)
+static int stopservice  (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "Task IPSET stop..");  
-  walk_through_set(&nas_stopservice);
+  logmsg(RH_LOG_NORMAL, "[%s] Task IPSET stop..",
+         vs->vserver_config->vserver_name);  
+  walk_through_set(&nas_stopservice, vs);
 
   return 0;
 }
 
 /* Start session task */
-static int startsess (struct rahunas_map *map, struct task_req *req)
+static int startsess (struct vserver *vs, struct task_req *req)
 {
   int res = 0;
   ip_set_ip_t ip;
-  parse_ip(idtoip(map, req->id), &ip);
+  parse_ip(idtoip(vs->v_map, req->id), &ip);
 
-  res = set_adtip_nb(rahunas_set, &ip, req->mac_address, IP_SET_OP_ADD_IP);
+  res = set_adtip_nb(vs->v_set, &ip, req->mac_address, IP_SET_OP_ADD_IP);
 
   return res;
 }
 
 /* Stop session task */
-static int stopsess  (struct rahunas_map *map, struct task_req *req)
+static int stopsess  (struct vserver *vs, struct task_req *req)
 {
   int res = 0;
   ip_set_ip_t ip;
-  parse_ip(idtoip(map, req->id), &ip);
+  parse_ip(idtoip(vs->v_map, req->id), &ip);
 
-  res = set_adtip_nb(rahunas_set, &ip, req->mac_address, IP_SET_OP_DEL_IP);
+  res = set_adtip_nb(vs->v_set, &ip, req->mac_address, IP_SET_OP_DEL_IP);
 
   return res;
 }
 
 /* Commit start session task */
-static int commitstartsess (struct rahunas_map *map, struct task_req *req)
+static int commitstartsess (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct rahunas_map *map, struct task_req *req)
+static int commitstopsess  (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct rahunas_map *map, struct task_req *req)
+static int rollbackstartsess (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
+static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -141,6 +148,6 @@ static struct task task_ipset = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_ipset_reg(void) {
-  task_register(&task_ipset);
+void rh_task_ipset_reg(struct main_server *ms) {
+  task_register(ms, &task_ipset);
 }

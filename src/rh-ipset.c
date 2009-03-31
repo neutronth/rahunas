@@ -12,6 +12,8 @@
 #include "rh-ipset.h"
 #include "rh-utils.h"
 
+ip_set_id_t max_sets;
+
 int kernel_getsocket(void)
 {
   int sockfd = -1;
@@ -196,7 +198,7 @@ int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac,
 }
 
 int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip, 
-                     unsigned char adtmac[ETH_ALEN], unsigned op)
+                 unsigned char adtmac[ETH_ALEN], unsigned op)
 {
   struct ip_set_req_adt *req_adt = NULL;
   struct ip_set_req_rahunas req;
@@ -263,7 +265,7 @@ void set_flush(const char *name)
   kernel_sendto(&req, sizeof(struct ip_set_req_std));
 }
 
-size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
+size_t load_set_list(struct vserver *vs, const char name[IP_SET_MAXNAMELEN],
           ip_set_id_t *idx,
           unsigned op, unsigned cmd)
 {
@@ -281,15 +283,7 @@ size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
         name);
   
 tryagain:
-  if (set_list != NULL) {
-    for (i = 0; i < max_sets; i++)
-      if (set_list[i] != NULL) {
-        free(set_list[i]);
-        set_list[i] = NULL;
-      }
-    free(set_list);
-    set_list = NULL;
-  }
+
   /* Get max_sets */
   req_max_sets.op = IP_SET_OP_MAX_SETS;
   req_max_sets.version = IP_SET_PROTOCOL_VERSION;
@@ -300,14 +294,13 @@ tryagain:
   DP("got MAX_SETS: sets %d, max_sets %d",
      req_max_sets.sets, req_max_sets.max_sets);
 
-  max_sets = req_max_sets.max_sets;
-  set_list = rh_malloc(max_sets * sizeof(struct set *));
-  memset(set_list, 0, max_sets * sizeof(struct set *));
   *idx = req_max_sets.set.index;
+  max_sets = req_max_sets.max_sets;
 
-  if (req_max_sets.sets == 0)
+  if (req_max_sets.sets == 0) {
     /* No sets in kernel */
     return 0;
+  }
 
   /* Get setnames */
   size = req_size = sizeof(struct ip_set_req_setnames) 
@@ -328,27 +321,16 @@ tryagain:
          " the sets has gone down.", LIST_TRIES);
     return -1;
   }
-    
-  /* Load in setnames */
-  size = sizeof(struct ip_set_req_setnames);      
-  while (size + sizeof(struct ip_set_name_list) <= req_size) {
-    name_list = (struct ip_set_name_list *)
-      (data + size);
-    set = rh_malloc(sizeof(struct set));
-    strcpy(set->name, name_list->name);
-    set->index = name_list->index;
-    set->id = name_list->id;
-    set_list[name_list->index] = set;
-    size += sizeof(struct ip_set_name_list);
-  }
+
   /* Size to get set members, bindings */
   size = ((struct ip_set_req_setnames *)data)->size;
+
   rh_free(&data);
   
   return size;
 }
 
-int get_header_from_set (struct rahunas_map *map)
+int get_header_from_set (struct vserver *vs)
 {
   struct ip_set_req_rahunas_create *header = NULL;
   void *data = NULL;
@@ -359,13 +341,19 @@ int get_header_from_set (struct rahunas_map *map)
   in_addr_t first_ip;
   in_addr_t last_ip;
 
-  size = req_size = load_set_list(rh_config.set_name, &idx, 
+  if (vs == NULL)
+    return (-1);
+
+  size = req_size = load_set_list(vs, vs->vserver_config->vserver_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 
   DP("Get Set Size: %d", size);
   
   if (size) {
     data = rh_malloc(size);
+    if (data == NULL)
+      return (-1);
+
     ((struct ip_set_req_list *) data)->op = IP_SET_OP_LIST;
     ((struct ip_set_req_list *) data)->index = idx;
     res = kernel_getfrom_handleerrno(data, &size);
@@ -384,26 +372,33 @@ int get_header_from_set (struct rahunas_map *map)
   first_ip = htonl(header->from); 
   last_ip = htonl(header->to); 
   
-  memcpy(&map->first_ip, &first_ip, sizeof(in_addr_t));
-  memcpy(&map->last_ip, &last_ip, sizeof(in_addr_t));
-  map->size = ntohl(map->last_ip) - ntohl(map->first_ip) + 1;
+  memcpy(&(vs->v_map->first_ip), &first_ip, sizeof(in_addr_t));
+  memcpy(&(vs->v_map->last_ip), &last_ip, sizeof(in_addr_t));
+  vs->v_map->size = ntohl(last_ip) - ntohl(first_ip) + 1;
 
-  logmsg(RH_LOG_NORMAL, "First IP: %s", ip_tostring(ntohl(map->first_ip)));
-  logmsg(RH_LOG_NORMAL, "Last  IP: %s", ip_tostring(ntohl(map->last_ip)));
-  logmsg(RH_LOG_NORMAL, "Set Size: %lu", map->size);
+  logmsg(RH_LOG_NORMAL, "[%s] First IP: %s", 
+         vs->vserver_config->vserver_name,
+         ip_tostring(ntohl(vs->v_map->first_ip)));
+  logmsg(RH_LOG_NORMAL, "[%s] Last  IP: %s", 
+         vs->vserver_config->vserver_name,
+         ip_tostring(ntohl(vs->v_map->last_ip)));
+  logmsg(RH_LOG_NORMAL, "[%s] Set Size: %lu", 
+         vs->vserver_config->vserver_name,
+         vs->v_map->size);
 
   rh_free(&data);
   return res;
 }
 
-int walk_through_set (int (*callback)(void *))
+int walk_through_set (int (*callback)(void *), struct vserver *vs)
 {
+  struct processing_set process;
   void *data = NULL;
   ip_set_id_t idx;
   socklen_t size, req_size;
   int res = 0;
 
-  size = req_size = load_set_list(rh_config.set_name, &idx, 
+  size = req_size = load_set_list(vs, vs->vserver_config->vserver_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 
   DP("Get Set Size: %d", size);
@@ -422,8 +417,11 @@ int walk_through_set (int (*callback)(void *))
     size = 0;
   }
   
-  if (data != NULL)
-    (*callback)(data);
+  if (data != NULL) {
+    process.vs = vs;
+    process.list = data;
+    (*callback)(&process);
+  }
 
   rh_free(&data);
   return res;

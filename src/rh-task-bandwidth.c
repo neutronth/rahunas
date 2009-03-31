@@ -14,30 +14,17 @@
 
 #include "rahunasd.h"
 #include "rh-task.h"
+#include "rh-task-bandwidth.h"
+#include "rh-task-memset.h"
+#include "rh-utils.h"
 
 
-/* MAX_SLOT_PAGE is calculated from the formula of
-   MAX_SLOT_PAGE = ceil(MAX_SLOT_ID/PAGE_SIZE)
-
-   where
-     PAGE_SIZE = sizeof(short) * 8
-*/
-
-#define MAX_SLOT_ID    9900
-#define PAGE_SIZE      16
-#define MAX_SLOT_PAGE  619
 
 #define BANDWIDTH_WRAPPER "/etc/rahunas/bandwidth.sh"
 
 static unsigned short slot_flags[MAX_SLOT_PAGE] = {1};
 static unsigned short slot_count = 0;
-
-struct bandwidth_req {
-  char slot_id[5];
-  char ip[16];
-  char bandwidth_max_down[15];
-  char bandwidth_max_up[15];
-};
+static int bw_service = 0;
 
 unsigned short _get_slot_id()
 {
@@ -72,7 +59,7 @@ unsigned short _get_slot_id()
   return slot_id;
 }
 
-void _mark_reserved_slot_id(unsigned int slot_id)
+void mark_reserved_slot_id(unsigned int slot_id)
 {
   unsigned short page       = 0;
   unsigned char  id_on_page = 0;
@@ -84,7 +71,7 @@ void _mark_reserved_slot_id(unsigned int slot_id)
   slot_flags[page] |= 1 << id_on_page;
 }
 
-int _bandwidth_exec(char *const args[])
+int bandwidth_exec(struct vserver *vs, char *const args[])
 {
   pid_t ws;
   pid_t pid;
@@ -93,6 +80,7 @@ int _bandwidth_exec(char *const args[])
   char buffer[150];
   char *endline = NULL;
   int ret = 0;
+  int fd = 0;
   
   memset(buffer, '\0', sizeof(buffer));
 
@@ -100,6 +88,7 @@ int _bandwidth_exec(char *const args[])
     logmsg(RH_LOG_ERROR, "Error: pipe()");
     return -1;
   }
+  DP("pipe0=%d,pipe1=%d", exec_pipe[0], exec_pipe[1]);
 
   pid = vfork();
   dup2(exec_pipe[1], STDOUT_FILENO);
@@ -107,7 +96,6 @@ int _bandwidth_exec(char *const args[])
   if (pid == 0) {
     // Child
     execv(BANDWIDTH_WRAPPER, args);
-
   } else if (pid < 0) {
     // Fork error
     logmsg(RH_LOG_ERROR, "Error: vfork()"); 
@@ -119,13 +107,21 @@ int _bandwidth_exec(char *const args[])
     DP("Bandwidth: Return (%d)", WEXITSTATUS(status));
 
     // Return message log
+    DP("Read message");
     read(exec_pipe[0], buffer, sizeof(buffer));
+
     if (buffer != NULL) {
+      DP("Got message: %s", buffer);
       endline = strstr(buffer, "\n");
       if (endline != NULL) 
         *endline = '\0';
 
-      logmsg(RH_LOG_NORMAL, "Bandwidth: %s", buffer);
+      if (vs != NULL) {
+        logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: %s", 
+          vs->vserver_config->vserver_name, buffer);
+      } else {
+        logmsg(RH_LOG_NORMAL, "[main server] Bandwidth: %s", buffer);
+      }
     }
 
     if (WIFEXITED(status)) {
@@ -140,7 +136,7 @@ int _bandwidth_exec(char *const args[])
   return ret;
 }
 
-int _bandwidth_start()
+int bandwidth_start()
 {
   char *args[3];
 
@@ -150,10 +146,10 @@ int _bandwidth_start()
   args[1] = "start";
   args[2] = (char *) 0;
 
-  return _bandwidth_exec(args);
+  return bandwidth_exec(NULL, args);
 }
 
-int _bandwidth_stop()
+int bandwidth_stop()
 {
   char *args[3];
 
@@ -163,10 +159,10 @@ int _bandwidth_stop()
   args[1] = "stop";
   args[2] = (char *) 0;
 
-  return _bandwidth_exec(args);
+  return bandwidth_exec(NULL, args);
 }
 
-int _bandwidth_add(struct bandwidth_req *bw_req)
+int bandwidth_add(struct vserver *vs, struct bandwidth_req *bw_req)
 {
   char *args[7];
 
@@ -181,10 +177,10 @@ int _bandwidth_add(struct bandwidth_req *bw_req)
   args[5] = bw_req->bandwidth_max_up;
   args[6] = (char *) 0;
 
-  return _bandwidth_exec(args);
+  return bandwidth_exec(vs, args);
 }
 
-int _bandwidth_del(struct bandwidth_req *bw_req)
+int bandwidth_del(struct vserver *vs, struct bandwidth_req *bw_req)
 {
   char *args[4];
 
@@ -195,88 +191,113 @@ int _bandwidth_del(struct bandwidth_req *bw_req)
   args[2] = bw_req->slot_id;
   args[3] = (char *) 0;
 
-  return _bandwidth_exec(args);
+  return bandwidth_exec(vs, args);
 }
 
 /* Initialize */
-static void init (void)
+static void init (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "Task BANDWIDTH init..");  
+  logmsg(RH_LOG_NORMAL, "[%s] Task BANDWIDTH init..", 
+         vs->vserver_config->vserver_name);  
 }
 
 /* Cleanup */
-static void cleanup (void)
+static int cleanup (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "Task BANDWIDTH cleanup..");  
+  logmsg(RH_LOG_NORMAL, "[%s] Task BANDWIDTH cleanup..",
+         vs->vserver_config->vserver_name);  
 }
 
 /* Start service task */
-static int startservice (struct rahunas_map *map)
+static int startservice (struct vserver *vs)
 {
-  return _bandwidth_start();
+  if (!(bw_service++))
+    return bandwidth_start();
+
+  return 0;
 }
 
 /* Stop service task */
-static int stopservice  (struct rahunas_map *map)
+static int stopservice  (struct vserver *vs)
 {
-  return _bandwidth_stop();
+  if ((--bw_service) == 0)
+    return bandwidth_stop();
+  
+  return 0;
 }
 
 /* Start session task */
-static int startsess (struct rahunas_map *map, struct task_req *req)
+static int startsess (struct vserver *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
   unsigned short slot_id;
   unsigned char max_try = 3;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
 
-  if (map->members[req->id].bandwidth_max_down == 0 && 
-      map->members[req->id].bandwidth_max_up == 0)
+  member_node = member_get_node_by_id(vs, req->id);
+  if (member_node == NULL)
+    return (-1);
+
+  member = (struct rahunas_member *) member_node->data;
+
+  if (member->bandwidth_max_down == 0 && member->bandwidth_max_up == 0)
     return 0;
 
-  if (map->members[req->id].bandwidth_slot_id > 0)
+  if (member->bandwidth_slot_id > 0)
     return 0;
   
   // Formating the bandwidth request
-  sprintf(bw_req.ip, "%s", idtoip(map, req->id));
+  sprintf(bw_req.ip, "%s", idtoip(vs->v_map, req->id));
   sprintf(bw_req.bandwidth_max_down, "%lu", 
-    map->members[req->id].bandwidth_max_down);
+    member->bandwidth_max_down);
   sprintf(bw_req.bandwidth_max_up, "%lu", 
-    map->members[req->id].bandwidth_max_up);
+    member->bandwidth_max_up);
   
   while (max_try > 0) { 
     slot_id = _get_slot_id();
     sprintf(bw_req.slot_id, "%d", slot_id);
-
-    if (_bandwidth_add(&bw_req) == 0)
+    if (bandwidth_add(vs, &bw_req) == 0)
       break;
     else
       max_try--;
   }
 
+
   if (max_try == 0) {
-    logmsg(RH_LOG_ERROR, "Bandwidth: Maximum trying, failed!");
+    logmsg(RH_LOG_ERROR, "[%s] Bandwidth: Maximum trying, failed!",
+           vs->vserver_config->vserver_name);
     return -1;
   }
 
-  _mark_reserved_slot_id(slot_id);
-  map->members[req->id].bandwidth_slot_id = slot_id;
+  mark_reserved_slot_id(slot_id);
+  member->bandwidth_slot_id = slot_id;
  
   return 0;
 }
 
 /* Stop session task */
-static int stopsess  (struct rahunas_map *map, struct task_req *req)
+static int stopsess  (struct vserver *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
-  unsigned short slot_id = map->members[req->id].bandwidth_slot_id;
+  unsigned short slot_id = 0;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
+  
+  member_node = member_get_node_by_id(vs, req->id);
+  if (member_node == NULL)
+    return (-1); 
+  
+  member = (struct rahunas_member *) member_node->data;
+  slot_id = member->bandwidth_slot_id;
 
   if (slot_id < 1)
     return 0;
 
   sprintf(bw_req.slot_id, "%d", slot_id);
 
-  if (_bandwidth_del(&bw_req) == 0) {
-    map->members[req->id].bandwidth_slot_id = 0;
+  if (bandwidth_del(vs, &bw_req) == 0) {
+    member->bandwidth_slot_id = 0;
 
     if (slot_count > 0)
       slot_count--;
@@ -288,30 +309,30 @@ static int stopsess  (struct rahunas_map *map, struct task_req *req)
 }
 
 /* Commit start session task */
-static int commitstartsess (struct rahunas_map *map, struct task_req *req)
+static int commitstartsess (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct rahunas_map *map, struct task_req *req)
+static int commitstopsess  (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct rahunas_map *map, struct task_req *req)
+static int rollbackstartsess (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
+static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
-static struct task task_bandwidth = {
+static struct task taskbandwidth = {
   .taskname = "BANDWIDTH",
   .taskprio = 20,
   .init = &init,
@@ -326,6 +347,6 @@ static struct task task_bandwidth = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_bandwidth_reg(void) {
-  task_register(&task_bandwidth);
+void rh_task_bandwidth_reg(struct main_server *ms) {
+  task_register(ms, &taskbandwidth);
 }

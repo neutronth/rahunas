@@ -6,7 +6,7 @@
 #ifndef __RH_TASK_MEMSET_H
 #define __RH_TASK_MEMSET_H
 
-extern void rh_task_ipset_reg(void);
+extern void rh_task_ipset_reg(struct main_server *ms);
 
 #endif // __RH_TASK_MEMSET_H
 

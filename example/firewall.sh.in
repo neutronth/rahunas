@@ -13,6 +13,7 @@ IPSET=/usr/sbin/ipset
 NAME="rahunas"
 INIT=@sysconfdir@/default/rahunas
 RUN=@localstatedir@/run/rahunas-firewall
+VSERVER_LIST=@localstatedir@/run/rahunas-vserver
 
 RUN_DAEMON=no
 
@@ -21,69 +22,151 @@ test -f $INIT || exit 0
 
 test "$RUN_DAEMON" = "yes" || exit 0
 test -f $RAHUNAS_CONFIG || exit 1
+test -f $VSERVER_LIST || touch $VSERVER_LIST
 
-get_config_value () {
-  key=$1
-  cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's/^ *\(.*[^ ]\) *$/\1/' | sed 's/"//g'
+get_section_name () {
+  file=$1
+  
+  grep "^.*\= {$" $file | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
 }
 
-# Get configuration
-DEV_WAN=`get_config_value dev_wan`
-DEV_LAN=`get_config_value dev_lan`
-BRIDGE=`get_config_value bridge`
-MASQUERADE=`get_config_value masquerade`
-SERVER=`get_config_value server`
-CLIENTS_RANGE_START=`get_config_value clients_range_start`
-CLIENTS_RANGE_END=`get_config_value clients_range_end`
-CLIENTS_NETWORK=`get_config_value clients_network`
-EXCLUDED=`get_config_value excluded`
-IGNORE_MAC=`get_config_value ignore_mac`
-BANDWIDTH_SHAPE_IMQ=`get_config_value bandwidth_shape_imq`
-FORWARD_DHCP=`get_config_value forward_dhcp`
-FORWARD_DNS=`get_config_value forward_dns`
-PROXY_PORT=`get_config_value proxy_port`
-PROXY_HOST=`get_config_value proxy_host`
-TRANSPARENT_PROXY=`get_config_value transparent_proxy`
-SSH=`get_config_value ssh`
-BITTORRENT_BLOCK=`get_config_value bittorrent_block`
-BITTORRENT_ALLOW=`get_config_value bittorrent_allow`
+get_config_value () {
+  section=$1
+  key=$2
+  file=$3
 
-# Bridge config
-if [ "$BRIDGE" = "yes" ]; then
-  DEV_IN_PARAM="-m physdev --physdev-in"
-  DEV_OUT_PARAM="-m physdev --physdev-out"
-else
-  DEV_IN_PARAM="-i"
-  DEV_OUT_PARAM="-o"
-fi
+  cat $file | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+}
 
-# Set declaration
-SETNAME="${NAME}_set"
+##
+#  Global Declaration
+##
 
-# Chains declaration
-CHAIN_INPUT="${NAME}_input"
-CHAIN_INPUT_AUTH="${NAME}_input_authorized"
-CHAIN_FORWARD="${NAME}_forward"
-CHAIN_FORWARD_AUTH="${NAME}_forward_authorized"
-CHAIN_MANGLE_PREROUTING="${NAME}_mangle_prerouting"
-CHAIN_MANGLE_FORWARD="${NAME}_mangle_forward"
-CHAIN_MANGLE_POSTROUTING="${NAME}_mangle_postrouting"
-CHAIN_NAT_PREROUTING="${NAME}_nat_prerouting"
-CHAIN_NAT_POSTROUTING="${NAME}_nat_postrouting"
-CHAIN_NAT_AUTHEN="${NAME}_nat_authen"
+# Main
+MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
+MAIN_BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
+MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
+MAIN_BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG`
 
-# P2P checking chains declaration
-CHAIN_P2P_DETECT="${NAME}_p2p_detect"
-CHAIN_P2P_RECHECK="${NAME}_p2p_recheck"
-CHAIN_P2P_CHECK="${NAME}_p2p_check"
-P2P_SET="rahunas_p2p"
-P2P_ALLOW_SET="rahunas_allow_p2p"
+# Virtual Server : config
+VSERVER_ID=
+DEV_EXTERNAL=
+DEV_INTERNAL=
+BRIDGE=
+MASQUERADE=
+IGNORE_MAC=
+VSERVER_IP=
+CLIENTS=
+EXCLUDED=
+BANDWIDTH_SHAPE=
+DHCP=
+DNS=
+SSH=
+PROXY=
+PROXY_HOST=
+PROXY_PORT=
+BITTORRENT=
+BITTORRENT_ALLOW=
+BITTORRENT_DOWNLOAD_MAX=
+BITTORRENT_UPLOAD_MAX=
+VSERVER_PORTS_ALLOW=
+VSERVER_PORTS_INTERCEPT=
 
-# Allow incoming to server
-SERVER_PORTS_ALLOW="80,443,8443,8888"
+# Virtual Server : set and chains
+CHAIN_INPUT=
+CHAIN_INPUT_AUTH=
+CHAIN_FORWARD=
+CHAIN_FORWARD_AUTH=
+CHAIN_MANGLE_PREROUTING=
+CHAIN_MANGLE_FORWARD=
+CHAIN_MANGLE_POSTROUTING=
+CHAIN_NAT_PREROUTING=
+CHAIN_NAT_POSTROUTING=
+CHAIN_NAT_AUTHEN=
+CHAIN_P2P_DETECT=
+CHAIN_P2P_RECHECK=
+CHAIN_P2P_CHECK=
+P2P_SET=
+P2P_ALLOW_SET=
+DEV_IN_PARAM=
+DEV_OUT_PARAM=
+SETNAME=
 
-# Intercept requesting ports
-SERVER_PORTS_INTERCEPT="80,8080,8088,3128"
+get_config () {
+  file=$1
+  opt=$2
+
+  test -f $file || return 1
+
+  NAME=`get_section_name $file`
+
+  # Get configuration
+  VSERVER_ID=`get_config_value $NAME vserver_id $file`
+  test -n "$VSERVER_ID" || return 2
+
+  if [ "$opt" = "start" ]; then
+    hash="$VSERVER_ID:$NAME"
+    test1=`grep -w "$hash" $VSERVER_LIST` || true
+    test2=`grep -w "$NAME" $VSERVER_LIST` || true
+  
+    test -n "$test1" -o -n "$test2" && return 3 
+
+    echo "$hash:$file" >> $VSERVER_LIST
+  fi
+
+  DEV_EXTERNAL=`get_config_value $NAME dev_external $file`
+  DEV_INTERNAL=`get_config_value $NAME dev_internal $file`
+  BRIDGE=`get_config_value $NAME bridge $file`
+  MASQUERADE=`get_config_value $NAME masquerade $file`
+  IGNORE_MAC=`get_config_value $NAME ignore_mac $file`
+  VSERVER_IP=`get_config_value $NAME vserver_ip $file`
+  CLIENTS=`get_config_value $NAME clients $file`
+  EXCLUDED=`get_config_value $NAME excluded $file`
+  BANDWIDTH_SHAPE=$MAIN_BANDWIDTH_SHAPE
+  DHCP=`get_config_value $NAME dhcp $file`
+  DNS=`get_config_value $NAME dns $file`
+  SSH=`get_config_value $NAME ssh $file`
+  PROXY=`get_config_value $NAME proxy $file`
+  PROXY_HOST=`get_config_value $NAME proxy_host $file`
+  PROXY_PORT=`get_config_value $NAME proxy_port $file`
+  BITTORRENT=`get_config_value $NAME bittorrent $file`
+  BITTORRENT_ALLOW=`get_config_value $NAME bittorrent_allow $file`
+  BITTORRENT_DOWNLOAD_MAX=$MAIN_BITTORRENT_DOWNLOAD_MAX
+  BITTORRENT_UPLOAD_MAX=$MAIN_BITTORRENT_UPLOAD_MAX
+  VSERVER_PORTS_ALLOW=`get_config_value $NAME vserver_ports_allow $file`
+  VSERVER_PORTS_INTERCEPT=`get_config_value $NAME vserver_ports_intercept $file`
+ 
+  # Bridge config
+  if [ "$BRIDGE" = "yes" ]; then
+    DEV_IN_PARAM="-m physdev --physdev-in"
+    DEV_OUT_PARAM="-m physdev --physdev-out"
+  else
+    DEV_IN_PARAM="-i"
+    DEV_OUT_PARAM="-o"
+  fi
+  
+  # Set declaration
+  SETNAME="${NAME}"
+  
+  # Chains declaration
+  CHAIN_INPUT="${NAME}_in"
+  CHAIN_INPUT_AUTH="${NAME}_in_auth"
+  CHAIN_FORWARD="${NAME}_fwd"
+  CHAIN_FORWARD_AUTH="${NAME}_fwd_auth"
+  CHAIN_MANGLE_PREROUTING="${NAME}_mg_pre"
+  CHAIN_MANGLE_FORWARD="${NAME}_mg_fwd"
+  CHAIN_MANGLE_POSTROUTING="${NAME}_mg_post"
+  CHAIN_NAT_PREROUTING="${NAME}_nat_pre"
+  CHAIN_NAT_POSTROUTING="${NAME}_nat_post"
+  CHAIN_NAT_AUTHEN="${NAME}_nat_authen"
+  
+  # P2P checking chains declaration
+  CHAIN_P2P_DETECT="${NAME}_p2p_detect"
+  CHAIN_P2P_RECHECK="${NAME}_p2p_rechk"
+  CHAIN_P2P_CHECK="${NAME}_p2p_chk"
+  P2P_SET="${NAME}_p2p"
+  P2P_ALLOW_SET="${NAME}_p2p_allow"
+}
 
 ##
 # Add set
@@ -92,11 +175,7 @@ add_set () {
   ipset_opt=""
   ipset_ignoremac=""
   
-  if [ "$CLIENTS_NETWORK" != "" ]; then
-    ipset_opt="--network $CLIENTS_NETWORK"
-  else
-    ipset_opt="--from $CLIENTS_RANGE_START --to $CLIENTS_RANGE_END"
-  fi
+  ipset_opt="--network $CLIENTS"
   
   if [ "$IGNORE_MAC" = "yes" ]; then
     ipset_ignoremac="--ignoremac"
@@ -104,7 +183,7 @@ add_set () {
   
   $IPSET -N $SETNAME rahunas $ipset_opt $ipset_ignoremac 
 
-  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+  if [ "$BITTORRENT" = "throttle" ]; then
     $IPSET -N $P2P_SET iphash
   fi
 
@@ -124,7 +203,7 @@ cleanup_set () {
   $IPSET -F $SETNAME
   $IPSET -X $SETNAME
 
-  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+  if [ "$BITTORRENT" = "throttle" ]; then
     $IPSET -F $P2P_SET
     $IPSET -X $P2P_SET 
   fi
@@ -136,19 +215,88 @@ cleanup_set () {
 }
 
 ##
+# Navigation rules
+##
+navigation_rules () {
+  opt=$1
+  if [ "$opt" = "start" ]; then
+    action="-I"
+  elif [ "$opt" = "stop" ]; then
+    action="-D"
+  fi
+
+  # INPUT from external
+  # TODO: Make a common firewall to filter the external requests.
+  $IPTABLES $action INPUT \
+    $DEV_IN_PARAM $DEV_EXTERNAL -j ACCEPT 
+
+  # INPUT
+  $IPTABLES $action INPUT \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_INPUT
+  $IPTABLES $action INPUT -m connmark --mark 2/2 \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_INPUT_AUTH
+
+  # FORWARD
+  $IPTABLES $action FORWARD \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_FORWARD
+  $IPTABLES $action FORWARD \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_FORWARD
+  $IPTABLES $action FORWARD -m connmark --mark 2/2 \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_FORWARD_AUTH
+  $IPTABLES $action FORWARD -m connmark --mark 2/2 \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_FORWARD_AUTH
+
+  # MANGLE
+  $IPTABLES -t mangle $action PREROUTING \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle $action PREROUTING \
+    $DEV_IN_PARAM $DEV_EXTERNAL -d $CLIENTS \
+    -j $CHAIN_MANGLE_PREROUTING
+
+  $IPTABLES -t mangle $action FORWARD \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_MANGLE_FORWARD
+  $IPTABLES -t mangle $action FORWARD \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_MANGLE_FORWARD
+
+  $IPTABLES -t mangle $action POSTROUTING \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_MANGLE_POSTROUTING
+  $IPTABLES -t mangle $action POSTROUTING \
+    $DEV_OUT_PARAM $DEV_EXTERNAL -s $CLIENTS \
+    -j $CHAIN_MANGLE_POSTROUTING
+
+  # NAT
+  $IPTABLES -t nat $action PREROUTING \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat $action PREROUTING \
+    $DEV_IN_PARAM $DEV_EXTERNAL -d $CLIENTS \
+    -j $CHAIN_NAT_PREROUTING
+
+  $IPTABLES -t nat $action POSTROUTING \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_NAT_POSTROUTING
+  $IPTABLES -t nat $action POSTROUTING \
+    $DEV_OUT_PARAM $DEV_EXTERNAL -s $CLIENTS \
+    -j $CHAIN_NAT_POSTROUTING
+}
+
+##
 # Cleanup old rules
 ##
 cleanup () {
-  $IPTABLES -D INPUT -m connmark --mark 2/2 -j $CHAIN_INPUT_AUTH
-  $IPTABLES -D INPUT -j $CHAIN_INPUT
-  $IPTABLES -D FORWARD -m connmark --mark 2/2 -j $CHAIN_FORWARD_AUTH
-  $IPTABLES -D FORWARD -j $CHAIN_FORWARD
-  $IPTABLES -t mangle -D PREROUTING -j $CHAIN_MANGLE_PREROUTING
-  $IPTABLES -t mangle -D FORWARD -j $CHAIN_MANGLE_FORWARD
-  $IPTABLES -t mangle -D POSTROUTING -j $CHAIN_MANGLE_POSTROUTING
-  $IPTABLES -t nat -D PREROUTING -j $CHAIN_NAT_PREROUTING
-  $IPTABLES -t nat -D POSTROUTING -j $CHAIN_NAT_POSTROUTING
-  
+
+  navigation_rules stop  
+
   $IPTABLES -F $CHAIN_INPUT_AUTH
   $IPTABLES -X $CHAIN_INPUT_AUTH
 
@@ -179,7 +327,7 @@ cleanup () {
   $IPTABLES -t nat -F $CHAIN_NAT_AUTHEN
   $IPTABLES -t nat -X $CHAIN_NAT_AUTHEN
 
-  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+  if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -F $CHAIN_P2P_CHECK
     $IPTABLES -t mangle -X $CHAIN_P2P_CHECK
 
@@ -206,7 +354,7 @@ new_chains () {
   $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
 
-  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+  if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -N $CHAIN_P2P_CHECK
     $IPTABLES -t mangle -N $CHAIN_P2P_RECHECK
     $IPTABLES -t mangle -N $CHAIN_P2P_DETECT
@@ -220,6 +368,8 @@ policy () {
   $IPTABLES -P INPUT DROP
   $IPTABLES -P OUTPUT ACCEPT
   $IPTABLES -P FORWARD DROP 
+
+  $IPTABLES -A INPUT -i lo -j ACCEPT
 }
 
 cleanup_policy () {
@@ -227,23 +377,13 @@ cleanup_policy () {
   $IPTABLES -P INPUT ACCEPT
   $IPTABLES -P OUTPUT ACCEPT
   $IPTABLES -P FORWARD ACCEPT 
+
+  $IPTABLES -D INPUT -i lo -j ACCEPT
 }
 
 rules () {
-  ##
-  # Init rules
-  ##
-  $IPTABLES -I INPUT -j $CHAIN_INPUT
-  $IPTABLES -I INPUT -m connmark --mark 2/2 -j $CHAIN_INPUT_AUTH
-  $IPTABLES -I FORWARD -j $CHAIN_FORWARD
-  $IPTABLES -I FORWARD -m connmark --mark 2/2 -j $CHAIN_FORWARD_AUTH
 
-  $IPTABLES -t mangle -I PREROUTING -j $CHAIN_MANGLE_PREROUTING
-  $IPTABLES -t mangle -I FORWARD -j $CHAIN_MANGLE_FORWARD
-  $IPTABLES -t mangle -I POSTROUTING -j $CHAIN_MANGLE_POSTROUTING
-
-  $IPTABLES -t nat -I PREROUTING -j $CHAIN_NAT_PREROUTING
-  $IPTABLES -t nat -I POSTROUTING -j $CHAIN_NAT_POSTROUTING
+  navigation_rules start
   
   ##
   # Allow all traffic for established and related connections
@@ -257,66 +397,71 @@ rules () {
   ##
   # Allow incoming to our DNS server
   ##
-  if [ "$FORWARD_DNS" = "yes" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
-  else
+  if [ "$DNS" = "yes" ]; then
     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
+  elif [ "$DNS" = "no" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j DROP
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
+  elif [ "$DNS" = "forward" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
   fi 
 
   ##
   # Allow incoming to our HTTP server for login page
   ##
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW \
-    -m recent --rcheck --seconds 15 --name INCOMING_THROTTLE -j DROP
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP\
+     --dports $VSERVER_PORTS_ALLOW \
+    -m recent --rcheck --seconds 15 --name incoming_throttle -j DROP
 
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW \
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
     -m hashlimit --hashlimit 5/sec \
     --hashlimit-mode srcip --hashlimit-burst 10 \
     --hashlimit-htable-expire 15000 --hashlimit-name incoming \
     -j ACCEPT
 
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport --dports $SERVER_PORTS_ALLOW \
-    -m recent --set --name INCOMING_THROTTLE -j DROP
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
+    -m recent --set --name incoming_throttle -j DROP
   
   ##
   # Allow incoming to our SSH server for remote maintenance access
   ##
   if [ "$SSH" = "yes" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p tcp --dport ssh -j ACCEPT
+    $IPTABLES -A $CHAIN_INPUT -p tcp -d $VSERVER_IP --dport ssh -j ACCEPT
   fi
 
   ##
   # Allow rate limited ICMP 
   ##
-  $IPTABLES -A $CHAIN_INPUT -p icmp -m limit --limit 1/second -j ACCEPT
+  $IPTABLES -A $CHAIN_INPUT -p icmp -m limit --limit 5/second \
+    -d $VSERVER_IP -j ACCEPT
 
   ##
   # Allow incoming DHCP request
   ##
 
-  if [ "$FORWARD_DHCP" = "yes" ]; then
-    $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
-      -p udp --dport 67:68 -j DROP 
-    $IPTABLES -A $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
-      -p udp --dport 67:68 -j ACCEPT
-  else
-    $IPTABLES -A $CHAIN_INPUT $DEV_IN_PARAM $DEV_LAN \
-      -p udp --dport 67:68 -j ACCEPT 
-    $IPTABLES -A $CHAIN_FORWARD $DEV_IN_PARAM $DEV_LAN \
-      -p udp --dport 67:68 -j DROP
+  if [ "$DHCP" = "yes" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$DHCP" = "no" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$DHCP" = "forward" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j ACCEPT
   fi
 
   ##
   # Bittorrent Blocking (layer7 module in kernel is needed)
   # Note: 
-  #   bittorrent-announce is custom pattern defined may warning with official
-  #   pattern downloaded from l7-filter site.
+  #   bittorrent-announce is customized pattern, warning if not exists.
   ##
-  if [ "$BITTORRENT_BLOCK" = "yes" -o -n "$BITTORRENT_ALLOW" ]; then
+  if [ "$BITTORRENT" = "yes" -o -n "$BITTORRENT_ALLOW" ]; then
     if [ -n "$BITTORRENT_ALLOW" ]; then
-      BITTORRENT_ALLOW_OPTIONS="$DEV_IN_PARAM $DEV_LAN -m set ! --set $P2P_ALLOW_SET"
+      BITTORRENT_ALLOW_OPTIONS="-m set ! --set $P2P_ALLOW_SET"
 
       # Source host
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
@@ -331,13 +476,13 @@ rules () {
   ##
   # Mark the connections that have been authorized
   ##
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set dst -j CONNMARK --set-mark 2 
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set rahunas_set src -j CONNMARK --set-mark 2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME dst -j CONNMARK --set-mark 2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME src -j CONNMARK --set-mark 2 
 
   ##
   # P2P Throttle
   ##
-  if [ "$BITTORRENT_BLOCK" = "throttle" ]; then
+  if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m connmark --mark 2/2 -j $CHAIN_P2P_CHECK
     $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m set --set $P2P_SET src -j MARK --set-mark 3
     $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m set --set $P2P_SET dst -j MARK --set-mark 3
@@ -353,7 +498,6 @@ rules () {
     $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -j SET --add-set $P2P_SET src
     $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -m recent --name $P2P_SET --set -j RETURN
 
-
     $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -m recent --name $P2P_SET --rcheck --seconds 600 -j RETURN
     $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -j SET --del-set $P2P_SET src
     $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -m recent --name $P2P_SET --remove -j RETURN 
@@ -367,19 +511,19 @@ rules () {
   ##
   # SQUID Cache-Proxy
   ##
-  if [ "$PROXY_PORT" != "0" ]; then
-    if [ "$PROXY_HOST" = "localhost" ]; then
+  if [ "$PROXY" = "yes" -o "$PROXY" = "transparent" ]; then
+    if [ "$PROXY_HOST" = "localhost" -o "$PROXY_HOST" = "127.0.0.1" ]; then
       $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp --dport $PROXY_PORT -j ACCEPT
     fi
 
-    if [ "$TRANSPARENT_PROXY" = "yes" ]; then
-      if [ "$PROXY_HOST" = "localhost" ]; then
+    if [ "$PROXY" = "transparent" ]; then
+      if [ "$PROXY_HOST" = "localhost" -o "$PROXY_HOST" = "127.0.0.1" ]; then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
           -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
       else
         $IPTABLES -t nat -A $CHAIN_NAT_PRETROUTING -p tcp --dport http \
           -m connmark --mark 2/2 \
-          -j DNAT --to-destination ${PROXY_HOST}:${PROXY_PORT}
+          -j DNAT --to-destination $PROXY_HOST:$PROXY_PORT
       fi
     fi
   fi
@@ -389,17 +533,18 @@ rules () {
   ##
   
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
-    --dports $SERVER_PORTS_INTERCEPT -d ! $SERVER \
-    $DEV_IN_PARAM $DEV_LAN -m connmark ! --mark 2/2 \
+    --dports $VSERVER_PORTS_INTERCEPT -d ! $VSERVER_IP \
+    -m connmark ! --mark 2/2 \
     -j $CHAIN_NAT_AUTHEN
   
-  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp -j REDIRECT --to-port 8888
+  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp \
+    -j DNAT --to-destination $VSERVER_IP:80
 
   ##
   # MASQUERADE
   ##
   if [ "$MASQUERADE" = "yes" ]; then
-    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING $DEV_OUT_PARAM $DEV_WAN \
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING $DEV_OUT_PARAM $DEV_EXTERNAL \
       -j MASQUERADE
   fi
 
@@ -417,11 +562,9 @@ rules () {
   ##
   # Bandwidth Shaping: IMQ - Intermediate Queueing Device
   ##
-  if [ "$BANDWIDTH_SHAPE_IMQ" = "yes" ]; then
-    $IPTABLES -t mangle -I $CHAIN_MANGLE_POSTROUTING $DEV_OUT_PARAM $DEV_LAN \
-      -j IMQ --todev 0
-    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING $DEV_IN_PARAM $DEV_LAN \
-      -j IMQ --todev 1
+  if [ "$BANDWIDTH_SHAPE" = "yes" ]; then
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_POSTROUTING $DEV_OUT_PARAM $DEV_INTERNAL -j IMQ --todev 0
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING $DEV_IN_PARAM $DEV_INTERNAL -j IMQ --todev 1
   fi
 
   ##
@@ -438,40 +581,79 @@ rules () {
   $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN
 }
 
-start () {
-  test ! -f $RUN || exit 0
+do_get_config () {
+  file=$1
+  opt=$2
+  get_config $file $opt || true
+  if [ $? -eq 1 ]; then
+    echo "Error: Could not parsing $file, file does not exists"
+    return 1
+  elif [ $? -eq 2 ]; then
+    echo "Error: Could not parsing $file, config file is malformed"
+    return 2
+  elif [ $? -eq 3 ]; then
+    if [ "$opt" != "stop" ]; then
+      echo "Error: Could not parsing $file, network's name is duplicated!"
+      return 3
+    fi
+  fi
+}
 
-  add_set
-  new_chains
-  policy 
-  rules
+start () {
+  test ! -f $RUN || return 0
+
+  if [ ! -d $MAIN_CONF_DIR ]; then
+    echo "Error: The config directory $MAIN_CONF_DIR does not exists"
+    exit 1
+  fi
+
+  for file in `find $MAIN_CONF_DIR -name '*.conf'`;
+  do
+    do_get_config $file start
+    if [ $? -gt 0 ]; then
+      continue
+    fi 
+
+    add_set
+    new_chains
+    policy 
+    rules  
+  done
 
   touch $RUN
 }
 
 stop () {
-  test -f $RUN || exit 0
+  opt=$1
+  test -f $RUN || return 0
 
-  cleanup
-  cleanup_policy
-  cleanup_set
- 
+  for line in `cat $VSERVER_LIST`;
+  do
+    file=`echo $line | cut -d: -f3` 
+    test -n $file || continue;
+    do_get_config $file stop
+    if [ $? -gt 0 ]; then
+      continue
+    fi
+
+    cleanup
+    cleanup_policy
+    test "$opt" = "reload" || cleanup_set
+  done
+
+   
   rm -f $RUN
+  echo "" > $VSERVER_LIST
+}
+
+restart() {
+  stop
+  start
 }
 
 reload() {
-  test -f $RUN || exit 0
-
-  # Do not cleanup set
-  cleanup
-  cleanup_policy
-  rm -f $RUN
-
-  add_set
-  new_chains
-  policy 
-  rules
-  touch $RUN
+  stop reload
+  start
 }
 
 case "$1" in
@@ -482,8 +664,7 @@ case "$1" in
     stop
     ;;
   restart)
-    stop
-    start
+    restart
     ;;
   reload)
     reload     

@@ -7,7 +7,6 @@
 #ifndef __RAHUNASD_H
 #define __RAHUNASD_H
 
-
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -23,10 +22,8 @@
 
 #define DEFAULT_MAC "00:00:00:00:00:00"
 
-extern struct rahunas_config rh_config; 
-extern struct rahunas_map *map;
-extern struct set *rahunas_set;
 extern const char *termstring; 
+extern struct main_server rh_main_server_instance;
 
 enum RH_LOG {
   RH_LOG_DEBUG,
@@ -47,14 +44,14 @@ enum RH_LOG {
 #endif
 
 struct rahunas_map {
-  struct rahunas_member *members;
+  GList *members;
   in_addr_t first_ip;
   in_addr_t last_ip;
   unsigned int size;
 };
 
 struct rahunas_member {
-  unsigned short flags; 
+  uint32_t id; 
   unsigned short expired;
   time_t session_start;
   time_t session_timeout;
@@ -66,10 +63,7 @@ struct rahunas_member {
   unsigned char mac_address[ETH_ALEN];
 };
 
-uint32_t iptoid(struct rahunas_map *map, const char *ip);
-char *idtoip(struct rahunas_map *map, uint32_t id);
-
-void rh_free_member (struct rahunas_member *member);
+void rh_free_member(struct rahunas_member *member);
 
 static const char *timemsg()
 {

@@ -40,6 +40,7 @@ require_once 'config.php';
 require_once 'header.php';
 require_once 'locale.php';
 require_once 'messages.php';
+require_once 'networkchk.php';
 
 $current_url = $_SERVER['REQUEST_URI'];
 $interval = 60;
@@ -49,6 +50,10 @@ if ($auto_refresh) {
   header("Refresh: $interval; url=$current_url");
 }
 
+$ip = $_SERVER['REMOTE_ADDR'];
+$config = get_config_by_network($ip, $config_list);
+$vserver_id = $config["VSERVER_ID"];
+
 $forward_uri  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
 $forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
 $forward_uri .= "/login.php?sss=" . time();
@@ -56,7 +61,8 @@ $forward_uri .= "/login.php?sss=" . time();
 $request_url = $_SESSION['request_url'];
 $request_url_text = strlen($request_url) < 20 ? $request_url : substr($request_url, 0, 20) . " ...";
 
-$ip = $_SERVER['REMOTE_ADDR'];
+
+
 $xmlrpc = new rahu_xmlrpc_client();
 $xmlrpc->host = $config["RAHUNAS_HOST"];
 $xmlrpc->port = $config["RAHUNAS_PORT"];
@@ -64,7 +70,7 @@ $valid = false;
 $isinfo = false;
 $isstopacct = false;
 $info = array();
-$retinfo = $xmlrpc->do_getsessioninfo($ip);
+$retinfo = $xmlrpc->do_getsessioninfo($vserver_id, $ip);
 if (is_array($retinfo)) {
   // Send stop accounting to Radius
   $ip =& $retinfo["ip"];
@@ -79,7 +85,7 @@ if (is_array($retinfo)) {
 
 if (!empty($_POST['do_logout'])) {
   if ($isinfo) {
-    $result = $xmlrpc->do_stopsession($ip, returnMacAddress(), 
+    $result = $xmlrpc->do_stopsession($vserver_id, $ip, returnMacAddress(), 
                                       RADIUS_TERM_USER_REQUEST);
     if ($result === true) {
       $valid = false;
@@ -113,7 +119,7 @@ if (!empty($_POST['do_logout'])) {
 }
 
 if ($show_info) {
-  $result = $xmlrpc->do_getsessioninfo($ip);
+  $result = $xmlrpc->do_getsessioninfo($vserver_id, $ip);
   if (is_array($result)) {
     if (!empty($result['session_id'])) {
       $valid = true;

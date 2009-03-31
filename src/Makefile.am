@@ -18,6 +18,8 @@ AM_CFLAGS = \
 rahunasd_SOURCES = \
 	rahunasd.c \
 	rahunasd.h \
+	rh-server.c \
+	rh-server.h \
 	rh-xmlrpc-server.c \
 	rh-xmlrpc-server.h \
 	rh-xmlrpc-cmd.c \
@@ -28,10 +30,10 @@ rahunasd_SOURCES = \
 	rh-utils.h \
 	rh-task.c \
 	rh-task.h \
-	rh-task-ipset.c \
-	rh-task-ipset.h \
 	rh-task-memset.c \
 	rh-task-memset.h \
+	rh-task-ipset.c \
+	rh-task-ipset.h \
 	rh-task-dbset.c \
 	rh-task-dbset.h \
   rh-task-bandwidth.c \

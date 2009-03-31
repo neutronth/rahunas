@@ -27,6 +27,12 @@ struct set {
   struct settype *settype;    /* Pointer to set type functions */
 };
 
+struct processing_set {
+  struct vserver *vs;
+  void *list;
+};
+
+
 enum rh_adt_result {
   RH_IS_IN_SET,
   RH_IS_NOT_IN_SET,
@@ -80,13 +86,13 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
 
 void set_flush(const char *name);
 
-size_t load_set_list(const char name[IP_SET_MAXNAMELEN],
+size_t load_set_list(struct vserver *vs, const char name[IP_SET_MAXNAMELEN],
           ip_set_id_t *idx,
           unsigned op, unsigned cmd);
 
-int get_header_from_set (struct rahunas_map *map);
+int get_header_from_set (struct vserver *vs);
 
-int walk_through_set (int (*callback)(void *));
+int walk_through_set (int (*callback)(void *), struct vserver *vs);
 
 void parse_ip(const char *str, ip_set_ip_t *ip);
 void parse_mac(const char *mac, unsigned char *ethernet);

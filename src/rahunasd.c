@@ -5,149 +5,36 @@
  */
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
 #include <syslog.h>
 
 #include "rahunasd.h"
+#include "rh-server.h"
 #include "rh-xmlrpc-server.h"
 #include "rh-xmlrpc-cmd.h"
 #include "rh-ipset.h"
 #include "rh-utils.h"
 #include "rh-task.h"
 
-/* Abstract functions */
-int logmsg(int priority, const char *msg, ...); 
-int getline(int fd, char *buf, size_t size);
-
-size_t expired_check(void *data);
-
-/* Declaration */
-struct rahunas_config rh_config;
-struct rahunas_map *map = NULL;
-struct set *rahunas_set = NULL;
-
-struct set **set_list = NULL;
-ip_set_id_t max_sets = 0;
-
 const char *termstring = '\0';
 pid_t pid, sid;
 
-uint32_t iptoid(struct rahunas_map *map, const char *ip) {
-  uint32_t ret;
-  struct in_addr req_ip;
+struct main_server rh_main_server_instance = {
+  .vserver_list = NULL,
+  .task_list = NULL,
+};
 
-  if (!map || !ip)
-    return (-1);
+struct main_server *rh_main_server = &rh_main_server_instance;
 
-  if (!(inet_aton(ip, &req_ip))) {
-    DP("Could not convert IP: %s", ip);
-    return (-1);  
-  }
-
-  DP("Request IP: %s", ip);
-  
-  ret = ntohl(req_ip.s_addr) - ntohl(map->first_ip);
-  if (ret < 0 || ret > (map->size - 1))
-    ret = (-1);
-
-  DP("Request Index: %lu", ret);
-  return ret; 
-}
-
-char *idtoip(struct rahunas_map *map, uint32_t id) {
-  struct in_addr sess_addr;
-
-  if (!map)
-    return termstring;
-
-  if (id < 0)
-    return termstring;
-
-  sess_addr.s_addr = htonl((ntohl(map->first_ip) + id));
-
-  return inet_ntoa(sess_addr);
-}
-
-void rh_free_member (struct rahunas_member *member)
-{
-  if (member->username && member->username != termstring)
-    free(member->username);
-
-  if (member->session_id && member->session_id != termstring)
-    free(member->session_id);
-  
-  memset(member, 0, sizeof(struct rahunas_member));
-  member->username = termstring;
-  member->session_id = termstring;
-}
-
-int rh_openlog(const char *filename)
-{
-  return open(filename, O_WRONLY | O_APPEND | O_CREAT);
-}
-
-int rh_closelog(int fd)
-{
-  if (close(fd) == 0)
-    return 1;
-  else
-    return 0;
-}
-
-int logmsg(int priority, const char *msg, ...) 
-{
-  int n, size = 256;
-  va_list ap;
-  char *time_fmt = "%b %e %T";
-  char *p = NULL;
-  char *np = NULL;
-
-  if (priority < RH_LOG_LEVEL)
-    return 0;
-
-  if ((p = rh_malloc(size)) == NULL) {
-    return (-1);
-  }
-
-  while (1) {
-    va_start(ap, msg);
-    n = vsnprintf(p, size, msg, ap);
-    va_end(ap);
-
-    if (n > -1 && n < size)
-      break;
- 
-    if (n > -1)
-      size = n+1;
-    else
-      size *= 2;
-
-    if ((np = realloc(p, size)) == NULL) {
-      free(p);
-      p = NULL;
-      break;
-    } else {
-      p = np;
-    }
-  }
-
-  if (!p)
-    return (-1);
-
-  fprintf(stderr, "%s : %s\n", timemsg(), p);
-
-  rh_free(&p);
-  rh_free(&np);
-}
+int getline(int fd, char *buf, size_t size);
+size_t expired_check(void *data);
 
 void rh_sighandler(int sig)
 {
@@ -190,59 +77,82 @@ int getline(int fd, char *buf, size_t size)
   return (current - buf);
 }
 
-gboolean polling(gpointer data) {
-  struct rahunas_map *map = (struct rahunas_map *)data;
-  DP("%s", "Start polling!");
-  walk_through_set(&expired_check);
+size_t expired_check(void *data)
+{
+  struct processing_set *process = (struct processing_set *) data;
+  struct ip_set_list *setlist = (struct ip_set_list *) process->list;
+  size_t offset;
+  struct ip_set_rahunas *table = NULL;
+  struct task_req req;
+  unsigned int id;
+  char *ip = NULL;
+  int res  = 0;
+  GList *runner = g_list_first(process->vs->v_map->members);
+  struct rahunas_member *member = NULL;
+
+  if (process == NULL)
+    return (-1);
+
+  if (process->list == NULL)
+    return (-1); 
+
+  offset = sizeof(struct ip_set_list) + setlist->header_size;
+  table = (struct ip_set_rahunas *)(process->list + offset);
+
+  while (runner != NULL) {
+    member = (struct rahunas_member *)runner->data;
+    id = member->id;
+
+    DP("Processing id = %d", id);
+
+    DP("Time diff = %d, idle_timeout=%d", (time(NULL) - table[id].timestamp),
+         process->vs->vserver_config->idle_timeout);
+
+    if ((time(NULL) - table[id].timestamp) > 
+         process->vs->vserver_config->idle_timeout) {
+      // Idle Timeout
+      DP("Found IP: %s idle timeout", idtoip(process->vs->v_map, id));
+      req.id = id;
+      memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
+      req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
+      send_xmlrpc_stopacct(process->vs, id, 
+                           RH_RADIUS_TERM_IDLE_TIMEOUT);
+      res = rh_task_stopsess(process->vs, &req);
+    } else if (member->session_timeout != 0 && 
+               time(NULL) > member->session_timeout) {
+      // Session Timeout (Expired)
+      DP("Found IP: %s session timeout", idtoip(process->vs->v_map, id));
+      req.id = id;
+      memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
+      req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
+      send_xmlrpc_stopacct(process->vs, id, 
+                           RH_RADIUS_TERM_SESSION_TIMEOUT);
+      res = rh_task_stopsess(process->vs, &req);
+    }
+
+    runner = g_list_next(runner);
+  }
+}
+
+gboolean polling_expired_check(struct main_server *ms, struct vserver *vs) {
+  walk_through_set(&expired_check, vs);
   return TRUE;
 }
 
-size_t expired_check(void *data)
-{
-  struct ip_set_list *setlist = (struct ip_set_list *) data;
-  struct set *set = set_list[setlist->index];
-  size_t offset;
-  struct ip_set_rahunas *table = NULL;
-  struct rahunas_member *members = map->members;
-  struct task_req req;
-  unsigned int i;
-  char *ip = NULL;
-  int res  = 0;
-
-  offset = sizeof(struct ip_set_list) + setlist->header_size;
-  table = (struct ip_set_rahunas *)(data + offset);
-
-  DP("Map size %d", map->size);
- 
-  for (i = 0; i < map->size; i++) {
-    if (test_bit(IPSET_RAHUNAS_ISSET, (void *)&table[i].flags)) {
-      if ((time(NULL) - table[i].timestamp) > rh_config.idle_threshold) {
-        // Idle Timeout
-        DP("Found IP: %s idle timeout", idtoip(map, i));
-        req.id = i;
-        memcpy(req.mac_address, &table[i].ethernet, ETH_ALEN);
-        req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
-        send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_IDLE_TIMEOUT);
-        res = rh_task_stopsess(map, &req);
-      } else if (members[i].session_timeout != 0 && 
-                   time(NULL) > members[i].session_timeout) {
-        // Session Timeout (Expired)
-        DP("Found IP: %s session timeout", idtoip(map, i));
-        req.id = i;
-        memcpy(req.mac_address, &table[i].ethernet, ETH_ALEN);
-        req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
-        send_xmlrpc_stopacct(map, i, RH_RADIUS_TERM_SESSION_TIMEOUT);
-        res = rh_task_stopsess(map, &req);
-      }
-    }
-  }
+gboolean polling(gpointer data) {
+  struct main_server *ms = (struct main_server *)data;
+  struct vserver *vs = NULL;
+  DP("%s", "Start polling!");
+  walk_through_vserver(&polling_expired_check, ms);
+  return TRUE;
 }
 
 void rh_exit()
 {
-  rh_task_stopservice(map);
-  rh_task_cleanup();
-  rh_closelog(rh_config.log_file);
+  walk_through_vserver(&rh_task_stopservice, rh_main_server);
+  walk_through_vserver(&rh_task_cleanup, rh_main_server);
+  rh_task_unregister(rh_main_server);
+  rh_closelog(rh_main_server->main_config->log_file);
 }
 
 static void
@@ -253,9 +163,7 @@ watch_child(char *argv[])
   time_t start;
   time_t stop;
   int status;
-
   int nullfd;
-  int pidfd;
   
   if (*(argv[0]) == '(')
     return;
@@ -266,12 +174,7 @@ watch_child(char *argv[])
     exit(EXIT_FAILURE);
   } else if (pid > 0) {
     /* parent */
-    pidfd = open(DEFAULT_PID, O_WRONLY | O_TRUNC | O_CREAT);
-    if (pidfd) {
-      dup2(pidfd, STDOUT_FILENO);
-      fprintf(stdout, "%d\n", pid);
-      close(pidfd);
-    }
+    rh_writepid(DEFAULT_PID, pid);
     exit(EXIT_SUCCESS);
   }
 
@@ -343,14 +246,31 @@ watch_child(char *argv[])
   }
 }
 
+void rh_free_member (struct rahunas_member *member)
+{
+  if (member->username && member->username != termstring)
+    free(member->username);
+
+  if (member->session_id && member->session_id != termstring)
+    free(member->session_id);
+}
+
 int main(int argc, char **argv) 
 {
   gchar* addr = "localhost";
   int port    = 8123;
   int fd_log;
 
-  char line[256];
   char version[256];
+
+  char line[256];
+
+  union rahunas_config rh_main_config = {
+    .rh_main.polling_interval = POLLING,
+    .rh_main.bandwidth_shape = BANDWIDTH_SHAPE,
+    .rh_main.conf_dir = NULL,
+    .rh_main.log_file = NULL,
+  };
 
   GNetXmlRpcServer *server = NULL;
   GMainLoop* main_loop     = NULL;
@@ -359,25 +279,40 @@ int main(int argc, char **argv)
 
   watch_child(argv);
 
-  /* Get configuration from config file */
-  if (config_init(&rh_config) < 0) {
-    syslog(LOG_ERR, "Could not open config file %s", CONFIG_FILE);
-    exit(EXIT_FAILURE);
+  /* Get main server config */
+  get_config(CONFIG_FILE, &rh_main_config);
+  rh_main_server->main_config = (struct rahunas_main_config *) &rh_main_config;
+
+  /* Open and select main log file */
+  if (rh_main_server->main_config->log_file != NULL) {
+    syslog(LOG_INFO, "Open log file: %s", 
+           rh_main_server->main_config->log_file);
+    rh_main_server->log_fd = rh_openlog(rh_main_server->main_config->log_file);
+
+    if (!rh_main_server->log_fd) {
+      syslog(LOG_ERR, "Could not open log file %s\n", 
+             rh_main_server->main_config->log_file);
+      exit(EXIT_FAILURE);
+    }
+
+    rh_logselect(rh_main_server->log_fd);
   }
 
-  /* Open log file */
-  if ((fd_log = rh_openlog(rh_config.log_file)) < 0) {
-    syslog(LOG_ERR, "Could not open log file %s", rh_config.log_file);
+  syslog(LOG_INFO, "Config directory: %s", rh_main_server->main_config->conf_dir);
+
+  /* Get vserver(s) config */
+  if (rh_main_server->main_config->conf_dir != NULL) {
+    get_vservers_config(rh_main_server->main_config->conf_dir, rh_main_server);
+  } else {
+    syslog(LOG_ERR, "The main configuration file is incompleted, lack of conf_dir\n");
     exit(EXIT_FAILURE);
   }
-
-  dup2(fd_log, STDERR_FILENO);
 
   sprintf(version, "Starting %s - Version %s", PROGRAM, RAHUNAS_VERSION);
   logmsg(RH_LOG_NORMAL, version);
-  syslog(LOG_INFO, version);
 
-  rh_task_init();
+  rh_task_register(rh_main_server);
+  walk_through_vserver(&rh_task_init, rh_main_server);
 
   gnet_init();
   main_loop = g_main_loop_new (NULL, FALSE);
@@ -387,28 +322,31 @@ int main(int argc, char **argv)
 
   if (!server) {
     syslog(LOG_ERR, "Could not start XML-RPC server!");
-    rh_task_stopservice(map);
+    walk_through_vserver(&rh_task_stopservice, rh_main_server);
     exit (EXIT_FAILURE);
   }
 
   gnet_xmlrpc_server_register_command (server, 
                                        "startsession", 
                                        do_startsession, 
-                                       map);
+                                       rh_main_server);
 
   gnet_xmlrpc_server_register_command (server, 
                                        "stopsession", 
                                        do_stopsession, 
-                                       map);
+                                       rh_main_server);
 
   gnet_xmlrpc_server_register_command (server, 
                                        "getsessioninfo", 
                                        do_getsessioninfo, 
-                                       map);
+                                       rh_main_server);
 
-  g_timeout_add_seconds (rh_config.polling_interval, polling, map);
+  DP("Polling interval = %d", rh_main_server->main_config->polling_interval);
 
-  rh_task_startservice(map);
+  g_timeout_add_seconds (rh_main_server->main_config->polling_interval, 
+                         polling, rh_main_server);
+
+  walk_through_vserver(&rh_task_startservice, rh_main_server);
 
   g_main_loop_run(main_loop);
 

@@ -19,7 +19,9 @@ SHAPING_DOWN_INF=imq0
 SHAPING_UP_INF=imq1
 
 INTERFACE_ID=9999
-P2P_ID=9998
+BITTORRENT_ID=9998
+
+MESSAGE=""
 
 test -f $INIT || exit 0
 . $INIT
@@ -30,16 +32,18 @@ test -f $RAHUNAS_CONFIG || exit 1
 set -e
 
 get_config_value () {
-  key=$1
-  cat $RAHUNAS_CONFIG | grep -v ^/ | grep -w "$key" | cut -d= -f2 | sed 's/^ *\(.*[^ ]\) *$/\1/' | sed 's/"//g'
+  section=$1
+  key=$2
+  file=$3
+
+  cat $file | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
 }
 
-BANDWIDTH_SHAPE_IMQ=`get_config_value bandwidth_shape_imq`
-BITTORRENT_BLOCK=`get_config_value bittorrent_block`
-DOWN_P2P=`get_config_value bittorrent_download_max`
-UP_P2P=`get_config_value bittorrent_upload_max` 
+BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
+BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
+BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG` 
 
-test "$BANDWIDTH_SHAPE_IMQ" = "yes" || exit 0 
+test "$BANDWIDTH_SHAPE" = "yes" || exit 0 
 
 interface_setting () {
   case "$1" in
@@ -66,24 +70,24 @@ interface_setting () {
   esac
 }
 
-p2p_setting () {
+bittorrent_setting () {
   case "$1" in
     start)
-      # P2P Download throttling
+      # BITTORRENT Download throttling
       $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
-        classid 1:${P2P_ID} htb rate ${DOWN_P2P}Kbit
-      $TC qdisc add dev $SHAPING_DOWN_INF parent 1:${P2P_ID} \
-        handle ${P2P_ID}: sfq perturb 10
+        classid 1:${BITTORRENT_ID} htb rate ${BITTORRENT_DOWNLOAD_MAX}Kbit
+      $TC qdisc add dev $SHAPING_DOWN_INF parent 1:${BITTORRENT_ID} \
+        handle ${BITTORRENT_ID}: sfq perturb 10
       $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 5 \
-        handle 0x3 fw classid 1:${P2P_ID}
+        handle 0x3 fw classid 1:${BITTORRENT_ID}
 
-      # P2P Upload throttling
+      # BITTORRENT Upload throttling
       $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
-        classid 2:${P2P_ID} htb rate ${UP_P2P}Kbit
-      $TC qdisc add dev $SHAPING_UP_INF parent 2:${P2P_ID} \
-        handle ${P2P_ID}: sfq perturb 10
+        classid 2:${BITTORRENT_ID} htb rate ${BITTORRENT_UPLOAD_MAX}Kbit
+      $TC qdisc add dev $SHAPING_UP_INF parent 2:${BITTORRENT_ID} \
+        handle ${BITTORRENT_ID}: sfq perturb 10
       $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 5 \
-        handle 0x3 fw classid 2:${P2P_ID}
+        handle 0x3 fw classid 2:${BITTORRENT_ID}
       ;;
     stop)
       ;;
@@ -91,19 +95,21 @@ p2p_setting () {
 }
 
 start () {
-  interface_setting start
-  
-  test "$BITTORRENT_BLOCK" = "throttle" && p2p_setting start
-
-  echo "Start OK"
+  if [ ! -e $RUN ]; then
+    interface_setting start
+    bittorrent_setting start
+    MESSAGE="Start OK"
+    touch $RUN
+  fi
 }
 
 stop () {
-  interface_setting stop
-
-  test "$BITTORRENT_BLOCK" = "throttle" && p2p_setting stop
-
-  echo "Stop OK"
+  if [ -e $RUN ]; then
+    interface_setting stop
+    bittorrent_setting stop
+    MESSAGE="Stop OK"
+    rm -f $RUN
+  fi
 }
 
 usage_add() {
@@ -130,7 +136,7 @@ bw_add() {
   IP=$2
   DOWNSPEED=$3
   UPSPEED=$4
-  echo "Add shaping slot id: $ID for $IP with D/U=$DOWNSPEED/$UPSPEED bits/s"
+  MESSAGE="Add shaping slot id: $ID for $IP with D/U=$DOWNSPEED/$UPSPEED bits/s"
 
   # Downlink
   $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
@@ -147,7 +153,7 @@ bw_add() {
 
 bw_del() {
   ID=$1
-  echo "Delete shaping slot id: $ID"
+  MESSAGE="Delete shaping slot id: $ID"
 
   # Filter Removal
   # Downlink/Uplink
@@ -168,16 +174,25 @@ N=@sysconfdir@/rahunas/bandwidth.sh
 
 case "$1" in
   start)
-    test -e $RUN || start
-    touch $RUN
+    start || true 
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
+    echo $MESSAGE
     ;;
   stop)
-    test ! -e $RUN || stop
-    rm -f $RUN
+    stop || true
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
+    echo $MESSAGE
+
     ;;
   restart)
-    stop
-    start
+    stop || true
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
+    echo $MESSAGE
+
+    start || true
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
+    echo $MESSAGE
+
     ;;
   add)
     if [ "$2" = "--help" ]; then
@@ -191,7 +206,8 @@ case "$1" in
       exit 1
     fi
 
-    bw_add $2 $3 $4 $5
+    bw_add $2 $3 $4 $5 || true
+    echo $MESSAGE
     ;;
   del)
     if [ "$2" = "--help" ]; then
@@ -205,7 +221,8 @@ case "$1" in
       exit 1
     fi
 
-    bw_del $2
+    bw_del $2 || true
+    echo $MESSAGE
     ;;
   *)
     usage $N

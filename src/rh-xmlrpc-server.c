@@ -13,6 +13,7 @@
 #include "rh-ipset.h"
 #include "rh-utils.h"
 #include "rh-task.h"
+#include "rh-task-memset.h"
 
 extern const char* termstring;
 
@@ -22,8 +23,8 @@ int do_startsession(GNetXmlRpcServer *server,
                     gpointer user_data,
                     gchar **reply_string) 
 {
-  struct rahunas_map *map = (struct rahunas_map *)user_data;
-  struct rahunas_member *members = NULL;
+  struct main_server *ms = (struct main_server *)user_data; 
+  struct vserver *vs = NULL;
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
   struct task_req req;
   gchar *ip = NULL;
@@ -33,18 +34,15 @@ int do_startsession(GNetXmlRpcServer *server,
   gchar *session_timeout = NULL;
   gchar *bandwidth_max_down = NULL;
   gchar *bandwidth_max_up = NULL;
+  gchar *vserver_id = NULL;
   uint32_t id;
-
-  if (!map)
-    goto out;
-
-  if (!map->members)
-    goto out;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
 
   if (param == NULL)
     goto out;
 
-  members = map->members;
+  DP("RPC Receive: %s", param);
 
   ip          = rh_string_get_sep(param, "|", 1);
   username    = rh_string_get_sep(param, "|", 2);
@@ -53,15 +51,21 @@ int do_startsession(GNetXmlRpcServer *server,
   session_timeout    = rh_string_get_sep(param, "|", 5);
   bandwidth_max_down = rh_string_get_sep(param, "|", 6);
   bandwidth_max_up   = rh_string_get_sep(param, "|", 7);
+  vserver_id         = rh_string_get_sep(param, "|", 8);
 
-  if (ip == NULL || username == NULL 
-        || session_id == NULL)
+  if (ip == NULL || username == NULL || session_id == NULL 
+      || vserver_id == NULL)
+    goto out;
+
+  vs = vserver_get_by_id(ms, atoi(vserver_id));
+
+  if (vs == NULL)
     goto out;
 
   if (mac_address == NULL)
     mac_address = g_strdup(DEFAULT_MAC);
 
-  id = iptoid(map, ip);
+  id = iptoid(vs->v_map, ip);
 
   if (id < 0) {
     *reply_string = g_strdup("Invalid IP Address");
@@ -69,6 +73,7 @@ int do_startsession(GNetXmlRpcServer *server,
   }
 
   req.id = id;
+  req.vserver_id = atoi(vserver_id);
   req.username = username;
   req.session_id = session_id;
   parse_mac(mac_address, &ethernet);
@@ -90,18 +95,24 @@ int do_startsession(GNetXmlRpcServer *server,
   else
     req.bandwidth_max_up = 0;
 
-  rh_task_startsess(map, &req);
+  rh_task_startsess(vs, &req);
 
-  *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s", 
-                                   ip, members[id].username, 
-                                   members[id].session_id);
-  goto cleanup;
+  member_node = member_get_node_by_id(vs, id);
+
+  if (member_node != NULL) {
+    member = (struct rahunas_member *)member_node->data;
+    *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s", 
+                                    ip, member->username, 
+                                    member->session_id);
+    goto cleanup;
+  }
 
 out:
     *reply_string = g_strdup("Invalid input parameters");
     goto cleanup;
 
 cleanup:
+  DP("RPC Reply: %s", *reply_string);
   g_free(ip);
   g_free(username);
   g_free(session_id);
@@ -109,6 +120,7 @@ cleanup:
   g_free(session_timeout);
   g_free(bandwidth_max_down);
   g_free(bandwidth_max_up);
+  g_free(vserver_id);
   return 0;
 }
 
@@ -118,24 +130,19 @@ int do_stopsession(GNetXmlRpcServer *server,
                    gpointer user_data,
                    gchar **reply_string)
 {
-  struct rahunas_map *map = (struct rahunas_map *)user_data;
-  struct rahunas_member *members;
+  struct main_server *ms = (struct main_server *)user_data;
+  struct vserver *vs = NULL;
   struct task_req req;
   gchar *ip = NULL;
   gchar *mac_address = NULL;
   gchar *cause = NULL;
+  gchar *vserver_id = NULL;
   int cause_id = 0;
   uint32_t   id;
   int res = 0;
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
-
-  if (!map)
-    goto out;
-
-  if (!map->members)
-    goto out;
-
-  members = map->members;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
 
   if (param == NULL)
     goto out;
@@ -145,14 +152,19 @@ int do_stopsession(GNetXmlRpcServer *server,
   ip          = rh_string_get_sep(param, "|", 1);
   mac_address = rh_string_get_sep(param, "|", 2);
   cause       = rh_string_get_sep(param, "|", 3);
+  vserver_id  = rh_string_get_sep(param, "|", 4);
 
-  if (ip == NULL)
+  if (ip == NULL || vserver_id == NULL)
+    goto out;
+  vs = vserver_get_by_id(ms, atoi(vserver_id));
+
+  if (vs == NULL)
     goto out;
 
   if (mac_address == NULL)
     mac_address = g_strdup(DEFAULT_MAC);
 
-  id = iptoid(map, ip);
+  id = iptoid(vs->v_map, ip);
 
   if (id < 0) {
     *reply_string = g_strdup("Invalid IP Address");
@@ -162,8 +174,12 @@ int do_stopsession(GNetXmlRpcServer *server,
   parse_mac(mac_address, &ethernet);
   memcpy(req.mac_address, &ethernet, ETH_ALEN);
 
-  if (members[id].flags) {
-    if (memcmp(&ethernet, &members[id].mac_address, ETH_ALEN) == 0) {
+  member_node = member_get_node_by_id(vs, id);
+
+  if (member_node != NULL) {
+    member = (struct rahunas_member *) member_node->data;
+    if (memcmp(&ethernet, &member->mac_address, 
+        ETH_ALEN) == 0) {
       req.id = id;
       
       if (cause == NULL) {
@@ -178,13 +194,13 @@ int do_stopsession(GNetXmlRpcServer *server,
         }
       }
 
-      res = rh_task_stopsess(map, &req);
+      res = rh_task_stopsess(vs, &req);
       if (res == 0) {
         *reply_string = g_strdup_printf("Client IP %s was removed!", 
-                                          idtoip(map, id));
+                                          idtoip(vs->v_map, id));
       } else {
          *reply_string = g_strdup_printf("Client IP %s error remove!", 
-                                        idtoip(map, id));
+                                        idtoip(vs->v_map, id));
       }
       goto cleanup;
     } 
@@ -198,9 +214,11 @@ out:
   goto cleanup;
 
 cleanup:
+  DP("RPC Reply: %s", *reply_string);
   g_free(ip);
   g_free(mac_address);
   g_free(cause);
+  g_free(vserver_id);
   return 0;
 }
 
@@ -210,55 +228,71 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
                       gpointer user_data,
                       gchar **reply_string)
 {
-  struct rahunas_map *map = (struct rahunas_map *)user_data;
-  struct rahunas_member *members = NULL;
+  struct main_server *ms = (struct main_server *)user_data;
+  struct vserver *vs = NULL;
   gchar *ip = NULL;
+  gchar *vserver_id = NULL;
   uint32_t   id;
-
-  if (!map)
-    goto out;
-
-  if (!map->members)
-    goto out;
-
-  members = map->members;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
 
   if (param == NULL)
     goto out;
 
-  ip = param;
-  id = iptoid(map, ip);
+  DP("RPC Receive: %s", param);
+
+  ip          = rh_string_get_sep(param, "|", 1);
+  vserver_id  = rh_string_get_sep(param, "|", 2);
+
+  if (ip == NULL || vserver_id == NULL)
+    goto out;
+
+  vs = vserver_get_by_id(ms, atoi(vserver_id));
+
+  if (vs == NULL)
+    goto out;
+
+  id = iptoid(vs->v_map, ip);
 
   if (id < 0) {
     *reply_string = g_strdup("Invalid IP Address");
-    return 0;
+    goto cleanup;
   }
 
-  if (members[id].flags) {
-    if (!members[id].username) {
+  member_node = member_get_node_by_id(vs, id);
+
+  if (member_node != NULL) {
+    member = (struct rahunas_member *) member_node->data;
+    if (!member->username) {
       *reply_string = g_strdup("Invalid Username");
-      return 0;
+      goto cleanup;
     }
 
-    if (!members[id].session_id) {
+    if (!member->session_id) {
       *reply_string = g_strdup("Invalid Session ID");
-      return 0;
+      goto cleanup;
     }
     
     *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d", 
-                                      ip, 
-                                      members[id].username,
-                                      members[id].session_id,
-                                      members[id].session_start,
-                                      mac_tostring(members[id].mac_address),
-                                      members[id].session_timeout);
-    return 0;
+                                    ip, 
+                                    member->username,
+                                    member->session_id,
+                                    member->session_start,
+                                    mac_tostring(member->mac_address),
+                                    member->session_timeout);
+    goto cleanup;
   }
 
   *reply_string = g_strdup_printf("%s", ip);
-  return 0;
+  goto cleanup;
 
 out:
     *reply_string = g_strdup("Invalid input parameters");
-    return 0;
+     goto cleanup;
+
+cleanup:
+  DP("RPC Reply: %s", *reply_string);
+  g_free(ip);
+  g_free(vserver_id);
+  return 0;
 }

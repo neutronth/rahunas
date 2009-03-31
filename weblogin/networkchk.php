@@ -31,24 +31,17 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
-$config_list['172.30.0.0/22'] = array(
-  "VSERVER_ID" => "1",
-  "RADIUS_HOST" => "localhost",
-  "RADIUS_SECRET" => "testing123",
-  "RADIUS_ENCRYPT" => "CHAP_MD5",
-  "RADIUS_AUTH_PORT" => 0,
-  "RADIUS_ACCT_PORT" => 0,
-  "RAHUNAS_HOST" => "localhost",
-  "RAHUNAS_PORT" => "8123",
-  "NAS_IDENTIFIER" => "RahuNAS-01",
-  "NAS_IP_ADDRESS" => "172.30.0.1",
-  "NAS_LOGIN_HOST" => "authen.rahunas.local",
-  "NAS_LOGIN_PORT" => "443",
-  "NAS_LOGIN_PROTO" => "https",
-  "NAS_PORT" => 1,
-  "NAS_LOGIN_TITLE" => "RahuNAS Network",
-  "DEFAULT_REDIRECT_URL" => "http://www.rahunas.org",
-  "DEFAULT_LANGUAGE" => "Thai",
-  "UAM_TEMPLATE" => "rahunas"
-);
+require_once 'Net/IPv4.php';
+
+function get_config_by_network($ip, &$config_list) {
+  if (!is_array($config_list))
+    return array();
+ 
+  foreach ($config_list as $network=>$config) {
+    if (Net_IPv4::ipInNetwork($ip, $network))
+      return $config;
+  }
+  
+  return array();
+}
 ?>

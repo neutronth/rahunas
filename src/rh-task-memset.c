@@ -12,56 +12,80 @@
 #include "rh-task.h"
 #include "rh-ipset.h"
 
-/* Initialize */
-static void init (void)
+GList *member_get_node_by_id(struct vserver *vs, uint32_t id) 
 {
-  struct rahunas_member *members = NULL;
+  GList *runner = g_list_first(vs->v_map->members);
+  struct rahunas_member *member = NULL;
+
+  while (runner != NULL) {
+    member = (struct rahunas_member *) runner->data;
+
+    if (member->id == id)
+      return runner;
+
+    runner = g_list_next(runner);
+  }
+
+  return NULL;
+}
+
+gint idcmp(struct rahunas_member *a, struct rahunas_member *b)
+{
+  if (a == NULL || b == NULL)
+    return 0;
+
+  if (a != NULL && b != NULL)
+    return (a->id - b->id);
+}
+
+/* Initialize */
+static void init (struct vserver *vs)
+{
   int size;
 
-  logmsg(RH_LOG_NORMAL, "Task MEMSET init..");  
-  map = (struct rahunas_map*)(rh_malloc(sizeof(struct rahunas_map)));
+  logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET init..",
+         vs->vserver_config->vserver_name);  
 
-  map->members = NULL;
-  map->size = 0;
-
-  if (get_header_from_set(map) < 0) {
-    syslog(LOG_ERR, "Could not fetch IPSET header");
+  vs->v_map = (struct rahunas_map *)(rh_malloc(sizeof(struct rahunas_map)));
+  if (vs->v_map == NULL) {
+    logmsg(RH_LOG_ERROR, "[%s] Could not allocate memory...",
+           vs->vserver_config->vserver_name); 
     exit(EXIT_FAILURE);
   }
 
-  size = map->size == 0 ? MAX_MEMBERS : map->size;
+  memset(vs->v_map, 0, sizeof(struct rahunas_map));
 
-  members = 
-    (struct rahunas_member*)(rh_malloc(sizeof(struct rahunas_member)*size));
-
-  memset(members, 0, sizeof(struct rahunas_member)*size);
-
-  map->members = members;
+  if (get_header_from_set(vs) < 0) {
+    syslog(LOG_ERR, "Could not fetch IPSET header");
+    exit(EXIT_FAILURE);
+  }
 }
 
 /* Cleanup */
-static void cleanup (void)
+static void cleanup (struct vserver *vs)
 {
-  struct rahunas_member *members = NULL;
-  int i;
-  int end;
+  GList *runner = NULL;
+  struct rahunas_member *member = NULL;
 
-  logmsg(RH_LOG_NORMAL, "Task MEMSET cleanup..");  
+  logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET cleanup..",
+         vs->vserver_config->vserver_name);  
 
-  if (map) {
-    if (map->members) {
-      members = map->members;
-      end = map->size;
-    } else {
-      end = 0;
-    }  
+  if (vs->v_map != NULL) {
 
-    for (i=0; i < end; i++) {
-        rh_free_member(&members[i]);
+    runner = g_list_first(vs->v_map->members);
+
+    while (runner != NULL) {
+      member = (struct rahunas_member *) runner->data; 
+
+      rh_free_member(member);
+
+      runner = g_list_delete_link(runner, runner);
     }
 
-    rh_free(&(map->members));
-    rh_free(&map);
+    g_list_free(vs->v_map->members);
+
+    rh_free(&(vs->v_map->members));
+    rh_free(&(vs->v_map));
   }
 
   return 0;
@@ -69,66 +93,96 @@ static void cleanup (void)
 
 
 /* Start service task */
-static int startservice (struct rahunas_map *map)
+static int startservice (struct vserver *vs)
 {
   /* Do nothing or need to implement */
 }
 
 /* Stop service task */
-static int stopservice  (struct rahunas_map *map)
+static int stopservice  (struct vserver *vs)
 {
   /* Do nothing or need to implement */
 }
 
 /* Start session task */
-static int startsess (struct rahunas_map *map, struct task_req *req)
+static int startsess (struct vserver *vs, struct task_req *req)
 {
-  struct rahunas_member *members = map->members;
   uint32_t id = req->id;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
 
-  members[id].flags = 1;
-  if (members[id].username && members[id].username != termstring)
-    free(members[id].username);
+  member_node = member_get_node_by_id(vs, id);
 
-  if (members[id].session_id && members[id].username != termstring)
-    free(members[id].session_id);
+  if (member_node == NULL) {
+    DP("Create new member");
+    member = (struct rahunas_member *)rh_malloc(sizeof(struct rahunas_member));
+    if (member == NULL)
+      return (-1);
 
-  members[id].username   = strdup(req->username);
-  if (!members[id].username)
-    members[id].username = termstring;
+    memset(member, 0, sizeof(struct rahunas_member));
 
-  members[id].session_id = strdup(req->session_id);
-  if (!members[id].session_id)
-    members[id].session_id = termstring;
+    vs->v_map->members = 
+      g_list_insert_sorted(vs->v_map->members, member, idcmp);
+  } else {
+    DP("Member already exists");
+    member = (struct rahunas_member *)member_node->data;
+  }
 
-  time(&(members[id].session_start));
-  memcpy(&req->session_start, &members[id].session_start, sizeof(time_t));
+  member->id = id; 
 
-  memcpy(&members[id].mac_address, &(req->mac_address), ETH_ALEN);
+  if (member->username && member->username != termstring)
+    free(member->username);
 
-  memcpy(&members[id].session_timeout, &req->session_timeout, sizeof(time_t));
-  members[id].bandwidth_max_down = req->bandwidth_max_down;
-  members[id].bandwidth_max_up = req->bandwidth_max_up;
+  if (member->session_id && member->username != termstring)
+    free(member->session_id);
+
+  member->username   = strdup(req->username);
+  if (!member->username)
+    member->username = termstring;
+
+  member->session_id = strdup(req->session_id);
+  if (!member->session_id)
+    member->session_id = termstring;
+
+  time(&(member->session_start));
+  memcpy(&req->session_start, &member->session_start, 
+         sizeof(time_t));
+
+  memcpy(&member->mac_address, &req->mac_address, ETH_ALEN);
+
+  memcpy(&member->session_timeout, &req->session_timeout, 
+         sizeof(time_t));
+  member->bandwidth_max_down = req->bandwidth_max_down;
+  member->bandwidth_max_up = req->bandwidth_max_up;
  
   DP("Session-Timeout %d", req->session_timeout);
   DP("Bandwidth - Down: %lu, Up: %lu", req->bandwidth_max_down, 
        req->bandwidth_max_up);
 
-  logmsg(RH_LOG_NORMAL, "Session Start, User: %s, IP: %s, "
+  logmsg(RH_LOG_NORMAL, "[%s] Session Start, User: %s, IP: %s, "
                         "Session ID: %s, MAC: %s",
-                        members[id].username, 
-                        idtoip(map, id), 
-                        members[id].session_id,
-                        mac_tostring(members[id].mac_address)); 
+                        vs->vserver_config->vserver_name,
+                        member->username, 
+                        idtoip(vs->v_map, id), 
+                        member->session_id,
+                        mac_tostring(member->mac_address)); 
   return 0;
 }
 
 /* Stop session task */
-static int stopsess  (struct rahunas_map *map, struct task_req *req)
+static int stopsess  (struct vserver *vs, struct task_req *req)
 {
-  struct rahunas_member *members = map->members;
   uint32_t id = req->id;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
   char cause[16] = "";
+
+  member_node = member_get_node_by_id(vs, id);
+  if (member_node == NULL)
+    return (-1);
+
+  member = (struct rahunas_member *)member_node->data;
+
   switch (req->req_opt) {
     case RH_RADIUS_TERM_IDLE_TIMEOUT :
       strcpy(cause, "idle timeout");
@@ -146,46 +200,48 @@ static int stopsess  (struct rahunas_map *map, struct task_req *req)
       strcpy(cause, "admin reset");
       break;
   }
-  if (!members[id].username)
-    members[id].username = termstring;
+  if (!member->username)
+    member->username = termstring;
 
-  if (!members[id].session_id)
-    members[id].session_id = termstring;
+  if (!member->session_id)
+    member->session_id = termstring;
 
-  logmsg(RH_LOG_NORMAL, "Session Stop (%s), User: %s, IP: %s, "
+  logmsg(RH_LOG_NORMAL, "[%s] Session Stop (%s), User: %s, IP: %s, "
                         "Session ID: %s, MAC: %s",
+                        vs->vserver_config->vserver_name,
                         cause,
-                        members[id].username, 
-                        idtoip(map, id), 
-                        members[id].session_id,
-                        mac_tostring(members[id].mac_address)); 
+                        member->username, 
+                        idtoip(vs->v_map, id), 
+                        member->session_id,
+                        mac_tostring(member->mac_address)); 
 
-  rh_free_member(&members[id]);   
+  rh_free_member(member);   
+
+  vs->v_map->members = g_list_delete_link(vs->v_map->members, member_node);
 
   return 0;
- 
 }
 
 /* Commit start session task */
-static int commitstartsess (struct rahunas_map *map, struct task_req *req)
+static int commitstartsess (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct rahunas_map *map, struct task_req *req)
+static int commitstopsess  (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct rahunas_map *map, struct task_req *req)
+static int rollbackstartsess (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct rahunas_map *map, struct task_req *req)
+static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -205,6 +261,6 @@ static struct task task_memset = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_memset_reg(void) {
-  task_register(&task_memset);
+void rh_task_memset_reg(struct main_server *ms) {
+  task_register(ms, &task_memset);
 }

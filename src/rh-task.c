@@ -11,7 +11,7 @@
 #include "rh-task-dbset.h"
 #include "rh-task-bandwidth.h"
 
-void task_register(struct task *task)
+void task_register(struct main_server *ms, struct task *task)
 {
   GList *chk  = NULL;
   GList *node = NULL;
@@ -22,7 +22,7 @@ void task_register(struct task *task)
 
   DP("Registering Task: %s", task->taskname);
 
-  chk = g_list_find(task_list, task);
+  chk = g_list_find(ms->task_list, task);
 
   /* Already register */
   if (chk != NULL) {
@@ -30,72 +30,79 @@ void task_register(struct task *task)
     return;
   }
 
-  if (task_list == NULL) {
-    task_list = g_list_append(task_list, task);
+  if (ms->task_list == NULL) {
+    ms->task_list = g_list_append(ms->task_list, task);
     return;
   }
 
-  for (node = g_list_first(task_list); node != NULL; node = g_list_next(node)) {
+  for (node = g_list_first(ms->task_list); node != NULL; node = g_list_next(node)) {
     ltask = (struct task *)node->data;
     if (task->taskprio >= ltask->taskprio)
       break;  
   }
   
-  task_list = g_list_insert_before(task_list, node, task);
+  ms->task_list = g_list_insert_before(ms->task_list, node, task);
 }
 
-static void rh_task_call_init (void)
+void rh_task_init (struct main_server *ms, struct vserver *vs)
 {
-  GList *runner = g_list_first(task_list);
+  GList *runner = g_list_first(ms->task_list);
   struct task *ltask = NULL;
 
   DP("Initialize...");
 
   while (runner != NULL) {
     ltask = (struct task *)runner->data;
-    (*ltask->init)();
+    (*ltask->init)(vs);
     runner = g_list_next(runner);
   }
 }
 
-void rh_task_init(void)
+void rh_task_register(struct main_server *ms)
 {
-  /* Register all tasks */
-  rh_task_ipset_reg();
-  rh_task_memset_reg();
-  rh_task_dbset_reg();
-  rh_task_bandwidth_reg();
+  static int task_registered = 0;
 
-  /* Call each init */
-  rh_task_call_init();
+  if (task_registered == 0) {
+    /* Register all tasks */
+    rh_task_memset_reg(ms);
+    rh_task_ipset_reg(ms);
+
+    if (ms->main_config->bandwidth_shape)
+      rh_task_bandwidth_reg(ms);
+
+    rh_task_dbset_reg(ms);
+    task_registered = 1;
+  }
 }
 
-void rh_task_cleanup(void)
+void rh_task_unregister(struct main_server *ms) {
+  g_list_free(ms->task_list);
+}
+
+void rh_task_cleanup(struct main_server *ms, struct vserver *vs)
 {
-  GList *runner = g_list_last(task_list);
+  GList *runner = g_list_last(ms->task_list);
   struct task *ltask = NULL;
 
   DP("Task Cleanup");
 
   while (runner != NULL) {
     ltask = (struct task *)runner->data;
-    (*ltask->cleanup)();
+    (*ltask->cleanup)(vs);
     runner = g_list_previous(runner);
   }  
-
-  g_list_free(task_list);
 }
 
-int  rh_task_startservice(struct rahunas_map *map)
+int  rh_task_startservice(struct main_server *ms, struct vserver *vs)
 {
-  GList *runner = g_list_first(task_list);
+  GList *runner = g_list_first(ms->task_list);
   struct task *ltask = NULL;
 
   DP("Start service");
 
   while (runner != NULL) {
     ltask = (struct task *)runner->data;
-    (*ltask->startservice)(map);
+    (*ltask->startservice)(vs);
     runner = g_list_next(runner);
   }  
 
@@ -103,66 +110,68 @@ int  rh_task_startservice(struct rahunas_map *map)
   return 0;
 }
 
-int  rh_task_stopservice(struct rahunas_map *map)
+int  rh_task_stopservice(struct main_server *ms, struct vserver *vs)
 {  
-  GList *runner = g_list_last(task_list);
+  GList *runner = g_list_last(ms->task_list);
   struct task *ltask = NULL;
 
   DP("Stop service");
 
   while (runner != NULL) {
     ltask = (struct task *)runner->data;
-    (*ltask->stopservice)(map);
+    (*ltask->stopservice)(vs);
     runner = g_list_previous(runner);
   }  
 
   logmsg(RH_LOG_NORMAL, "Service stopped");
 }
 
-int  rh_task_startsess(struct rahunas_map *map, struct task_req *req)
+int  rh_task_startsess(struct vserver *vs, struct task_req *req)
 {
-  GList *runner = g_list_first(task_list);
+  struct main_server *ms = &rh_main_server_instance;
+  GList *runner = g_list_first(ms->task_list);
   struct task *ltask = NULL;
 
   DP("Start session called");
 
   while (runner != NULL) {
     ltask = (struct task *)runner->data;
-    (*ltask->startsess)(map, req);
+    (*ltask->startsess)(vs, req);
     runner = g_list_next(runner);
   }  
 
   return 0;
 }
 
-int  rh_task_stopsess(struct rahunas_map *map, struct task_req *req)
+int  rh_task_stopsess(struct vserver *vs, struct task_req *req)
 {
-  GList *runner = g_list_last(task_list);
+  struct main_server *ms = &rh_main_server_instance;
+  GList *runner = g_list_last(ms->task_list);
   struct task *ltask = NULL;
 
   DP("Stop session called");
-
+ 
   while (runner != NULL) {
     ltask = (struct task *)runner->data;
-    (*ltask->stopsess)(map, req);
+    (*ltask->stopsess)(vs, req);
     runner = g_list_previous(runner);
   }  
 
   return 0;
 }
 
-int  rh_task_commitstartsess(struct rahunas_map *map, struct task_req *req)
+int  rh_task_commitstartsess(struct vserver *vs, struct task_req *req)
 {
 }
 
-int  rh_task_commitstopsess(struct rahunas_map *map, struct task_req *req)
+int  rh_task_commitstopsess(struct vserver *vs, struct task_req *req)
 {
 }
 
-int  rh_task_rollbackstartsess(struct rahunas_map *map, struct task_req *req)
+int  rh_task_rollbackstartsess(struct vserver *vs, struct task_req *req)
 {
 }
 
-int  rh_task_rollbackstopsess(struct rahunas_map *map, struct task_req *req)
+int  rh_task_rollbackstopsess(struct vserver *vs, struct task_req *req)
 {
 }

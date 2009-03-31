@@ -62,6 +62,7 @@ AC_CONFIG_FILES([
   example/rahunas.default
   example/rahunas.init
   example/rahunas.conf
+  example/rahunas-vserver.conf
   example/firewall.sh
   example/bandwidth.sh
 ])

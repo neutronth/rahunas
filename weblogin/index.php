@@ -33,6 +33,11 @@
 
 require_once 'config.php';
 require_once 'header.php';
+require_once 'networkchk.php';
+
+$ip = $_SERVER['REMOTE_ADDR'];
+$config = get_config_by_network($ip, $config_list);
+$vserver_id = $config["VSERVER_ID"];
 
 $forward_uri  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
 $forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";

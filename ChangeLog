@@ -1,3 +1,37 @@
+2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +src/rh-server.{h,c}: 
+	  - Add virtual server concepts, make the clients from different interface to
+	    access the particular virtual server, differentiate clients by their IP.
+
+	* src/rahunasd.{h,c}, src/rh-config.{c,h}, src/rh-ipset.{h,c}, 
+	  src/rh-task.{h,c}, src/rh-task-{bandwidth,dbset,ipset,memset}.{h,c},
+	  src/rh-utils.{h,c}, src/rh-xmlrpc-cmd.{h,c}, src/rh-xmlrpc-server.c:
+	  - Redesign, rewrite and adjust the code to support the virtual server 
+	    concepts.
+	  - Improve the memory management by replace old static memory allocation by
+	    dynamic memory allocation (GList), therefore fix the memory leak in 
+	    earlier version.
+
+	* example/{bandwidth.sh.in,firewall.sh.in},
+	  example/rahunas.conf.in,
+	  +example/rahunas-vserver.conf.in:
+	  - Add new virtual server config example file which need to put into the
+	    config directory (default: /etc/rahunas/rahunas.d).
+	  - Update config file to support the new virtual server concepts,
+	    for earlier config file is not compatible now.
+	  - Update the bandwidth and firewall example script to support virtual 
+	    server.
+
+	* configure.ac, Makefile.am: Update make file according to new changes.
+
+	* weblogin/networkchk.php: Add new client's IP check for determine the 
+	  network of each client and get the appropriate config, 
+	  differentiate client to access the particular virtual server by vserver_id.
+	  
+	* weblogin/{config,index,locale,login,logout}.php, 
+	  weblogin/rahu_xmlrpc.class.php: Adjust for virtual server concepts.
+
 2009-03-18  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/bandwidth.sh.in, example/rahunas.conf.in:

@@ -8,9 +8,20 @@
 
 #include <stdlib.h>
 
+#define LOG_MAIN_FD  -1
+
 void *rh_malloc(size_t size);
 void rh_free(void **data);
 
 const char *rh_string_get_sep(const char *haystack, const char *sep, 
                               unsigned short idx);
+int rh_openlog(const char *filename);
+int rh_closelog(int fd);
+int rh_logselect(int fd);
+int rh_writepid(const char *pidfile, int pid); 
+int logmsg(int priority, const char *msg, ...);
+
+uint32_t iptoid(struct rahunas_map *map, const char *ip);
+char *idtoip(struct rahunas_map *map, uint32_t id);
+
 #endif // __RH_UTILS_H
