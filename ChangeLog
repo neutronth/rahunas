@@ -1,5 +1,11 @@
 2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
 
+	=== Release 0.1.2 ===
+	* NEWS: Update for 0.1.2 release.
+	* TODO: Remove VLAN support, already implemented.
+
+2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* +src/rh-server.{h,c}: 
 	  - Add virtual server concepts, make the clients from different interface to
 	    access the particular virtual server, differentiate clients by their IP.

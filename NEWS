@@ -1,5 +1,30 @@
 RahuNAS
 
+0.1.2 (2009-31-08)
+=====
+- Bug fix and add virtual server to support multiple network (VLAN, 
+  multiple ethernet) and support scripts to do the traffic shape and
+  Bittorrent blocking or throttling:
+
+  * Multiple network support using virtual server concepts.
+    - Clients with different IP can access to particular virtual server.
+    - Each virtual server is independent.
+    - Capable to add more virtual server as much as the you want, if the
+      memory of the system is available.
+  * Traffic shape and Bittorrent blocking or throttling scripts.
+    - Traffic shape using TC and synchronize with RahuNAS for each client.
+      (Per client shaping)
+    - Capable to block the bittorrent, allow someone to access 
+      or throttling with the specific download and upload rate. 
+      (Require layer7 kernel module)
+  * Bug fix.
+    - Replace static memory allocation by dynamic memory allocation, 
+      the static allocation cause the error when more virtual servers are 
+      registered. The dynamic memory allocation reduce the memory requirement 
+      for the same size of clients set.
+    - Fix the memory allocation for the ipset polling which does not free
+      unneccessary data.
+
 0.1.1 (2008-12-09)
 =====
 - First release of the ready to use Network Access Server which provides:
