@@ -1,5 +1,9 @@
 2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* configure.ac: Bump version to 0.1.3
+
+2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
+
 	=== Release 0.1.2 ===
 	* NEWS: Update for 0.1.2 release.
 	* TODO: Remove VLAN support, already implemented.
