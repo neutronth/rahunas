@@ -2,6 +2,8 @@ rahunas (0.1.2-2) unstable; urgency=low
 
   * debian/rahunas.postinst: Fix fail to install if /etc/rahunas/rahunas.d does
     not exists.
+  * debian/patches/01_example_config.patch: Add missing vserver_ports_allow and
+    vserver_ports_intercept.
 
  -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 01 Apr 2009 14:58:18 +0700
 
