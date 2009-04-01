@@ -1,3 +1,10 @@
+rahunas (0.1.2-2) unstable; urgency=low
+
+  * debian/rahunas.postinst: Fix fail to install if /etc/rahunas/rahunas.d does
+    not exists.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 01 Apr 2009 14:58:18 +0700
+
 rahunas (0.1.2-1) unstable; urgency=low
 
   * New upstream release.
