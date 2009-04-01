@@ -1,0 +1,31 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" != "remove" ] && [ "$1" != "purge" ]; then
+  exit 0
+fi
+
+## Source debconf library
+. /usr/share/debconf/confmodule
+db_version 2.0
+
+
+case "$1" in
+  purge)
+    test -d "/var/log/rahunas" && rm -rf /var/log/rahunas
+    
+    if which ucf >/dev/null 2>&1; then
+      ucf --purge /etc/rahunas/rahunas.conf
+      ucf --purge /etc/rahunas/rahunas.d/rahunas-vserver.conf
+    fi
+
+    rm -f /etc/rahunas/rahunas.conf
+    rm -f /etc/rahunas/rahunas.d/rahunas-vserver.conf
+    ;;
+  remove)
+    ;;
+esac
+
+#DEBHELPER#
+exit 0

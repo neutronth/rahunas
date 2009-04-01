@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+#
+# Skip, if we are not in "configure" state
+#
+if [ "$1" != "configure" ]; then
+  exit 0
+fi
+
+test -d /var/log/rahunas || mkdir /var/log/rahunas
+
+ucf /usr/share/doc/rahunas/rahunas.conf /etc/rahunas/rahunas.conf
+ucf /usr/share/doc/rahunas/rahunas-vserver.conf \
+  /etc/rahunas/rahunas.d/rahunas-vserver.conf
+
+#DEBHELPER#
+exit 0

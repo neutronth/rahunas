@@ -1,0 +1,25 @@
+Index: b/example/rahunas.conf.in
+===================================================================
+--- a/example/rahunas.conf.in	2009-04-01 14:13:42.000000000 +0700
++++ b/example/rahunas.conf.in	2009-04-01 14:13:53.000000000 +0700
+@@ -5,8 +5,8 @@
+ //////////////////////////////////////////////////////////
+ 
+ main = {
+-  conf_dir = "@prefix@/etc/rahunas/rahunas.d"
+-  log_file = "@prefix@/var/log/rahunas/rahunas.log"
++  conf_dir = "@sysconfdir@/rahunas/rahunas.d"
++  log_file = "@localstatedir@/log/rahunas/rahunas.log"
+ 
+   bandwidth_shape = "yes"  
+   bittorrent_download_max = "512"
+Index: b/example/rahunas.default.in
+===================================================================
+--- a/example/rahunas.default.in	2009-04-01 14:14:09.000000000 +0700
++++ b/example/rahunas.default.in	2009-04-01 14:14:21.000000000 +0700
+@@ -5,4 +5,4 @@
+ RUN_DAEMON=no
+ 
+ # RahuNAS config file
+-RAHUNAS_CONFIG=@prefix@/etc/rahunas/rahunas.conf
++RAHUNAS_CONFIG=@sysconfdir@/rahunas/rahunas.conf

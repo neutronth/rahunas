@@ -1,0 +1,15 @@
+rahunas (0.1.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/gbp.conf: Introduce git-buildpackage config file.
+  * debian/control, debian/rules, +debian/patches/*:
+    Add quilt to maintain the patches.
+  * debian/control: Update Standards-Version: 3.8.1, no change.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 31 Mar 2009 23:53:12 +0700
+
+rahunas (0.1.1-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 03 Dec 2008 22:55:47 +0700
