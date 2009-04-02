@@ -466,11 +466,10 @@ rules () {
       # Source host
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS src -j DROP
-
-    else
+    fi
+  else
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
-    fi
   fi
   
   ##

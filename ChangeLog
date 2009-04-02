@@ -1,5 +1,10 @@
 2009-04-02  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* example/firewall.sh.in: Fix the script do not add bittorrent blocking rules
+	  due to the miss point of condition check.
+
+2009-04-02  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* example/{rahunas,rahunas-vserver}.conf.in,
 	  example/rahunas.default.in: 
 	  Substitute @prefix@ with the appropriate variables for each location, 
