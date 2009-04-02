@@ -89,8 +89,6 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
     .rh_vserver.vserver_ip = NULL, 
     .rh_vserver.vserver_name = NULL,
     .rh_vserver.idle_timeout = IDLE_TIMEOUT,
-    .rh_vserver.xml_serv_port = XMLSERVICE_PORT,
-    .rh_vserver.xml_serv_url = strdup(XMLSERVICE_URL),
   };
 
   cfg_file = fopen(vserver_cfg_file, "r");
@@ -106,7 +104,6 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
 
   if (get_config(vserver_cfg_file, &config) != 0) {
     rh_free(&config.rh_vserver.vserver_ip);
-    rh_free(&config.rh_vserver.xml_serv_url);
     return -1;
   }
 

@@ -17,7 +17,7 @@
 
 #define XMLSERVICE_HOST "localhost"
 #define XMLSERVICE_PORT 80
-#define XMLSERVICE_URL  "/xmlrpc_service.php"
+#define XMLSERVICE_URL  "/rahunas_service/xmlrpc_service.php"
 
 #define CONFIG_FILE RAHUNAS_CONF_DIR "rahunas.conf"
 #define DEFAULT_PID RAHUNAS_RUN_DIR "rahunasd.pid"
@@ -35,8 +35,6 @@ struct rahunas_vserver_config {
   char *vserver_name;
   int  idle_timeout;
   char *vserver_ip;
-  int  xml_serv_port;
-  char *xml_serv_url;
 };
 
 union rahunas_config {

@@ -40,12 +40,8 @@ int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
   if (params == NULL)
     return (-1);
 
-  DP("XMLRPC: %s%s, port=%d", vs->vserver_config->vserver_ip,
-                               vs->vserver_config->xml_serv_url,
-                               vs->vserver_config->xml_serv_port);
-  client = gnet_xmlrpc_client_new(vs->vserver_config->vserver_ip, 
-                                  vs->vserver_config->xml_serv_url, 
-                                  vs->vserver_config->xml_serv_port);
+  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL, 
+                                  XMLSERVICE_PORT);
 
   if (!client) {
     logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);

@@ -1,6 +1,17 @@
 2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-config.{h,c}, src/rh-server.c , src/rh-xmlrpc-cmd.c:
+	  - Drop all xml_serv_* due to now only the "localhost" that 
+	    gnet_xmlrpc_client_new() can make a connection to.
+	  - Substitute xml_serv_* with the XMLSERVICE_HOST, XMLSERVICE_URL and 
+	    XMLSERVICE_PORT.
+	  - According to XMLSERVICE_URL  "/rahunas_service/xmlrpc_service.php",
+	    needs the special apache config to do the alias for this path,
+	    will do in the debian apache config file for example.
+
+2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-config.{h,c}, src/rh-server.c , src/rh-xmlrpc-cmd.c:
 	  - Drop xml_serv_host from config list and replaced by vserver_ip.
 	  - Try to sending XML-RPC command via vserver_ip.
 

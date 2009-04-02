@@ -75,12 +75,6 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         config->rh_vserver.vserver_ip = strdup(value); 
       } else if (strncmp(sub_key, "idle_timeout", 12) == 0) {
         config->rh_vserver.idle_timeout = atoi(value);
-      } else if (strncmp(sub_key, "xml_serv_port", 13) == 0) {
-        config->rh_vserver.xml_serv_port = atoi(value); 
-      } else if (strncmp(sub_key, "xml_serv_url", 12) == 0) {
-        if (config->rh_vserver.xml_serv_url != NULL)
-          free(config->rh_vserver.xml_serv_url);
-        config->rh_vserver.xml_serv_url = strdup(value); 
       }
       break;
   }
@@ -172,7 +166,6 @@ int cleanup_vserver_config(struct rahunas_vserver_config *config)
 {
   rh_free(&(config->vserver_ip));
   rh_free(&(config->vserver_name));  
-  rh_free(&(config->xml_serv_url));
   return 0;
 }
 
