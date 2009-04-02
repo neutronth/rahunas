@@ -1,3 +1,10 @@
+2009-04-02  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/{rahunas,rahunas-vserver}.conf.in,
+	  example/rahunas.default.in: 
+	  Substitute @prefix@ with the appropriate variables for each location, 
+	  @prefix@/etc with @sysconfdir@, @prefix@/var with @localstatedir@.
+
 2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* configure.ac: Bump version to 0.1.3
