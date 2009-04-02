@@ -1,3 +1,10 @@
+rahunas (0.1.2-3) unstable; urgency=low
+
+  * +debian/patches/02_firewall_bittorrent.patch: Firewall script do not add
+    the bittorrent block rules as requested.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Thu, 02 Apr 2009 23:12:00 +0700
+
 rahunas (0.1.2-2) unstable; urgency=low
 
   * debian/rahunas.postinst: Fix fail to install if /etc/rahunas/rahunas.d does
