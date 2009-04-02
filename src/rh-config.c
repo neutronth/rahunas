@@ -69,14 +69,14 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
     case VSERVER:
       if (strncmp(sub_key, "vserver_id", 10) == 0) {
         config->rh_vserver.vserver_id = atoi(value);
+      } else if (strncmp(sub_key, "vserver_ip", 10) == 0) {
+        if (config->rh_vserver.vserver_ip != NULL)
+          free(config->rh_vserver.vserver_ip);
+        config->rh_vserver.vserver_ip = strdup(value); 
       } else if (strncmp(sub_key, "idle_timeout", 12) == 0) {
         config->rh_vserver.idle_timeout = atoi(value);
       } else if (strncmp(sub_key, "xml_serv_port", 13) == 0) {
         config->rh_vserver.xml_serv_port = atoi(value); 
-      } else if (strncmp(sub_key, "xml_serv_host", 13) == 0) {
-        if (config->rh_vserver.xml_serv_host != NULL)
-          free(config->rh_vserver.xml_serv_host);
-        config->rh_vserver.xml_serv_host = strdup(value); 
       } else if (strncmp(sub_key, "xml_serv_url", 12) == 0) {
         if (config->rh_vserver.xml_serv_url != NULL)
           free(config->rh_vserver.xml_serv_url);
@@ -170,8 +170,8 @@ int get_vservers_config(const char *conf_dir, struct main_server *server)
 
 int cleanup_vserver_config(struct rahunas_vserver_config *config)
 {
+  rh_free(&(config->vserver_ip));
   rh_free(&(config->vserver_name));  
-  rh_free(&(config->xml_serv_host));
   rh_free(&(config->xml_serv_url));
   return 0;
 }

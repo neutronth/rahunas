@@ -86,10 +86,10 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
 
   union rahunas_config config = {
     .rh_vserver.vserver_id = VSERVER_ID,
+    .rh_vserver.vserver_ip = NULL, 
     .rh_vserver.vserver_name = NULL,
     .rh_vserver.idle_timeout = IDLE_TIMEOUT,
     .rh_vserver.xml_serv_port = XMLSERVICE_PORT,
-    .rh_vserver.xml_serv_host = strdup(XMLSERVICE_HOST),
     .rh_vserver.xml_serv_url = strdup(XMLSERVICE_URL),
   };
 
@@ -105,7 +105,7 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
   memset(vserver_config, 0, sizeof(struct rahunas_vserver_config));
 
   if (get_config(vserver_cfg_file, &config) != 0) {
-    rh_free(&config.rh_vserver.xml_serv_host);
+    rh_free(&config.rh_vserver.vserver_ip);
     rh_free(&config.rh_vserver.xml_serv_url);
     return -1;
   }

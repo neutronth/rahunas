@@ -1,3 +1,12 @@
+2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-config.{h,c}, src/rh-server.c , src/rh-xmlrpc-cmd.c:
+	  - Drop xml_serv_host from config list and replaced by vserver_ip.
+	  - Try to sending XML-RPC command via vserver_ip.
+
+	* weblogin/xmlrpc_service.php: Add the ip parameter checking to get the
+	  appropriate config from list.
+
 2009-04-02  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/firewall.sh.in: Fix the script do not add bittorrent blocking rules

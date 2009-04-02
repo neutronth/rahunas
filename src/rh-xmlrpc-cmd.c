@@ -35,10 +35,15 @@ int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
                            mac_tostring(member->mac_address),
                            cause);
 
+  DP("Params = %s", params);
+
   if (params == NULL)
     return (-1);
 
-  client = gnet_xmlrpc_client_new(vs->vserver_config->xml_serv_host, 
+  DP("XMLRPC: %s%s, port=%d", vs->vserver_config->vserver_ip,
+                               vs->vserver_config->xml_serv_url,
+                               vs->vserver_config->xml_serv_port);
+  client = gnet_xmlrpc_client_new(vs->vserver_config->vserver_ip, 
                                   vs->vserver_config->xml_serv_url, 
                                   vs->vserver_config->xml_serv_port);
 
@@ -54,6 +59,9 @@ int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
     }
   else
     {
+      if (reply != NULL)
+        DP("stopacct reply = %s", reply);
+
       DP("%s", "Failed executing stopacct!");
       return (-1);
     }

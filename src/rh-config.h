@@ -34,8 +34,8 @@ struct rahunas_vserver_config {
   int  vserver_id;
   char *vserver_name;
   int  idle_timeout;
+  char *vserver_ip;
   int  xml_serv_port;
-  char *xml_serv_host;
   char *xml_serv_url;
 };
 

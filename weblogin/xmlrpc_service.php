@@ -33,6 +33,7 @@
 
 require_once 'config.php';
 require_once 'rahu_radius.class.php';
+require_once 'networkchk.php';
 
 // Deny all connections that does not come from the localhost
 if ($_SERVER['REMOTE_ADDR'] != "127.0.0.1")
@@ -88,6 +89,9 @@ if ($GLOBALS["task"] == "do_stopacct") {
   $session_start =& $GLOBALS["session_start"];
   $mac_address =& $GLOBALS["mac_address"];
   $cause =& $GLOBALS["cause"];
+
+  $config = get_config_by_network($ip, $config_list);
+  $vserver_id = $config["VSERVER_ID"];
 
   $racct = new rahu_radius_acct ($username);
   $racct->host = $config["RADIUS_HOST"];
