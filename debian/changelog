@@ -1,3 +1,15 @@
+rahunas (0.1.2-4) unstable; urgency=low
+
+  * +debian/patches/03_fix_users_stuck.patch: Backported from upstream git to
+    fix the users stuck in the Radius Accouting DB due to the unable to 
+    connect to the XMLRPC service.
+
+  * debian/rahunas-weblogin.apache2.conf: Add Alias /rahunas_service to 
+    support the new change for fix the users stuck and prevent the failure of
+    the cleanup process on restart. 
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Fri, 03 Apr 2009 03:11:31 +0700
+
 rahunas (0.1.2-3) unstable; urgency=low
 
   * +debian/patches/02_firewall_bittorrent.patch: Firewall script do not add
