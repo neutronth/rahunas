@@ -1,5 +1,10 @@
 2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* weblogin/{login,squid_helper}.php: Add caught exception for 
+	  'XML_RPC2_CurlException' which thrown on server unreachable.
+
+2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rh-config.{h,c}, src/rh-server.c , src/rh-xmlrpc-cmd.c:
 	  - Drop all xml_serv_* due to now only the "localhost" that 
 	    gnet_xmlrpc_client_new() can make a connection to.
