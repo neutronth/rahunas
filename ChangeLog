@@ -1,3 +1,14 @@
+2009-04-06  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunasd.c, src/rh-task-{memset,ipset}.c: Fix the member deleted during
+	  polling process that cause the process will stop unexpectly.
+	* src/rh-task-dbset.c:
+	  - Using task_req and rh_task_startsess to restore set data from DB instead
+	    of manual call.
+	* src/rh-task.h: Add bandwidth_slot_id into task_req structure.
+	* src/rh-xmlrpc-server.c: Initial session_start = 0 to trigger the program
+	  to use the current timestamp;
+
 2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* weblogin/{login,squid_helper}.php: Add caught exception for 

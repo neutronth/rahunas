@@ -33,6 +33,8 @@ size_t nas_stopservice(void *data)
 
   while (runner != NULL) {
     member = (struct rahunas_member *) runner->data;
+    runner = g_list_next(runner);
+
     id = member->id;
 
     DP("Found IP: %s in set, try logout", idtoip(process->vs->v_map, id));
@@ -41,8 +43,6 @@ size_t nas_stopservice(void *data)
     req.req_opt = RH_RADIUS_TERM_NAS_REBOOT;
     send_xmlrpc_stopacct(process->vs, id, RH_RADIUS_TERM_NAS_REBOOT);
     rh_task_stopsess(process->vs, &req);
-
-    runner = g_list_next(runner);
   }
 }
 

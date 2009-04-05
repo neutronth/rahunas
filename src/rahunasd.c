@@ -101,6 +101,8 @@ size_t expired_check(void *data)
 
   while (runner != NULL) {
     member = (struct rahunas_member *)runner->data;
+    runner = g_list_next(runner);
+
     id = member->id;
 
     DP("Processing id = %d", id);
@@ -129,8 +131,6 @@ size_t expired_check(void *data)
                            RH_RADIUS_TERM_SESSION_TIMEOUT);
       res = rh_task_stopsess(process->vs, &req);
     }
-
-    runner = g_list_next(runner);
   }
 }
 
