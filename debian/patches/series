@@ -1,3 +1,4 @@
 01_example_config.patch
 02_firewall_bittorrent.patch
 03_fix_users_stuck.patch
+04-fix-the-member-deleted-during-polling-process.patch

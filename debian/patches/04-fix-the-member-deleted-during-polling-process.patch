@@ -1,0 +1,241 @@
+diff --git a/src/rahunasd.c b/src/rahunasd.c
+index 8a33db8..60a8de5 100644
+--- a/src/rahunasd.c
++++ b/src/rahunasd.c
+@@ -101,6 +101,8 @@ size_t expired_check(void *data)
+ 
+   while (runner != NULL) {
+     member = (struct rahunas_member *)runner->data;
++    runner = g_list_next(runner);
++
+     id = member->id;
+ 
+     DP("Processing id = %d", id);
+@@ -129,8 +131,6 @@ size_t expired_check(void *data)
+                            RH_RADIUS_TERM_SESSION_TIMEOUT);
+       res = rh_task_stopsess(process->vs, &req);
+     }
+-
+-    runner = g_list_next(runner);
+   }
+ }
+ 
+diff --git a/src/rh-task-dbset.c b/src/rh-task-dbset.c
+index 6445045..8980aca 100644
+--- a/src/rh-task-dbset.c
++++ b/src/rh-task-dbset.c
+@@ -13,8 +13,6 @@
+ #include "rh-task.h"
+ #include "rh-ipset.h"
+ #include "rh-utils.h"
+-#include "rh-task-memset.h"
+-#include "rh-task-bandwidth.h"
+ 
+ struct dbset_row {
+   gchar *session_id;
+@@ -207,7 +205,8 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
+   uint32_t id;
+   GList *member_node = NULL;
+   struct rahunas_member *member = NULL;
+-  struct bandwidth_req bw_req;
++  struct task_req req;
++  unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
+   unsigned char max_try = 3;
+  
+   node = g_list_first(*data_list);
+@@ -225,57 +224,24 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
+ 
+     id = iptoid(vs->v_map, row->ip);
+ 
+-    DP("id=%d", id);
+-    
+     if (id < 0)
+       continue;
+ 
+-    member_node = member_get_node_by_id(vs, id);
+-
+-    if (member_node == NULL) {
+-      DP("Create new member");
+-      member = (struct rahunas_member *) rh_malloc(sizeof(struct rahunas_member));
+-      if (member == NULL)
+-        continue; 
+-      
+-      memset(member, 0, sizeof(struct rahunas_member));
+-      vs->v_map->members =
+-        g_list_insert_sorted(vs->v_map->members, member, idcmp);
+-    } else {
+-      DP("Member already exists");
+-      member = (struct rahunas_member *) member_node->data;
+-    }
++    req.id = id;
++    req.vserver_id = atoi(row->vserver_id);
++    req.username = row->username;
++    req.session_id = row->session_id;
++    parse_mac(row->mac, &ethernet);
++    memcpy(req.mac_address, &ethernet, ETH_ALEN);
+ 
+-    // MEMSET
+-    member->id = id;
+-    member->session_id = g_strdup(row->session_id);
+-    member->username   = g_strdup(row->username);
+-    parse_mac(row->mac, &member->mac_address); 
+-    memcpy(&member->session_start, &row->session_start, 
+-           sizeof(time_t));
+-    memcpy(&member->session_timeout, &row->session_timeout, 
+-           sizeof(time_t));
+-    member->bandwidth_slot_id = row->bandwidth_slot_id;
+-    member->bandwidth_max_down = row->bandwidth_max_down;
+-    member->bandwidth_max_up = row->bandwidth_max_up;
+-
+-    // IPSET
+-    DP("Restore, ip=%s, mac=%s", row->ip, row->mac);
+-    set_adtip(vs->v_set, row->ip, row->mac, IP_SET_OP_ADD_IP);
+-
+-
+-    // Bandwidth
+-    sprintf(bw_req.ip, "%s", row->ip);
+-    sprintf(bw_req.bandwidth_max_down, "%lu", row->bandwidth_max_down);
+-    sprintf(bw_req.bandwidth_max_up, "%lu", row->bandwidth_max_up);
+-    sprintf(bw_req.slot_id, "%u", row->bandwidth_slot_id); 
+-
+-    mark_reserved_slot_id(row->bandwidth_slot_id);
+-
+-    while (max_try-- > 0) { 
+-      if (bandwidth_add(vs, &bw_req) == 0)
+-        break;
+-    }
++    req.session_start = row->session_start;
++    req.session_timeout = row->session_timeout;
++
++    req.bandwidth_slot_id = row->bandwidth_slot_id;
++    req.bandwidth_max_down = row->bandwidth_max_down; 
++    req.bandwidth_max_up = row->bandwidth_max_up;
++
++    rh_task_startsess(vs, &req);
+   }
+   return TRUE;
+ }
+@@ -372,7 +338,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
+   connection = gda_client_open_connection (client, 
+                  PROGRAM, NULL, NULL,
+                  GDA_CONNECTION_OPTIONS_NONE, NULL);
+-  
++
+   strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
+   strftime(&time_str2, sizeof time_str2, "%s", 
+     localtime(&req->session_timeout));
+diff --git a/src/rh-task-ipset.c b/src/rh-task-ipset.c
+index 32a6663..e82af36 100644
+--- a/src/rh-task-ipset.c
++++ b/src/rh-task-ipset.c
+@@ -33,6 +33,8 @@ size_t nas_stopservice(void *data)
+ 
+   while (runner != NULL) {
+     member = (struct rahunas_member *) runner->data;
++    runner = g_list_next(runner);
++
+     id = member->id;
+ 
+     DP("Found IP: %s in set, try logout", idtoip(process->vs->v_map, id));
+@@ -41,8 +43,6 @@ size_t nas_stopservice(void *data)
+     req.req_opt = RH_RADIUS_TERM_NAS_REBOOT;
+     send_xmlrpc_stopacct(process->vs, id, RH_RADIUS_TERM_NAS_REBOOT);
+     rh_task_stopsess(process->vs, &req);
+-
+-    runner = g_list_next(runner);
+   }
+ }
+ 
+diff --git a/src/rh-task-memset.c b/src/rh-task-memset.c
+index 10740d8..0ed8bfe 100644
+--- a/src/rh-task-memset.c
++++ b/src/rh-task-memset.c
+@@ -31,11 +31,10 @@ GList *member_get_node_by_id(struct vserver *vs, uint32_t id)
+ 
+ gint idcmp(struct rahunas_member *a, struct rahunas_member *b)
+ {
+-  if (a == NULL || b == NULL)
+-    return 0;
+-
+   if (a != NULL && b != NULL)
+     return (a->id - b->id);
++
++  return -1;
+ }
+ 
+ /* Initialize */
+@@ -65,6 +64,7 @@ static void init (struct vserver *vs)
+ static void cleanup (struct vserver *vs)
+ {
+   GList *runner = NULL;
++  GList *deleting = NULL;
+   struct rahunas_member *member = NULL;
+ 
+   logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET cleanup..",
+@@ -77,9 +77,13 @@ static void cleanup (struct vserver *vs)
+     while (runner != NULL) {
+       member = (struct rahunas_member *) runner->data; 
+ 
++      DP("Cleanup IP: %s", idtoip(vs->v_map, member->id));
++
+       rh_free_member(member);
++      deleting = runner;
++      runner = g_list_next(runner);
+ 
+-      runner = g_list_delete_link(runner, runner);
++      vs->v_map->members = g_list_delete_link(vs->v_map->members, deleting);
+     }
+ 
+     g_list_free(vs->v_map->members);
+@@ -122,7 +126,8 @@ static int startsess (struct vserver *vs, struct task_req *req)
+     memset(member, 0, sizeof(struct rahunas_member));
+ 
+     vs->v_map->members = 
+-      g_list_insert_sorted(vs->v_map->members, member, idcmp);
++        g_list_insert_sorted(vs->v_map->members, member, idcmp);
++
+   } else {
+     DP("Member already exists");
+     member = (struct rahunas_member *)member_node->data;
+@@ -144,9 +149,11 @@ static int startsess (struct vserver *vs, struct task_req *req)
+   if (!member->session_id)
+     member->session_id = termstring;
+ 
+-  time(&(member->session_start));
+-  memcpy(&req->session_start, &member->session_start, 
+-         sizeof(time_t));
++  if (req->session_start == 0) {
++    time(&(req->session_start));
++  } 
++
++  memcpy(&member->session_start, &req->session_start, sizeof(time_t));
+ 
+   memcpy(&member->mac_address, &req->mac_address, ETH_ALEN);
+ 
+diff --git a/src/rh-task.h b/src/rh-task.h
+index 93a141d..0e90623 100644
+--- a/src/rh-task.h
++++ b/src/rh-task.h
+@@ -19,6 +19,7 @@ struct task_req {
+   unsigned char mac_address[ETH_ALEN];
+   time_t session_start;
+   time_t session_timeout;
++  unsigned short bandwidth_slot_id; 
+   unsigned long bandwidth_max_down;
+   unsigned long bandwidth_max_up;
+   unsigned short req_opt;
+diff --git a/src/rh-xmlrpc-server.c b/src/rh-xmlrpc-server.c
+index 93bd671..3095d4d 100644
+--- a/src/rh-xmlrpc-server.c
++++ b/src/rh-xmlrpc-server.c
+@@ -78,6 +78,7 @@ int do_startsession(GNetXmlRpcServer *server,
+   req.session_id = session_id;
+   parse_mac(mac_address, &ethernet);
+   memcpy(req.mac_address, &ethernet, ETH_ALEN);
++  req.session_start = 0;
+   req.session_timeout = 0;
+ 
+   if (session_timeout != NULL) {
+-- 
+1.6.2.1
+

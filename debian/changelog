@@ -1,3 +1,12 @@
+rahunas (0.1.2-5) unstable; urgency=low
+
+  * +debian/patches/04-fix-the-member-deleted-during-polling-process.patch:
+    Backported from upstream git to fix the member was deleted during polling
+    process cause of the program will stop unexpectly and often the login 
+    users get stuck in the DB after service restarted.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 06 Apr 2009 00:30:22 +0700
+
 rahunas (0.1.2-4) unstable; urgency=low
 
   * +debian/patches/03_fix_users_stuck.patch: Backported from upstream git to
