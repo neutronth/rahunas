@@ -1,5 +1,13 @@
 2009-04-06  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* example/firewall.sh.in: Add the additional rules to allow in some situation 
+	  the connections could not established before the FORWARD rules allow the 
+	  clients, thus the connections never mark.  Just allow them passthrough the 
+	  rules if the connections do not mark but the clients are in the set 
+	  (allow them).
+
+2009-04-06  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* src/rahunasd.c, src/rh-task-{memset,ipset}.c: Fix the member deleted during
 	  polling process that cause the process will stop unexpectly.
 	* src/rh-task-dbset.c:

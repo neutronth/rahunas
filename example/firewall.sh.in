@@ -245,6 +245,14 @@ navigation_rules () {
   $IPTABLES $action FORWARD \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_FORWARD
+
+  # In some situation the connections could not established before
+  # the FORWARD rules allow the clients, thus the connections never mark.
+  # Just allow them passthrough the rules if the connections do not mark but
+  # the clients are in the set (allow them).
+  $IPTABLES $action FORWARD -m set --set $SETNAME dst -j $CHAIN_FORWARD_AUTH
+  $IPTABLES $action FORWARD -m set --set $SETNAME src -j $CHAIN_FORWARD_AUTH
+
   $IPTABLES $action FORWARD -m connmark --mark 2/2 \
     $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
     -j $CHAIN_FORWARD_AUTH
