@@ -1,5 +1,15 @@
 2009-04-18  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* example/{rahunas,rahunas-vserver}.conf.in, tools/firewall.sh.in:
+	  - Remove dhcp field from vserver config due to the dhcp request is broadcast
+	    message could not be classified which vserver it is.
+	  - Remove dhcp_range from vserver config which will consider later how to
+	    handle it.
+	  - Move the dhcp firewall code from vserver section to policy.
+	  - Adjust the webserver access limit rate for performance tuning.
+
+2009-04-18  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* -example/{bandwidth,firewall}.sh.in, +tools/{bandwidth,firewall}.sh.in:
 	  Move now considered neccessary scripts from example/ to tools/.
 	* configure.ac: Update accordingly.

@@ -47,6 +47,7 @@ MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
 MAIN_BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG`
+MAIN_DHCP=`get_config_value main dhcp $RAHUNAS_CONFIG`
 
 # Virtual Server : config
 VSERVER_ID=
@@ -59,7 +60,6 @@ VSERVER_IP=
 CLIENTS=
 EXCLUDED=
 BANDWIDTH_SHAPE=
-DHCP=
 DNS=
 SSH=
 PROXY=
@@ -123,7 +123,6 @@ get_config () {
   CLIENTS=`get_config_value $NAME clients $file`
   EXCLUDED=`get_config_value $NAME excluded $file`
   BANDWIDTH_SHAPE=$MAIN_BANDWIDTH_SHAPE
-  DHCP=`get_config_value $NAME dhcp $file`
   DNS=`get_config_value $NAME dns $file`
   SSH=`get_config_value $NAME ssh $file`
   PROXY=`get_config_value $NAME proxy $file`
@@ -378,6 +377,19 @@ policy () {
   $IPTABLES -P FORWARD DROP 
 
   $IPTABLES -A INPUT -i lo -j ACCEPT
+
+  # DHCP Settings
+
+  if [ "$MAIN_DHCP" = "yes" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "no" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "forward" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j ACCEPT
+  fi
 }
 
 cleanup_policy () {
@@ -387,6 +399,19 @@ cleanup_policy () {
   $IPTABLES -P FORWARD ACCEPT 
 
   $IPTABLES -D INPUT -i lo -j ACCEPT
+
+  # DHCP Settings
+
+  if [ "$MAIN_DHCP" = "yes" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "no" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "forward" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j ACCEPT
+  fi
 }
 
 rules () {
@@ -421,13 +446,13 @@ rules () {
   ##
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP\
      --dports $VSERVER_PORTS_ALLOW \
-    -m recent --rcheck --seconds 15 --name incoming_throttle -j DROP
+    -m recent --rcheck --seconds 6 --name incoming_throttle -j DROP
 
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
     --dports $VSERVER_PORTS_ALLOW \
-    -m hashlimit --hashlimit 5/sec \
-    --hashlimit-mode srcip --hashlimit-burst 10 \
-    --hashlimit-htable-expire 15000 --hashlimit-name incoming \
+    -m hashlimit --hashlimit 20/sec \
+    --hashlimit-mode srcip --hashlimit-burst 30 \
+    --hashlimit-htable-expire 4000 --hashlimit-name incoming \
     -j ACCEPT
 
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
@@ -447,20 +472,7 @@ rules () {
   $IPTABLES -A $CHAIN_INPUT -p icmp -m limit --limit 5/second \
     -d $VSERVER_IP -j ACCEPT
 
-  ##
-  # Allow incoming DHCP request
-  ##
 
-  if [ "$DHCP" = "yes" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j ACCEPT 
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j DROP
-  elif [ "$DHCP" = "no" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j DROP 
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j DROP
-  elif [ "$DHCP" = "forward" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j DROP 
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j ACCEPT
-  fi
 
   ##
   # Bittorrent Blocking (layer7 module in kernel is needed)

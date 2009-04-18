@@ -16,8 +16,6 @@ rahunas_default = {
   excluded = ""
   idle_timeout = "600"
 
-  dhcp = "yes"
-  dhcp_range = "172.30.0.10 172.30.3.254"
   dns = "yes"
   ssh = "yes"
   proxy = "transparent"

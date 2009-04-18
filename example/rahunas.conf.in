@@ -8,6 +8,8 @@ main = {
   conf_dir = "@sysconfdir@/rahunas/rahunas.d"
   log_file = "@localstatedir@/log/rahunas/rahunas.log"
 
+  dhcp = "yes"
+
   bandwidth_shape = "yes"  
   bittorrent_download_max = "512"
   bittorrent_upload_max = "256"
