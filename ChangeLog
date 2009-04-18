@@ -1,3 +1,13 @@
+2009-04-18  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* -example/{bandwidth,firewall}.sh.in, +tools/{bandwidth,firewall}.sh.in:
+	  Move now considered neccessary scripts from example/ to tools/.
+	* configure.ac: Update accordingly.
+
+	* data/rahunas.db: Change the primary key from only session_id to 
+	  vserver_id,ip and mac which will prevent the same client login twice by
+	  mistake.
+
 2009-04-06  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/firewall.sh.in: Add the additional rules to allow in some situation 

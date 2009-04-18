@@ -59,12 +59,12 @@ AC_CONFIG_FILES([
 	src/Makefile
 	data/Makefile
   src/include/linux/netfilter_ipv4/Makefile
+  tools/firewall.sh
+  tools/bandwidth.sh
   example/rahunas.default
   example/rahunas.init
   example/rahunas.conf
   example/rahunas-vserver.conf
-  example/firewall.sh
-  example/bandwidth.sh
 ])
 
 AC_OUTPUT
