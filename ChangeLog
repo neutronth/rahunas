@@ -1,5 +1,10 @@
 2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
 
+	* +tools/weblogin-config-update.sh.in: Add new weblogin config in php update script.
+	* configure.ac: Updated accordingly.
+
+2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
+
 	* +src/rh-task-iptables.{h,c}: 
 	  Add new iptables handle, preparing for configuration reloading.
 	* src/Makefile.am: Changed accordingly, iptables handle.

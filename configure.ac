@@ -61,6 +61,7 @@ AC_CONFIG_FILES([
   src/include/linux/netfilter_ipv4/Makefile
   tools/firewall.sh
   tools/bandwidth.sh
+	tools/weblogin-config-update.sh
   example/rahunas.default
   example/rahunas.init
   example/rahunas.conf
