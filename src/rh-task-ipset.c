@@ -12,7 +12,7 @@
 #include "rh-task.h"
 #include "rh-xmlrpc-cmd.h"
 
-size_t nas_stopservice(void *data)
+size_t set_cleanup(void *data)
 {
   struct processing_set *process = (struct processing_set *) data;
   struct ip_set_list *setlist = (struct ip_set_list *) process->list;
@@ -46,16 +46,31 @@ size_t nas_stopservice(void *data)
   }
 }
 
+/* Start service task */
+static int startservice ()
+{
+  return 0;
+}
+
+/* Stop service task */
+static int stopservice  ()
+{
+  return 0;
+}
+
 /* Initialize */
 static void init (struct vserver *vs)
 {
   vs->v_set = set_adt_get(vs->vserver_config->vserver_name);
-  logmsg(RH_LOG_NORMAL, "[%s] Task IPSET init..",
+  logmsg(RH_LOG_NORMAL, "[%s] Task IPSET initialize..",
          vs->vserver_config->vserver_name);  
 
   DP("getsetname: %s", vs->v_set->name);
   DP("getsetid: %d", vs->v_set->id);
   DP("getsetindex: %d", vs->v_set->index);
+
+  /* Ensure the set is empty */
+  set_flush(vs->vserver_config->vserver_name);
 }
 
 /* Cleanup */
@@ -63,26 +78,11 @@ static void cleanup (struct vserver *vs)
 {
   logmsg(RH_LOG_NORMAL, "[%s] Task IPSET cleanup..",
          vs->vserver_config->vserver_name);  
-  set_flush(vs->vserver_config->vserver_name);
 
+  walk_through_set(&set_cleanup, vs);
+
+  set_flush(vs->vserver_config->vserver_name);
   rh_free(&(vs->v_set));
-}
-
-/* Start service task */
-static int startservice (struct vserver *vs)
-{
-  /* Ensure the set is empty */
-  set_flush(vs->vserver_config->vserver_name);
-}
-
-/* Stop service task */
-static int stopservice  (struct vserver *vs)
-{
-  logmsg(RH_LOG_NORMAL, "[%s] Task IPSET stop..",
-         vs->vserver_config->vserver_name);  
-  walk_through_set(&nas_stopservice, vs);
-
-  return 0;
 }
 
 /* Start session task */

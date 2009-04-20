@@ -37,12 +37,26 @@ gint idcmp(struct rahunas_member *a, struct rahunas_member *b)
   return -1;
 }
 
+/* Start service task */
+static int startservice ()
+{
+  /* Do nothing or need to implement */
+  return 0;
+}
+
+/* Stop service task */
+static int stopservice  ()
+{
+  /* Do nothing or need to implement */
+  return 0;
+}
+
 /* Initialize */
 static void init (struct vserver *vs)
 {
   int size;
 
-  logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET init..",
+  logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET initialize..",
          vs->vserver_config->vserver_name);  
 
   vs->v_map = (struct rahunas_map *)(rh_malloc(sizeof(struct rahunas_map)));
@@ -93,19 +107,6 @@ static void cleanup (struct vserver *vs)
   }
 
   return 0;
-}
-
-
-/* Start service task */
-static int startservice (struct vserver *vs)
-{
-  /* Do nothing or need to implement */
-}
-
-/* Stop service task */
-static int stopservice  (struct vserver *vs)
-{
-  /* Do nothing or need to implement */
 }
 
 /* Start session task */

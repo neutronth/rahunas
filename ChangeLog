@@ -1,3 +1,15 @@
+2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +src/rh-task-iptables.{h,c}: 
+	  Add new iptables handle, preparing for configuration reloading.
+	* src/Makefile.am: Changed accordingly, iptables handle.
+	* src/rh-config.{h,c}: Add more config fields.
+	* src/rh-task-{bandwidth,dbset,ipset,memset}.c, src/rh-task.{h,c}:
+	  Change the {start,stop}service API and use them to do the task only when
+	  the service is start or stop.
+	* src/rahunasd.c, src/rh-server.c: Changed accordingly, {start,stop}service.
+	* tools/firewall.sh.in: Adapted to the new iptables handle.
+
 2009-04-18  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/{rahunas,rahunas-vserver}.conf.in, tools/firewall.sh.in:

@@ -27,8 +27,6 @@ struct dbset_row {
   long bandwidth_max_up;
 };
 
-static db_init = 0;
-
 gboolean get_errors (GdaConnection * connection)
 {
   GList *list;
@@ -246,40 +244,36 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
   return TRUE;
 }
 
-/* Initialize */
-static void init (struct vserver *vs)
+/* Start service task */
+static int startservice ()
 {
   char ds_name[] = PROGRAM;
   char ds_provider[] = "SQLite";
   char ds_cnc_string[] = "DB_DIR=" RAHUNAS_CONF_DIR ";DB_NAME=" DB_NAME; 
   char ds_desc[] = "RahuNAS DB Set";
 
-  if (!(db_init++)) {
-    logmsg(RH_LOG_NORMAL, "Task DBSET init..");
-    
-    gda_init(ds_name, RAHUNAS_VERSION, NULL, NULL);
-    
-    gda_config_save_data_source(ds_name, ds_provider, 
-                                ds_cnc_string, ds_desc,
-                                NULL, NULL, FALSE);
+  logmsg(RH_LOG_NORMAL, "Task DBSET start..");
    
-    list_datasource();
-  }
+  gda_init(ds_name, RAHUNAS_VERSION, NULL, NULL);
+    
+  gda_config_save_data_source(ds_name, ds_provider, 
+                              ds_cnc_string, ds_desc,
+                              NULL, NULL, FALSE);
+   
+  list_datasource();
+
+  return 0;
 }
 
-/* Cleanup */
-static void cleanup (struct vserver *vs)
+/* Stop service task */
+static int stopservice  ()
 {
-  if ((--db_init) == 0) {
-    logmsg(RH_LOG_NORMAL, "Task DBSET cleanup..");  
-  
-    gda_config_remove_data_source (PROGRAM);
-  }
+  gda_config_remove_data_source (PROGRAM);
+  return 0;
 }
 
-
-/* Start service task */
-static int startservice (struct vserver *vs)
+/* Initialize */
+static void init (struct vserver *vs)
 {
   GdaClient *client;
   GdaConnection *connection;
@@ -288,7 +282,7 @@ static int startservice (struct vserver *vs)
   struct dbset_row *row;
   char select_cmd[256];
 
-  logmsg(RH_LOG_NORMAL, "[%s] Task DBSET start..",
+  logmsg(RH_LOG_NORMAL, "[%s] Task DBSET initialize..",
          vs->vserver_config->vserver_name);  
 
   client = gda_client_new ();
@@ -310,16 +304,12 @@ static int startservice (struct vserver *vs)
   gda_client_close_all_connections (client);
 
   g_object_unref(G_OBJECT(client));
-
-  return 0;
 }
 
-/* Stop service task */
-static int stopservice  (struct vserver *vs)
+/* Cleanup */
+static void cleanup (struct vserver *vs)
 {
-  /* Do nothing or need to implement */
-  logmsg(RH_LOG_NORMAL, "[%s] Task DBSET stop..",
-         vs->vserver_config->vserver_name);  
+  /* Do nothing */
 }
 
 /* Start session task */

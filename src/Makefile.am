@@ -30,6 +30,8 @@ rahunasd_SOURCES = \
 	rh-utils.h \
 	rh-task.c \
 	rh-task.h \
+	rh-task-iptables.c \
+	rh-task-iptables.h \
 	rh-task-memset.c \
 	rh-task-memset.h \
 	rh-task-ipset.c \

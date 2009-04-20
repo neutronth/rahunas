@@ -6,6 +6,7 @@
 
 #include <syslog.h>
 #include "rh-task.h"
+#include "rh-task-iptables.h"
 #include "rh-task-memset.h"
 #include "rh-task-ipset.h"
 #include "rh-task-dbset.h"
@@ -44,26 +45,13 @@ void task_register(struct main_server *ms, struct task *task)
   ms->task_list = g_list_insert_before(ms->task_list, node, task);
 }
 
-void rh_task_init (struct main_server *ms, struct vserver *vs)
-{
-  GList *runner = g_list_first(ms->task_list);
-  struct task *ltask = NULL;
-
-  DP("Initialize...");
-
-  while (runner != NULL) {
-    ltask = (struct task *)runner->data;
-    (*ltask->init)(vs);
-    runner = g_list_next(runner);
-  }
-}
-
 void rh_task_register(struct main_server *ms)
 {
   static int task_registered = 0;
 
   if (task_registered == 0) {
     /* Register all tasks */
+    rh_task_iptables_reg(ms);
     rh_task_memset_reg(ms);
     rh_task_ipset_reg(ms);
 
@@ -79,6 +67,54 @@ void rh_task_unregister(struct main_server *ms) {
   g_list_free(ms->task_list);
 }
 
+int  rh_task_startservice(struct main_server *ms)
+{
+  GList *runner = g_list_first(ms->task_list);
+  struct task *ltask = NULL;
+
+  DP("Start service");
+
+  while (runner != NULL) {
+    ltask = (struct task *)runner->data;
+    (*ltask->startservice)();
+    runner = g_list_next(runner);
+  }
+
+  logmsg(RH_LOG_NORMAL, "Service started");
+  return 0;
+}
+
+int rh_task_stopservice(struct main_server *ms)
+{  
+  GList *runner = g_list_last(ms->task_list);
+  struct task *ltask = NULL;
+
+  DP("Stop service");
+
+  while (runner != NULL) {
+    ltask = (struct task *)runner->data;
+    (*ltask->stopservice)();
+    runner = g_list_previous(runner);
+  }
+
+  logmsg(RH_LOG_NORMAL, "Service stopped");
+  return 0;
+}
+
+void rh_task_init (struct main_server *ms, struct vserver *vs)
+{
+  GList *runner = g_list_first(ms->task_list);
+  struct task *ltask = NULL;
+
+  DP("Initialize...");
+
+  while (runner != NULL) {
+    ltask = (struct task *)runner->data;
+    (*ltask->init)(vs);
+    runner = g_list_next(runner);
+  }
+}
+
 void rh_task_cleanup(struct main_server *ms, struct vserver *vs)
 {
   GList *runner = g_list_last(ms->task_list);
@@ -91,39 +127,6 @@ void rh_task_cleanup(struct main_server *ms, struct vserver *vs)
     (*ltask->cleanup)(vs);
     runner = g_list_previous(runner);
   }  
-}
-
-int  rh_task_startservice(struct main_server *ms, struct vserver *vs)
-{
-  GList *runner = g_list_first(ms->task_list);
-  struct task *ltask = NULL;
-
-  DP("Start service");
-
-  while (runner != NULL) {
-    ltask = (struct task *)runner->data;
-    (*ltask->startservice)(vs);
-    runner = g_list_next(runner);
-  }  
-
-  logmsg(RH_LOG_NORMAL, "Service started");
-  return 0;
-}
-
-int  rh_task_stopservice(struct main_server *ms, struct vserver *vs)
-{  
-  GList *runner = g_list_last(ms->task_list);
-  struct task *ltask = NULL;
-
-  DP("Stop service");
-
-  while (runner != NULL) {
-    ltask = (struct task *)runner->data;
-    (*ltask->stopservice)(vs);
-    runner = g_list_previous(runner);
-  }  
-
-  logmsg(RH_LOG_NORMAL, "Service stopped");
 }
 
 int  rh_task_startsess(struct vserver *vs, struct task_req *req)

@@ -30,17 +30,17 @@ struct task {
   char taskname[RH_TASK_MAXNAMELEN];
   unsigned int taskprio;
 
+  /* Start service task */
+  int (*startservice) (void);
+
+  /* Stop service task */
+  int (*stopservice) (void);
+
   /* Initialize */
   void (*init) (struct vserver *vs);
 
   /* Cleanup */
   void (*cleanup) (struct vserver *vs);
-  
-  /* Start service task */
-  int (*startservice) (struct vserver *vs);
-
-  /* Stop service task */
-  int (*stopservice) (struct vserver *vs);
 
   /* Start session task */
   int (*startsess) (struct vserver *vs, struct task_req *req);
@@ -65,10 +65,10 @@ extern void task_register(struct main_server *ms, struct task *task);
 
 void rh_task_register(struct main_server *ms);
 void rh_task_unregister(struct main_server *ms);
+int  rh_task_startservice(struct main_server *ms);
+int  rh_task_stopservice(struct main_server *ms);
 void rh_task_init(struct main_server *ms, struct vserver *vs);
 void rh_task_cleanup(struct main_server *ms, struct vserver *vs);
-int  rh_task_startservice(struct main_server *ms, struct vserver *vs);
-int  rh_task_stopservice(struct main_server *ms, struct vserver *vs);
 int  rh_task_startsess(struct vserver *vs, struct task_req *req);
 int  rh_task_stopsess(struct vserver *vs, struct task_req *req);
 int  rh_task_commitstartsess(struct vserver *vs, struct task_req *req);

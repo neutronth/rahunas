@@ -26,15 +26,49 @@
 struct rahunas_main_config {
   char *conf_dir;
   char *log_file;
-  int  polling_interval;
+  char *dhcp;
   int  bandwidth_shape;
+  int  bittorrent_download_max;
+  int  bittorrent_upload_max;
+  int  polling_interval;
 };
 
 struct rahunas_vserver_config {
-  int  vserver_id;
   char *vserver_name;
-  int  idle_timeout;
+  int  vserver_id;
+  char *dev_external;
+  char *dev_internal;
+  char *vlan;
+  char *vlan_raw_dev_external;
+  char *vlan_raw_dev_internal;
+  char *bridge;
+  char *masquerade;
+  char *ignore_mac;
   char *vserver_ip;
+  char *vserver_fqdn;
+  char *vserver_ports_allow;
+  char *vserver_ports_intercept;
+  char *clients;
+  char *excluded;
+  int  idle_timeout;
+  char *dns;
+  char *ssh;
+  char *proxy;
+  char *proxy_host;
+  char *proxy_port;
+  char *bittorrent;
+  char *bittorrent_allow;
+  char *radius_host;
+  char *radius_secret;
+  char *radius_encrypt;
+  char *radius_auth_port;
+  char *radius_account_port;
+  char *nas_identifier;
+  char *nas_port;
+  char *nas_login_title;
+  char *nas_default_redirect;
+  char *nas_default_language;
+  char *nas_weblogin_template;
 };
 
 union rahunas_config {
