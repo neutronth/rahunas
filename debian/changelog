@@ -1,3 +1,19 @@
+rahunas (0.1.3~b1-1) unstable; urgency=low
+
+  * New upstream beta relese.
+  * debian/rules: 
+    + Install weblogin-config-update.sh to satisfy the new init script need.
+    + Remove the installation of rahunas-vserver.conf for the freedom of the
+      user to manage config files.
+  * debian/rahunas.init: Update to follow the new init example changes.
+  * debian/patches/series, debian/patches/01_example_config.patch,
+    debian/patches/02_firewall_bittorrent.patch,
+    debian/patches/03_fix_users_stuck.patch,
+    debian/patches/04-fix-the-member-deleted-during-polling-process.patch:
+    Removed, included in upstream.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 20 Apr 2009 17:23:40 +0700
+
 rahunas (0.1.2-5) unstable; urgency=low
 
   * +debian/patches/04-fix-the-member-deleted-during-polling-process.patch:
