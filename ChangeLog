@@ -1,3 +1,105 @@
+2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/rahunas.init.in: Call weblogin-config-update.sh to generate config
+	  every time the service start.
+
+2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +tools/weblogin-config-update.sh.in: Add new weblogin config in php update script.
+	* configure.ac: Updated accordingly.
+
+2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +src/rh-task-iptables.{h,c}: 
+	  Add new iptables handle, preparing for configuration reloading.
+	* src/Makefile.am: Changed accordingly, iptables handle.
+	* src/rh-config.{h,c}: Add more config fields.
+	* src/rh-task-{bandwidth,dbset,ipset,memset}.c, src/rh-task.{h,c}:
+	  Change the {start,stop}service API and use them to do the task only when
+	  the service is start or stop.
+	* src/rahunasd.c, src/rh-server.c: Changed accordingly, {start,stop}service.
+	* tools/firewall.sh.in: Adapted to the new iptables handle.
+
+2009-04-18  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/{rahunas,rahunas-vserver}.conf.in, tools/firewall.sh.in:
+	  - Remove dhcp field from vserver config due to the dhcp request is broadcast
+	    message could not be classified which vserver it is.
+	  - Remove dhcp_range from vserver config which will consider later how to
+	    handle it.
+	  - Move the dhcp firewall code from vserver section to policy.
+	  - Adjust the webserver access limit rate for performance tuning.
+
+2009-04-18  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* -example/{bandwidth,firewall}.sh.in, +tools/{bandwidth,firewall}.sh.in:
+	  Move now considered neccessary scripts from example/ to tools/.
+	* configure.ac: Update accordingly.
+
+	* data/rahunas.db: Change the primary key from only session_id to 
+	  vserver_id,ip and mac which will prevent the same client login twice by
+	  mistake.
+
+2009-04-06  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/firewall.sh.in: Add the additional rules to allow in some situation 
+	  the connections could not established before the FORWARD rules allow the 
+	  clients, thus the connections never mark.  Just allow them passthrough the 
+	  rules if the connections do not mark but the clients are in the set 
+	  (allow them).
+
+2009-04-06  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunasd.c, src/rh-task-{memset,ipset}.c: Fix the member deleted during
+	  polling process that cause the process will stop unexpectly.
+	* src/rh-task-dbset.c:
+	  - Using task_req and rh_task_startsess to restore set data from DB instead
+	    of manual call.
+	* src/rh-task.h: Add bandwidth_slot_id into task_req structure.
+	* src/rh-xmlrpc-server.c: Initial session_start = 0 to trigger the program
+	  to use the current timestamp;
+
+2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* weblogin/{login,squid_helper}.php: Add caught exception for 
+	  'XML_RPC2_CurlException' which thrown on server unreachable.
+
+2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-config.{h,c}, src/rh-server.c , src/rh-xmlrpc-cmd.c:
+	  - Drop all xml_serv_* due to now only the "localhost" that 
+	    gnet_xmlrpc_client_new() can make a connection to.
+	  - Substitute xml_serv_* with the XMLSERVICE_HOST, XMLSERVICE_URL and 
+	    XMLSERVICE_PORT.
+	  - According to XMLSERVICE_URL  "/rahunas_service/xmlrpc_service.php",
+	    needs the special apache config to do the alias for this path,
+	    will do in the debian apache config file for example.
+
+2009-04-03  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-config.{h,c}, src/rh-server.c , src/rh-xmlrpc-cmd.c:
+	  - Drop xml_serv_host from config list and replaced by vserver_ip.
+	  - Try to sending XML-RPC command via vserver_ip.
+
+	* weblogin/xmlrpc_service.php: Add the ip parameter checking to get the
+	  appropriate config from list.
+
+2009-04-02  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/firewall.sh.in: Fix the script do not add bittorrent blocking rules
+	  due to the miss point of condition check.
+
+2009-04-02  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/{rahunas,rahunas-vserver}.conf.in,
+	  example/rahunas.default.in: 
+	  Substitute @prefix@ with the appropriate variables for each location, 
+	  @prefix@/etc with @sysconfdir@, @prefix@/var with @localstatedir@.
+
+2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* configure.ac: Bump version to 0.1.3
+
 2009-03-31  Neutron Soutmun <neo.neutron@gmail.com>
 
 	=== Release 0.1.2 ===

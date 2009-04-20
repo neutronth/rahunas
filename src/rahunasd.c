@@ -101,6 +101,8 @@ size_t expired_check(void *data)
 
   while (runner != NULL) {
     member = (struct rahunas_member *)runner->data;
+    runner = g_list_next(runner);
+
     id = member->id;
 
     DP("Processing id = %d", id);
@@ -129,8 +131,6 @@ size_t expired_check(void *data)
                            RH_RADIUS_TERM_SESSION_TIMEOUT);
       res = rh_task_stopsess(process->vs, &req);
     }
-
-    runner = g_list_next(runner);
   }
 }
 
@@ -149,8 +149,8 @@ gboolean polling(gpointer data) {
 
 void rh_exit()
 {
-  walk_through_vserver(&rh_task_stopservice, rh_main_server);
   walk_through_vserver(&rh_task_cleanup, rh_main_server);
+  rh_task_stopservice(rh_main_server);
   rh_task_unregister(rh_main_server);
   rh_closelog(rh_main_server->main_config->log_file);
 }
@@ -266,10 +266,11 @@ int main(int argc, char **argv)
   char line[256];
 
   union rahunas_config rh_main_config = {
-    .rh_main.polling_interval = POLLING,
-    .rh_main.bandwidth_shape = BANDWIDTH_SHAPE,
     .rh_main.conf_dir = NULL,
     .rh_main.log_file = NULL,
+    .rh_main.dhcp = NULL,
+    .rh_main.polling_interval = POLLING,
+    .rh_main.bandwidth_shape = BANDWIDTH_SHAPE,
   };
 
   GNetXmlRpcServer *server = NULL;
@@ -312,6 +313,8 @@ int main(int argc, char **argv)
   logmsg(RH_LOG_NORMAL, version);
 
   rh_task_register(rh_main_server);
+  rh_task_startservice(rh_main_server);
+
   walk_through_vserver(&rh_task_init, rh_main_server);
 
   gnet_init();
@@ -346,8 +349,8 @@ int main(int argc, char **argv)
   g_timeout_add_seconds (rh_main_server->main_config->polling_interval, 
                          polling, rh_main_server);
 
-  walk_through_vserver(&rh_task_startservice, rh_main_server);
 
+  logmsg(RH_LOG_NORMAL, "Ready to serve...");
   g_main_loop_run(main_loop);
 
   exit(EXIT_SUCCESS);

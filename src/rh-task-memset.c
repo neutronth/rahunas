@@ -31,11 +31,24 @@ GList *member_get_node_by_id(struct vserver *vs, uint32_t id)
 
 gint idcmp(struct rahunas_member *a, struct rahunas_member *b)
 {
-  if (a == NULL || b == NULL)
-    return 0;
-
   if (a != NULL && b != NULL)
     return (a->id - b->id);
+
+  return -1;
+}
+
+/* Start service task */
+static int startservice ()
+{
+  /* Do nothing or need to implement */
+  return 0;
+}
+
+/* Stop service task */
+static int stopservice  ()
+{
+  /* Do nothing or need to implement */
+  return 0;
 }
 
 /* Initialize */
@@ -43,7 +56,7 @@ static void init (struct vserver *vs)
 {
   int size;
 
-  logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET init..",
+  logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET initialize..",
          vs->vserver_config->vserver_name);  
 
   vs->v_map = (struct rahunas_map *)(rh_malloc(sizeof(struct rahunas_map)));
@@ -65,6 +78,7 @@ static void init (struct vserver *vs)
 static void cleanup (struct vserver *vs)
 {
   GList *runner = NULL;
+  GList *deleting = NULL;
   struct rahunas_member *member = NULL;
 
   logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET cleanup..",
@@ -77,9 +91,13 @@ static void cleanup (struct vserver *vs)
     while (runner != NULL) {
       member = (struct rahunas_member *) runner->data; 
 
-      rh_free_member(member);
+      DP("Cleanup IP: %s", idtoip(vs->v_map, member->id));
 
-      runner = g_list_delete_link(runner, runner);
+      rh_free_member(member);
+      deleting = runner;
+      runner = g_list_next(runner);
+
+      vs->v_map->members = g_list_delete_link(vs->v_map->members, deleting);
     }
 
     g_list_free(vs->v_map->members);
@@ -89,19 +107,6 @@ static void cleanup (struct vserver *vs)
   }
 
   return 0;
-}
-
-
-/* Start service task */
-static int startservice (struct vserver *vs)
-{
-  /* Do nothing or need to implement */
-}
-
-/* Stop service task */
-static int stopservice  (struct vserver *vs)
-{
-  /* Do nothing or need to implement */
 }
 
 /* Start session task */
@@ -122,7 +127,8 @@ static int startsess (struct vserver *vs, struct task_req *req)
     memset(member, 0, sizeof(struct rahunas_member));
 
     vs->v_map->members = 
-      g_list_insert_sorted(vs->v_map->members, member, idcmp);
+        g_list_insert_sorted(vs->v_map->members, member, idcmp);
+
   } else {
     DP("Member already exists");
     member = (struct rahunas_member *)member_node->data;
@@ -144,9 +150,11 @@ static int startsess (struct vserver *vs, struct task_req *req)
   if (!member->session_id)
     member->session_id = termstring;
 
-  time(&(member->session_start));
-  memcpy(&req->session_start, &member->session_start, 
-         sizeof(time_t));
+  if (req->session_start == 0) {
+    time(&(req->session_start));
+  } 
+
+  memcpy(&member->session_start, &req->session_start, sizeof(time_t));
 
   memcpy(&member->mac_address, &req->mac_address, ETH_ALEN);
 

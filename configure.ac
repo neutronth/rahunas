@@ -3,7 +3,7 @@
 
 m4_define(major, 0)
 m4_define(minor, 1)
-m4_define(micro, 2)
+m4_define(micro, 3)
 
 AC_PREREQ(2.61)
 AC_INIT([RahuNAS], major.minor.micro,[neo.neutron@gmail.com] )
@@ -59,12 +59,13 @@ AC_CONFIG_FILES([
 	src/Makefile
 	data/Makefile
   src/include/linux/netfilter_ipv4/Makefile
+  tools/firewall.sh
+  tools/bandwidth.sh
+	tools/weblogin-config-update.sh
   example/rahunas.default
   example/rahunas.init
   example/rahunas.conf
   example/rahunas-vserver.conf
-  example/firewall.sh
-  example/bandwidth.sh
 ])
 
 AC_OUTPUT

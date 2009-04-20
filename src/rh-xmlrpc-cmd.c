@@ -35,12 +35,13 @@ int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
                            mac_tostring(member->mac_address),
                            cause);
 
+  DP("Params = %s", params);
+
   if (params == NULL)
     return (-1);
 
-  client = gnet_xmlrpc_client_new(vs->vserver_config->xml_serv_host, 
-                                  vs->vserver_config->xml_serv_url, 
-                                  vs->vserver_config->xml_serv_port);
+  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL, 
+                                  XMLSERVICE_PORT);
 
   if (!client) {
     logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);
@@ -54,6 +55,9 @@ int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
     }
   else
     {
+      if (reply != NULL)
+        DP("stopacct reply = %s", reply);
+
       DP("%s", "Failed executing stopacct!");
       return (-1);
     }

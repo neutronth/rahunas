@@ -68,6 +68,9 @@ try {
 } catch (XML_RPC2_FaultException $e) {
   $message = get_message('ERR_CONNECT_SERVER');
   $forward = false;
+} catch (XML_RPC2_CurlExeption $e) {
+  $message = get_message('ERR_CONNECT_SERVER');
+  $forward = false;
 } catch (Exception $e) {
   $message = get_message('ERR_CONNECT_SERVER');
   $forward = false;

@@ -47,30 +47,35 @@ MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
 MAIN_BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG`
+MAIN_DHCP=`get_config_value main dhcp $RAHUNAS_CONFIG`
 
-# Virtual Server : config
-VSERVER_ID=
-DEV_EXTERNAL=
-DEV_INTERNAL=
-BRIDGE=
-MASQUERADE=
-IGNORE_MAC=
-VSERVER_IP=
-CLIENTS=
-EXCLUDED=
+if [ "$ENV_OVERRIDE" != "yes" ]; then
+  # Virtual Server : config
+  VSERVER_ID=
+  DEV_EXTERNAL=
+  DEV_INTERNAL=
+  BRIDGE=
+  MASQUERADE=
+  IGNORE_MAC=
+  VSERVER_IP=
+  CLIENTS=
+  EXCLUDED=
+  DNS=
+  SSH=
+  PROXY=
+  PROXY_HOST=
+  PROXY_PORT=
+  BITTORRENT=
+  BITTORRENT_ALLOW=
+  VSERVER_PORTS_ALLOW=
+  VSERVER_PORTS_INTERCEPT=
+  SETNAME=
+fi
+
 BANDWIDTH_SHAPE=
-DHCP=
-DNS=
-SSH=
-PROXY=
-PROXY_HOST=
-PROXY_PORT=
-BITTORRENT=
-BITTORRENT_ALLOW=
 BITTORRENT_DOWNLOAD_MAX=
 BITTORRENT_UPLOAD_MAX=
-VSERVER_PORTS_ALLOW=
-VSERVER_PORTS_INTERCEPT=
+
 
 # Virtual Server : set and chains
 CHAIN_INPUT=
@@ -90,52 +95,53 @@ P2P_SET=
 P2P_ALLOW_SET=
 DEV_IN_PARAM=
 DEV_OUT_PARAM=
-SETNAME=
 
 get_config () {
   file=$1
   opt=$2
 
-  test -f $file || return 1
-
-  NAME=`get_section_name $file`
-
-  # Get configuration
-  VSERVER_ID=`get_config_value $NAME vserver_id $file`
-  test -n "$VSERVER_ID" || return 2
-
-  if [ "$opt" = "start" ]; then
-    hash="$VSERVER_ID:$NAME"
-    test1=`grep -w "$hash" $VSERVER_LIST` || true
-    test2=`grep -w "$NAME" $VSERVER_LIST` || true
+  if [ "$ENV_OVERRIDE" != "yes" ]; then
+    test -f $file || return 1
   
-    test -n "$test1" -o -n "$test2" && return 3 
-
-    echo "$hash:$file" >> $VSERVER_LIST
+    SETNAME=`get_section_name $file`
+  
+    # Get configuration
+    VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+    test -n "$VSERVER_ID" || return 2
+  
+    if [ "$opt" = "start" ]; then
+      hash="$VSERVER_ID:$SETNAME"
+      test1=`grep -w "$hash" $VSERVER_LIST` || true
+      test2=`grep -w "$SETNAME" $VSERVER_LIST` || true
+    
+      test -n "$test1" -o -n "$test2" && return 3 
+  
+      echo "$hash:$file" >> $VSERVER_LIST
+    fi
+  
+    DEV_EXTERNAL=`get_config_value $SETNAME dev_external $file`
+    DEV_INTERNAL=`get_config_value $SETNAME dev_internal $file`
+    BRIDGE=`get_config_value $SETNAME bridge $file`
+    MASQUERADE=`get_config_value $SETNAME masquerade $file`
+    IGNORE_MAC=`get_config_value $SETNAME ignore_mac $file`
+    VSERVER_IP=`get_config_value $SETNAME vserver_ip $file`
+    CLIENTS=`get_config_value $SETNAME clients $file`
+    EXCLUDED=`get_config_value $SETNAME excluded $file`
+    DNS=`get_config_value $SETNAME dns $file`
+    SSH=`get_config_value $SETNAME ssh $file`
+    PROXY=`get_config_value $SETNAME proxy $file`
+    PROXY_HOST=`get_config_value $SETNAME proxy_host $file`
+    PROXY_PORT=`get_config_value $SETNAME proxy_port $file`
+    BITTORRENT=`get_config_value $SETNAME bittorrent $file`
+    BITTORRENT_ALLOW=`get_config_value $SETNAME bittorrent_allow $file`
+    VSERVER_PORTS_ALLOW=`get_config_value $SETNAME vserver_ports_allow $file`
+    VSERVER_PORTS_INTERCEPT=`get_config_value $SETNAME vserver_ports_intercept $file`
   fi
-
-  DEV_EXTERNAL=`get_config_value $NAME dev_external $file`
-  DEV_INTERNAL=`get_config_value $NAME dev_internal $file`
-  BRIDGE=`get_config_value $NAME bridge $file`
-  MASQUERADE=`get_config_value $NAME masquerade $file`
-  IGNORE_MAC=`get_config_value $NAME ignore_mac $file`
-  VSERVER_IP=`get_config_value $NAME vserver_ip $file`
-  CLIENTS=`get_config_value $NAME clients $file`
-  EXCLUDED=`get_config_value $NAME excluded $file`
+ 
   BANDWIDTH_SHAPE=$MAIN_BANDWIDTH_SHAPE
-  DHCP=`get_config_value $NAME dhcp $file`
-  DNS=`get_config_value $NAME dns $file`
-  SSH=`get_config_value $NAME ssh $file`
-  PROXY=`get_config_value $NAME proxy $file`
-  PROXY_HOST=`get_config_value $NAME proxy_host $file`
-  PROXY_PORT=`get_config_value $NAME proxy_port $file`
-  BITTORRENT=`get_config_value $NAME bittorrent $file`
-  BITTORRENT_ALLOW=`get_config_value $NAME bittorrent_allow $file`
   BITTORRENT_DOWNLOAD_MAX=$MAIN_BITTORRENT_DOWNLOAD_MAX
   BITTORRENT_UPLOAD_MAX=$MAIN_BITTORRENT_UPLOAD_MAX
-  VSERVER_PORTS_ALLOW=`get_config_value $NAME vserver_ports_allow $file`
-  VSERVER_PORTS_INTERCEPT=`get_config_value $NAME vserver_ports_intercept $file`
- 
+
   # Bridge config
   if [ "$BRIDGE" = "yes" ]; then
     DEV_IN_PARAM="-m physdev --physdev-in"
@@ -145,27 +151,24 @@ get_config () {
     DEV_OUT_PARAM="-o"
   fi
   
-  # Set declaration
-  SETNAME="${NAME}"
-  
   # Chains declaration
-  CHAIN_INPUT="${NAME}_in"
-  CHAIN_INPUT_AUTH="${NAME}_in_auth"
-  CHAIN_FORWARD="${NAME}_fwd"
-  CHAIN_FORWARD_AUTH="${NAME}_fwd_auth"
-  CHAIN_MANGLE_PREROUTING="${NAME}_mg_pre"
-  CHAIN_MANGLE_FORWARD="${NAME}_mg_fwd"
-  CHAIN_MANGLE_POSTROUTING="${NAME}_mg_post"
-  CHAIN_NAT_PREROUTING="${NAME}_nat_pre"
-  CHAIN_NAT_POSTROUTING="${NAME}_nat_post"
-  CHAIN_NAT_AUTHEN="${NAME}_nat_authen"
+  CHAIN_INPUT="${SETNAME}_in"
+  CHAIN_INPUT_AUTH="${SETNAME}_in_auth"
+  CHAIN_FORWARD="${SETNAME}_fwd"
+  CHAIN_FORWARD_AUTH="${SETNAME}_fwd_auth"
+  CHAIN_MANGLE_PREROUTING="${SETNAME}_mg_pre"
+  CHAIN_MANGLE_FORWARD="${SETNAME}_mg_fwd"
+  CHAIN_MANGLE_POSTROUTING="${SETNAME}_mg_post"
+  CHAIN_NAT_PREROUTING="${SETNAME}_nat_pre"
+  CHAIN_NAT_POSTROUTING="${SETNAME}_nat_post"
+  CHAIN_NAT_AUTHEN="${SETNAME}_nat_authen"
   
   # P2P checking chains declaration
-  CHAIN_P2P_DETECT="${NAME}_p2p_detect"
-  CHAIN_P2P_RECHECK="${NAME}_p2p_rechk"
-  CHAIN_P2P_CHECK="${NAME}_p2p_chk"
-  P2P_SET="${NAME}_p2p"
-  P2P_ALLOW_SET="${NAME}_p2p_allow"
+  CHAIN_P2P_DETECT="${SETNAME}_p2p_detect"
+  CHAIN_P2P_RECHECK="${SETNAME}_p2p_rechk"
+  CHAIN_P2P_CHECK="${SETNAME}_p2p_chk"
+  P2P_SET="${SETNAME}_p2p"
+  P2P_ALLOW_SET="${SETNAME}_p2p_allow"
 }
 
 ##
@@ -245,6 +248,14 @@ navigation_rules () {
   $IPTABLES $action FORWARD \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_FORWARD
+
+  # In some situation the connections could not established before
+  # the FORWARD rules allow the clients, thus the connections never mark.
+  # Just allow them passthrough the rules if the connections do not mark but
+  # the clients are in the set (allow them).
+  $IPTABLES $action FORWARD -m set --set $SETNAME dst -j $CHAIN_FORWARD_AUTH
+  $IPTABLES $action FORWARD -m set --set $SETNAME src -j $CHAIN_FORWARD_AUTH
+
   $IPTABLES $action FORWARD -m connmark --mark 2/2 \
     $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
     -j $CHAIN_FORWARD_AUTH
@@ -370,6 +381,19 @@ policy () {
   $IPTABLES -P FORWARD DROP 
 
   $IPTABLES -A INPUT -i lo -j ACCEPT
+
+  # DHCP Settings
+
+  if [ "$MAIN_DHCP" = "yes" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "no" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "forward" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j ACCEPT
+  fi
 }
 
 cleanup_policy () {
@@ -379,6 +403,19 @@ cleanup_policy () {
   $IPTABLES -P FORWARD ACCEPT 
 
   $IPTABLES -D INPUT -i lo -j ACCEPT
+
+  # DHCP Settings
+
+  if [ "$MAIN_DHCP" = "yes" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "no" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "forward" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j ACCEPT
+  fi
 }
 
 rules () {
@@ -413,13 +450,13 @@ rules () {
   ##
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP\
      --dports $VSERVER_PORTS_ALLOW \
-    -m recent --rcheck --seconds 15 --name incoming_throttle -j DROP
+    -m recent --rcheck --seconds 6 --name incoming_throttle -j DROP
 
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
     --dports $VSERVER_PORTS_ALLOW \
-    -m hashlimit --hashlimit 5/sec \
-    --hashlimit-mode srcip --hashlimit-burst 10 \
-    --hashlimit-htable-expire 15000 --hashlimit-name incoming \
+    -m hashlimit --hashlimit 20/sec \
+    --hashlimit-mode srcip --hashlimit-burst 30 \
+    --hashlimit-htable-expire 4000 --hashlimit-name incoming \
     -j ACCEPT
 
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
@@ -439,20 +476,7 @@ rules () {
   $IPTABLES -A $CHAIN_INPUT -p icmp -m limit --limit 5/second \
     -d $VSERVER_IP -j ACCEPT
 
-  ##
-  # Allow incoming DHCP request
-  ##
 
-  if [ "$DHCP" = "yes" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j ACCEPT 
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j DROP
-  elif [ "$DHCP" = "no" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j DROP 
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j DROP
-  elif [ "$DHCP" = "forward" ]; then
-    $IPTABLES -A $CHAIN_INPUT -p udp --dport 67:68 -j DROP 
-    $IPTABLES -A $CHAIN_FORWARD -p udp --dport 67:68 -j ACCEPT
-  fi
 
   ##
   # Bittorrent Blocking (layer7 module in kernel is needed)
@@ -466,11 +490,10 @@ rules () {
       # Source host
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS src -j DROP
-
-    else
+    fi
+  else
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
-    fi
   fi
   
   ##
@@ -607,41 +630,16 @@ start () {
     exit 1
   fi
 
-  for file in `find $MAIN_CONF_DIR -name '*.conf'`;
-  do
-    do_get_config $file start
-    if [ $? -gt 0 ]; then
-      continue
-    fi 
-
-    add_set
-    new_chains
-    policy 
-    rules  
-  done
+  policy 
 
   touch $RUN
 }
 
 stop () {
-  opt=$1
   test -f $RUN || return 0
-
-  for line in `cat $VSERVER_LIST`;
-  do
-    file=`echo $line | cut -d: -f3` 
-    test -n $file || continue;
-    do_get_config $file stop
-    if [ $? -gt 0 ]; then
-      continue
-    fi
-
-    cleanup
-    cleanup_policy
-    test "$opt" = "reload" || cleanup_set
-  done
-
    
+  cleanup_policy
+
   rm -f $RUN
   echo "" > $VSERVER_LIST
 }
@@ -651,9 +649,45 @@ restart() {
   start
 }
 
-reload() {
-  stop reload
-  start
+start_config() {
+  add_set
+  new_chains
+  rules
+}
+
+start_config_env() {
+  do_get_config "" start
+  start_config
+}
+
+start_config_file() {
+  file=$1
+  do_get_config $file start
+  if [ $? -gt 0 ]; then
+    return
+  fi 
+  
+  start_config
+}
+
+stop_config() {
+  cleanup
+  cleanup_set
+}
+
+stop_config_env() {
+  do_get_config "" stop
+  stop_config
+}
+
+stop_config_file() {
+  file=$1
+  do_get_config $file stop
+  if [ $? -gt 0 ]; then
+    return
+  fi 
+
+  stop_config
 }
 
 case "$1" in
@@ -666,12 +700,23 @@ case "$1" in
   restart)
     restart
     ;;
-  reload)
-    reload     
-    ;; 
+  start-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      start_config_env
+    elif [ -f "$2" ]; then
+      start_config_file $2
+    fi
+    ;;
+  stop-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      stop_config_env
+    elif [ -f "$2" ]; then
+      stop_config_file $2
+    fi
+    ;;
   *)
     N=@sysconfdir@/rahunas/firewall.sh
-    echo "Usage: $N {start|stop|restart|reload}"
+    echo "Usage: $N {start|stop|restart}"
     exit 3
     ;;
 esac 

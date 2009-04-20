@@ -24,7 +24,6 @@
 
 static unsigned short slot_flags[MAX_SLOT_PAGE] = {1};
 static unsigned short slot_count = 0;
-static int bw_service = 0;
 
 unsigned short _get_slot_id()
 {
@@ -136,7 +135,7 @@ int bandwidth_exec(struct vserver *vs, char *const args[])
   return ret;
 }
 
-int bandwidth_start()
+int bandwidth_start(void)
 {
   char *args[3];
 
@@ -149,7 +148,7 @@ int bandwidth_start()
   return bandwidth_exec(NULL, args);
 }
 
-int bandwidth_stop()
+int bandwidth_stop(void)
 {
   char *args[3];
 
@@ -194,36 +193,28 @@ int bandwidth_del(struct vserver *vs, struct bandwidth_req *bw_req)
   return bandwidth_exec(vs, args);
 }
 
+/* Start service task */
+static int startservice (void)
+{
+  return bandwidth_start();
+}
+
+/* Stop service task */
+static int stopservice (void)
+{
+  return bandwidth_stop();
+}
+
 /* Initialize */
 static void init (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "[%s] Task BANDWIDTH init..", 
-         vs->vserver_config->vserver_name);  
+  /* Do nothing */
 }
 
 /* Cleanup */
 static int cleanup (struct vserver *vs)
 {
-  logmsg(RH_LOG_NORMAL, "[%s] Task BANDWIDTH cleanup..",
-         vs->vserver_config->vserver_name);  
-}
-
-/* Start service task */
-static int startservice (struct vserver *vs)
-{
-  if (!(bw_service++))
-    return bandwidth_start();
-
-  return 0;
-}
-
-/* Stop service task */
-static int stopservice  (struct vserver *vs)
-{
-  if ((--bw_service) == 0)
-    return bandwidth_stop();
-  
-  return 0;
+  /* Do nothing */
 }
 
 /* Start session task */

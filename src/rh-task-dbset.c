@@ -13,8 +13,6 @@
 #include "rh-task.h"
 #include "rh-ipset.h"
 #include "rh-utils.h"
-#include "rh-task-memset.h"
-#include "rh-task-bandwidth.h"
 
 struct dbset_row {
   gchar *session_id;
@@ -28,8 +26,6 @@ struct dbset_row {
   long bandwidth_max_down;
   long bandwidth_max_up;
 };
-
-static db_init = 0;
 
 gboolean get_errors (GdaConnection * connection)
 {
@@ -207,7 +203,8 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
   uint32_t id;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
-  struct bandwidth_req bw_req;
+  struct task_req req;
+  unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
   unsigned char max_try = 3;
  
   node = g_list_first(*data_list);
@@ -225,95 +222,58 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
 
     id = iptoid(vs->v_map, row->ip);
 
-    DP("id=%d", id);
-    
     if (id < 0)
       continue;
 
-    member_node = member_get_node_by_id(vs, id);
+    req.id = id;
+    req.vserver_id = atoi(row->vserver_id);
+    req.username = row->username;
+    req.session_id = row->session_id;
+    parse_mac(row->mac, &ethernet);
+    memcpy(req.mac_address, &ethernet, ETH_ALEN);
 
-    if (member_node == NULL) {
-      DP("Create new member");
-      member = (struct rahunas_member *) rh_malloc(sizeof(struct rahunas_member));
-      if (member == NULL)
-        continue; 
-      
-      memset(member, 0, sizeof(struct rahunas_member));
-      vs->v_map->members =
-        g_list_insert_sorted(vs->v_map->members, member, idcmp);
-    } else {
-      DP("Member already exists");
-      member = (struct rahunas_member *) member_node->data;
-    }
+    req.session_start = row->session_start;
+    req.session_timeout = row->session_timeout;
 
-    // MEMSET
-    member->id = id;
-    member->session_id = g_strdup(row->session_id);
-    member->username   = g_strdup(row->username);
-    parse_mac(row->mac, &member->mac_address); 
-    memcpy(&member->session_start, &row->session_start, 
-           sizeof(time_t));
-    memcpy(&member->session_timeout, &row->session_timeout, 
-           sizeof(time_t));
-    member->bandwidth_slot_id = row->bandwidth_slot_id;
-    member->bandwidth_max_down = row->bandwidth_max_down;
-    member->bandwidth_max_up = row->bandwidth_max_up;
+    req.bandwidth_slot_id = row->bandwidth_slot_id;
+    req.bandwidth_max_down = row->bandwidth_max_down; 
+    req.bandwidth_max_up = row->bandwidth_max_up;
 
-    // IPSET
-    DP("Restore, ip=%s, mac=%s", row->ip, row->mac);
-    set_adtip(vs->v_set, row->ip, row->mac, IP_SET_OP_ADD_IP);
-
-
-    // Bandwidth
-    sprintf(bw_req.ip, "%s", row->ip);
-    sprintf(bw_req.bandwidth_max_down, "%lu", row->bandwidth_max_down);
-    sprintf(bw_req.bandwidth_max_up, "%lu", row->bandwidth_max_up);
-    sprintf(bw_req.slot_id, "%u", row->bandwidth_slot_id); 
-
-    mark_reserved_slot_id(row->bandwidth_slot_id);
-
-    while (max_try-- > 0) { 
-      if (bandwidth_add(vs, &bw_req) == 0)
-        break;
-    }
+    rh_task_startsess(vs, &req);
   }
   return TRUE;
 }
 
-/* Initialize */
-static void init (struct vserver *vs)
+/* Start service task */
+static int startservice ()
 {
   char ds_name[] = PROGRAM;
   char ds_provider[] = "SQLite";
   char ds_cnc_string[] = "DB_DIR=" RAHUNAS_CONF_DIR ";DB_NAME=" DB_NAME; 
   char ds_desc[] = "RahuNAS DB Set";
 
-  if (!(db_init++)) {
-    logmsg(RH_LOG_NORMAL, "Task DBSET init..");
-    
-    gda_init(ds_name, RAHUNAS_VERSION, NULL, NULL);
-    
-    gda_config_save_data_source(ds_name, ds_provider, 
-                                ds_cnc_string, ds_desc,
-                                NULL, NULL, FALSE);
+  logmsg(RH_LOG_NORMAL, "Task DBSET start..");
    
-    list_datasource();
-  }
+  gda_init(ds_name, RAHUNAS_VERSION, NULL, NULL);
+    
+  gda_config_save_data_source(ds_name, ds_provider, 
+                              ds_cnc_string, ds_desc,
+                              NULL, NULL, FALSE);
+   
+  list_datasource();
+
+  return 0;
 }
 
-/* Cleanup */
-static void cleanup (struct vserver *vs)
+/* Stop service task */
+static int stopservice  ()
 {
-  if ((--db_init) == 0) {
-    logmsg(RH_LOG_NORMAL, "Task DBSET cleanup..");  
-  
-    gda_config_remove_data_source (PROGRAM);
-  }
+  gda_config_remove_data_source (PROGRAM);
+  return 0;
 }
 
-
-/* Start service task */
-static int startservice (struct vserver *vs)
+/* Initialize */
+static void init (struct vserver *vs)
 {
   GdaClient *client;
   GdaConnection *connection;
@@ -322,7 +282,7 @@ static int startservice (struct vserver *vs)
   struct dbset_row *row;
   char select_cmd[256];
 
-  logmsg(RH_LOG_NORMAL, "[%s] Task DBSET start..",
+  logmsg(RH_LOG_NORMAL, "[%s] Task DBSET initialize..",
          vs->vserver_config->vserver_name);  
 
   client = gda_client_new ();
@@ -344,16 +304,12 @@ static int startservice (struct vserver *vs)
   gda_client_close_all_connections (client);
 
   g_object_unref(G_OBJECT(client));
-
-  return 0;
 }
 
-/* Stop service task */
-static int stopservice  (struct vserver *vs)
+/* Cleanup */
+static void cleanup (struct vserver *vs)
 {
-  /* Do nothing or need to implement */
-  logmsg(RH_LOG_NORMAL, "[%s] Task DBSET stop..",
-         vs->vserver_config->vserver_name);  
+  /* Do nothing */
 }
 
 /* Start session task */
@@ -372,7 +328,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
   connection = gda_client_open_connection (client, 
                  PROGRAM, NULL, NULL,
                  GDA_CONNECTION_OPTIONS_NONE, NULL);
-  
+
   strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
   strftime(&time_str2, sizeof time_str2, "%s", 
     localtime(&req->session_timeout));

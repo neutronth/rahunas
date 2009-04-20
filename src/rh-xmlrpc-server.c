@@ -78,6 +78,7 @@ int do_startsession(GNetXmlRpcServer *server,
   req.session_id = session_id;
   parse_mac(mac_address, &ethernet);
   memcpy(req.mac_address, &ethernet, ETH_ALEN);
+  req.session_start = 0;
   req.session_timeout = 0;
 
   if (session_timeout != NULL) {

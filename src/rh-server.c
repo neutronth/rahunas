@@ -85,12 +85,41 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
   struct vserver *new_vserver = NULL;
 
   union rahunas_config config = {
-    .rh_vserver.vserver_id = VSERVER_ID,
     .rh_vserver.vserver_name = NULL,
+    .rh_vserver.vserver_id = VSERVER_ID,
+    .rh_vserver.dev_external = NULL,
+    .rh_vserver.dev_internal = NULL,
+    .rh_vserver.vlan = NULL,
+    .rh_vserver.vlan_raw_dev_external = NULL,
+    .rh_vserver.vlan_raw_dev_internal = NULL,
+    .rh_vserver.bridge = NULL,
+    .rh_vserver.masquerade = NULL,
+    .rh_vserver.ignore_mac = NULL,
+    .rh_vserver.vserver_ip = NULL, 
+    .rh_vserver.vserver_fqdn = NULL,
+    .rh_vserver.vserver_ports_allow = NULL,
+    .rh_vserver.vserver_ports_intercept = NULL,
+    .rh_vserver.clients = NULL,
+    .rh_vserver.excluded = NULL,
     .rh_vserver.idle_timeout = IDLE_TIMEOUT,
-    .rh_vserver.xml_serv_port = XMLSERVICE_PORT,
-    .rh_vserver.xml_serv_host = strdup(XMLSERVICE_HOST),
-    .rh_vserver.xml_serv_url = strdup(XMLSERVICE_URL),
+    .rh_vserver.dns = NULL,
+    .rh_vserver.ssh = NULL,
+    .rh_vserver.proxy = NULL,
+    .rh_vserver.proxy_host = NULL,
+    .rh_vserver.proxy_port = NULL,
+    .rh_vserver.bittorrent = NULL,
+    .rh_vserver.bittorrent_allow = NULL,
+    .rh_vserver.radius_host = NULL,
+    .rh_vserver.radius_secret = NULL,
+    .rh_vserver.radius_encrypt = NULL,
+    .rh_vserver.radius_auth_port = NULL,
+    .rh_vserver.radius_account_port = NULL,
+    .rh_vserver.nas_identifier = NULL,
+    .rh_vserver.nas_port = NULL,
+    .rh_vserver.nas_login_title = NULL,
+    .rh_vserver.nas_default_redirect = NULL,
+    .rh_vserver.nas_default_language = NULL,
+    .rh_vserver.nas_weblogin_template = NULL,
   };
 
   cfg_file = fopen(vserver_cfg_file, "r");
@@ -105,8 +134,7 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
   memset(vserver_config, 0, sizeof(struct rahunas_vserver_config));
 
   if (get_config(vserver_cfg_file, &config) != 0) {
-    rh_free(&config.rh_vserver.xml_serv_host);
-    rh_free(&config.rh_vserver.xml_serv_url);
+    rh_free(&config.rh_vserver.vserver_ip);
     return -1;
   }
 

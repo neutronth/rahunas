@@ -5,8 +5,10 @@
 //////////////////////////////////////////////////////////
 
 main = {
-  conf_dir = "@prefix@/etc/rahunas/rahunas.d"
-  log_file = "@prefix@/var/log/rahunas/rahunas.log"
+  conf_dir = "@sysconfdir@/rahunas/rahunas.d"
+  log_file = "@localstatedir@/log/rahunas/rahunas.log"
+
+  dhcp = "yes"
 
   bandwidth_shape = "yes"  
   bittorrent_download_max = "512"

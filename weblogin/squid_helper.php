@@ -67,6 +67,8 @@ while (!feof(STDIN)) {
 
   } catch (XML_RPC2_FaultException $e) {
       fwrite(STDOUT, "ERR\n");
+  } catch (XML_RPC2_CurlException $e) {
+      fwrite(STDOUT, "ERR\n");
   } catch (Exception $e) {
       fwrite(STDOUT, "ERR\n");
   }
