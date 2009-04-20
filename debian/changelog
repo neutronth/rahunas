@@ -1,4 +1,4 @@
-rahunas (0.1.3~b1-1) unstable; urgency=low
+rahunas (0.1.3.b1-1) unstable; urgency=low
 
   * New upstream beta relese.
   * debian/rules: 
