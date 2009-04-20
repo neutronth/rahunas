@@ -5,6 +5,7 @@ rahunas (0.1.3.b1-1) unstable; urgency=low
     + Install weblogin-config-update.sh to satisfy the new init script need.
     + Remove the installation of rahunas-vserver.conf for the freedom of the
       user to manage config files.
+  * debian/rahunas.{postinst,postrm}: Remove rahunas-vserver.conf related.
   * debian/rahunas.init: Update to follow the new init example changes.
   * debian/patches/series, debian/patches/01_example_config.patch,
     debian/patches/02_firewall_bittorrent.patch,

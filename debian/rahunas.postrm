@@ -17,11 +17,9 @@ case "$1" in
     
     if which ucf >/dev/null 2>&1; then
       ucf --purge /etc/rahunas/rahunas.conf
-      ucf --purge /etc/rahunas/rahunas.d/rahunas-vserver.conf
     fi
 
     rm -f /etc/rahunas/rahunas.conf
-    rm -f /etc/rahunas/rahunas.d/rahunas-vserver.conf
     ;;
   remove)
     ;;
