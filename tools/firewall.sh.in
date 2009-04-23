@@ -13,6 +13,7 @@ IPSET=/usr/sbin/ipset
 NAME="rahunas"
 INIT=@sysconfdir@/default/rahunas
 RUN=@localstatedir@/run/rahunas-firewall
+RUNDIR=@localstatedir@/run/rahunas-set
 VSERVER_LIST=@localstatedir@/run/rahunas-vserver
 
 RUN_DAEMON=no
@@ -20,9 +21,9 @@ RUN_DAEMON=no
 test -f $INIT || exit 0 
 . $INIT
 
-test "$RUN_DAEMON" = "yes" || exit 0
 test -f $RAHUNAS_CONFIG || exit 1
 test -f $VSERVER_LIST || touch $VSERVER_LIST
+test -d $RUNDIR || mkdir -p $RUNDIR
 
 get_section_name () {
   file=$1
@@ -623,6 +624,7 @@ do_get_config () {
 }
 
 start () {
+  test "$RUN_DAEMON" = "yes" || return 0
   test ! -f $RUN || return 0
 
   if [ ! -d $MAIN_CONF_DIR ]; then
@@ -650,44 +652,54 @@ restart() {
 }
 
 start_config() {
+  test ! -f $RUNDIR/$SETNAME || return 0
   add_set
   new_chains
   rules
+  touch $RUNDIR/$SETNAME
+  return 0
 }
 
 start_config_env() {
   do_get_config "" start
   start_config
+  return $?
 }
 
 start_config_file() {
   file=$1
   do_get_config $file start
   if [ $? -gt 0 ]; then
-    return
+    return 1
   fi 
   
   start_config
+  return $?
 }
 
 stop_config() {
+  test -f $RUNDIR/$SETNAME || return 0
   cleanup
   cleanup_set
+  rm -f $RUNDIR/$SETNAME
+  return 0
 }
 
 stop_config_env() {
   do_get_config "" stop
   stop_config
+  return $?
 }
 
 stop_config_file() {
   file=$1
   do_get_config $file stop
   if [ $? -gt 0 ]; then
-    return
+    return 1
   fi 
 
   stop_config
+  return $?
 }
 
 case "$1" in

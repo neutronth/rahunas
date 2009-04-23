@@ -1,3 +1,11 @@
+2009-04-23  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/rahunas.init.in: 
+	  - Adjust the code to handle the start and stop process.
+	  - Waiting for the process really stop.
+	* tools/firewall.sh.in: Prevent the script to start the same rules again for 
+	  each virtual server.
+
 2009-04-21  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-xmlrpc-server.c: Prevent the client to double login by mistake. 
