@@ -82,12 +82,6 @@ reload () {
     --pidfile $PID --name $NAME < /dev/null
   sleep 2
 
-  if test -n "$PID" && kill -0 $PID 2>/dev/null
-  then
-    log_action_end_msg 0
-  else
-    log_action_end_msg 1
-  fi
   return 0
 }
 
