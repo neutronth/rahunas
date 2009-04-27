@@ -36,6 +36,7 @@ struct rahunas_main_config {
 struct rahunas_vserver_config {
   char *vserver_name;
   int  vserver_id;
+  int  init_flag;
   char *dev_external;
   char *dev_internal;
   char *vlan;
@@ -79,6 +80,14 @@ union rahunas_config {
 enum config_type {
   MAIN,
   VSERVER
+};
+
+enum vserver_config_init_flag {
+  VS_NONE,
+  VS_INIT,
+  VS_RELOAD,
+  VS_RESET,
+  VS_DONE
 };
 
 int get_config(const char *cfg_file, union rahunas_config *config);

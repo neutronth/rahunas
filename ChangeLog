@@ -1,3 +1,36 @@
+2009-04-27  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-server.c: Fix the segfault on reloading config files.
+
+2009-04-27  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/rahunas.init.in: 
+	  - Adjust the reload function to show status message propperly.
+
+2009-04-27  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rahunas.c, src/rh-config.h, src/rh-ipset.c, src/rh-server.{h,c},
+	  src/rh-task-dbset.c, src/rh-task-ipset.c, src/rh-task-iptables.c, 
+	  src/rh-task-memset.c:
+	  - Add config reloading by issue SIGHUP.
+	  - Adjust the tasks to the changes of config reloading.
+	* example/rahunas.init.in:
+	  - Add reload function.
+	  - In restart command, try to start if the process is not running.
+	* tools/firewall.sh.in: Add the KEEP_SET funtionality.
+
+2009-04-23  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/rahunas.init.in: 
+	  - Adjust the code to handle the start and stop process.
+	  - Waiting for the process really stop.
+	* tools/firewall.sh.in: Prevent the script to start the same rules again for 
+	  each virtual server.
+
+2009-04-21  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* src/rh-xmlrpc-server.c: Prevent the client to double login by mistake. 
+
 2009-04-20  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/rahunas.init.in: Call weblogin-config-update.sh to generate config

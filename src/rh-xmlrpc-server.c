@@ -72,6 +72,11 @@ int do_startsession(GNetXmlRpcServer *server,
     goto cleanup;
   }
 
+  /* Check if client already registered */
+  member_node = member_get_node_by_id(vs, id);
+  if (member_node != NULL)
+    goto greeting;
+
   req.id = id;
   req.vserver_id = atoi(vserver_id);
   req.username = username;
@@ -97,9 +102,9 @@ int do_startsession(GNetXmlRpcServer *server,
     req.bandwidth_max_up = 0;
 
   rh_task_startsess(vs, &req);
-
   member_node = member_get_node_by_id(vs, id);
 
+greeting:
   if (member_node != NULL) {
     member = (struct rahunas_member *)member_node->data;
     *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s", 
@@ -109,8 +114,8 @@ int do_startsession(GNetXmlRpcServer *server,
   }
 
 out:
-    *reply_string = g_strdup("Invalid input parameters");
-    goto cleanup;
+  *reply_string = g_strdup("Invalid input parameters");
+  goto cleanup;
 
 cleanup:
   DP("RPC Reply: %s", *reply_string);
@@ -288,8 +293,8 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
   goto cleanup;
 
 out:
-    *reply_string = g_strdup("Invalid input parameters");
-     goto cleanup;
+  *reply_string = g_strdup("Invalid input parameters");
+   goto cleanup;
 
 cleanup:
   DP("RPC Reply: %s", *reply_string);

@@ -397,7 +397,7 @@ int walk_through_set (int (*callback)(void *), struct vserver *vs)
   ip_set_id_t idx;
   socklen_t size, req_size;
   int res = 0;
-
+   
   size = req_size = load_set_list(vs, vs->vserver_config->vserver_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 

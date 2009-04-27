@@ -26,15 +26,13 @@
 const char *termstring = '\0';
 pid_t pid, sid;
 
+int getline(int fd, char *buf, size_t size);
+
 struct main_server rh_main_server_instance = {
   .vserver_list = NULL,
   .task_list = NULL,
 };
-
 struct main_server *rh_main_server = &rh_main_server_instance;
-
-int getline(int fd, char *buf, size_t size);
-size_t expired_check(void *data);
 
 void rh_sighandler(int sig)
 {
@@ -51,7 +49,18 @@ void rh_sighandler(int sig)
         exit(EXIT_FAILURE);
       }
       break;
+    case SIGHUP:
+      if (pid == 0) {
+        rh_reload();
+      } else if (pid > 0) {
+        syslog(LOG_NOTICE, "Reloading config files");
+        kill(pid, SIGHUP);
+      } else {
+        syslog(LOG_ERR, "Invalid PID");
+      }
+      break;
   }
+  return;
 }
 
 int getline(int fd, char *buf, size_t size)
@@ -134,14 +143,20 @@ size_t expired_check(void *data)
   }
 }
 
-gboolean polling_expired_check(struct main_server *ms, struct vserver *vs) {
+int polling_expired_check(struct main_server *ms, struct vserver *vs) {
   walk_through_set(&expired_check, vs);
-  return TRUE;
+  return 0;
 }
 
 gboolean polling(gpointer data) {
   struct main_server *ms = (struct main_server *)data;
   struct vserver *vs = NULL;
+  
+  if (ms->polling_blocked) {
+    DP("%s", "Skip polling!");
+    return TRUE;
+  }
+  
   DP("%s", "Start polling!");
   walk_through_vserver(&polling_expired_check, ms);
   return TRUE;
@@ -152,7 +167,45 @@ void rh_exit()
   walk_through_vserver(&rh_task_cleanup, rh_main_server);
   rh_task_stopservice(rh_main_server);
   rh_task_unregister(rh_main_server);
+  unregister_vserver_all(rh_main_server);
   rh_closelog(rh_main_server->main_config->log_file);
+}
+
+void rh_reload()
+{
+  logmsg(RH_LOG_NORMAL, "Reloading config files");
+  /* Block polling */
+  rh_main_server->polling_blocked = 1;
+
+  if (rh_main_server->main_config->log_file != NULL) {
+    syslog(LOG_INFO, "Open log file: %s", 
+           rh_main_server->main_config->log_file);
+    rh_main_server->log_fd = rh_openlog(rh_main_server->main_config->log_file);
+
+    if (!rh_main_server->log_fd) {
+      syslog(LOG_ERR, "Could not open log file %s\n", 
+             rh_main_server->main_config->log_file);
+      exit(EXIT_FAILURE);
+    }
+
+    rh_logselect(rh_main_server->log_fd);
+  }
+
+  /* Get vserver(s) config, again */
+  if (rh_main_server->main_config->conf_dir != NULL) {
+    get_vservers_config(rh_main_server->main_config->conf_dir, rh_main_server);
+  } else {
+    syslog(LOG_ERR, "The main configuration file is incompleted, lack of conf_dir\n");
+    exit(EXIT_FAILURE);
+  }
+
+  walk_through_vserver(&vserver_reload, rh_main_server);
+  vserver_unused_cleanup(rh_main_server);
+  
+  /* Unblock polling */
+  rh_main_server->polling_blocked = 0;
+  DP("Config reload finished");
+  return;
 }
 
 static void
@@ -255,6 +308,7 @@ void rh_free_member (struct rahunas_member *member)
     free(member->session_id);
 }
 
+
 int main(int argc, char **argv) 
 {
   gchar* addr = "localhost";
@@ -276,7 +330,9 @@ int main(int argc, char **argv)
   GNetXmlRpcServer *server = NULL;
   GMainLoop* main_loop     = NULL;
 
-  signal(SIGTERM, rh_sighandler);
+  signal(SIGTERM, &rh_sighandler);
+  signal(SIGHUP, &rh_sighandler);
+  signal(SIGINT, SIG_IGN);
 
   watch_child(argv);
 
@@ -349,7 +405,8 @@ int main(int argc, char **argv)
   g_timeout_add_seconds (rh_main_server->main_config->polling_interval, 
                          polling, rh_main_server);
 
-
+ 
+  walk_through_vserver(&vserver_init_done, rh_main_server);
   logmsg(RH_LOG_NORMAL, "Ready to serve...");
   g_main_loop_run(main_loop);
 

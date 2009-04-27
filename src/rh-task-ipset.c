@@ -61,6 +61,9 @@ static int stopservice  ()
 /* Initialize */
 static void init (struct vserver *vs)
 {
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
+
   vs->v_set = set_adt_get(vs->vserver_config->vserver_name);
   logmsg(RH_LOG_NORMAL, "[%s] Task IPSET initialize..",
          vs->vserver_config->vserver_name);  
@@ -76,6 +79,9 @@ static void init (struct vserver *vs)
 /* Cleanup */
 static void cleanup (struct vserver *vs)
 {
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
+
   logmsg(RH_LOG_NORMAL, "[%s] Task IPSET cleanup..",
          vs->vserver_config->vserver_name);  
 
