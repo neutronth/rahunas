@@ -29,7 +29,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
   int ret = 0;
   int fd = 0;
   int i = 0;
-  char *env[21];
+  char *env[22];
 
   env[0]  = g_strdup("ENV_OVERRIDE=yes");
   env[1]  = g_strdup_printf("SETNAME=%s", vs->vserver_config->vserver_name);
@@ -54,7 +54,10 @@ int iptables_exec(struct vserver *vs, char *const args[])
                             vs->vserver_config->vserver_ports_allow);
   env[19] = g_strdup_printf("VSERVER_PORTS_INTERCEPT=%s", 
                             vs->vserver_config->vserver_ports_intercept);
-  env[20] = (char *) 0;
+  env[20] = g_strdup_printf("KEEP_SET=%s", 
+                            vs->vserver_config->init_flag == VS_RELOAD ?
+                            "yes" : "no");
+  env[21] = (char *) 0;
 
   for (i = 0; i < 21; i++) {
     if (env[i] != NULL) 
@@ -155,6 +158,7 @@ static int cleanup (struct vserver *vs)
 {
   logmsg(RH_LOG_NORMAL, "[%s] Task IPTABLES cleanup..",
          vs->vserver_config->vserver_name);  
+
   iptables_stop(vs);
 }
 

@@ -77,6 +77,20 @@ stop () {
   return 0
 }
 
+reload () {
+  start-stop-daemon --stop --quiet --signal HUP \
+    --pidfile $PID --name $NAME < /dev/null
+  sleep 2
+
+  if test -n "$PID" && kill -0 $PID 2>/dev/null
+  then
+    log_action_end_msg 0
+  else
+    log_action_end_msg 1
+  fi
+  return 0
+}
+
 case "$1" in
   start)
     log_daemon_msg "Starting $DESC" "$NAME"
@@ -102,7 +116,7 @@ case "$1" in
     ;;
   restart)
     log_daemon_msg "Restarting $DESC" "$NAME"
-    stop
+    stop || true
 
     if [ "$RUN_DAEMON" = "yes" ]; then
       if start ; then
@@ -112,6 +126,15 @@ case "$1" in
       fi
     else
       log_end_msg "disabled, to enable see $INIT"
+    fi
+    ;;
+  reload)
+    log_daemon_msg "Reloading $DESC" "$NAME"
+    
+    if reload ; then
+      log_end_msg $?
+    else
+      log_end_msg $?
     fi
     ;;
   status)

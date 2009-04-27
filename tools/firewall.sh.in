@@ -653,7 +653,7 @@ restart() {
 
 start_config() {
   test ! -f $RUNDIR/$SETNAME || return 0
-  add_set
+  test "$KEEP_SET" = "yes" || add_set
   new_chains
   rules
   touch $RUNDIR/$SETNAME
@@ -680,7 +680,7 @@ start_config_file() {
 stop_config() {
   test -f $RUNDIR/$SETNAME || return 0
   cleanup
-  cleanup_set
+  test "$KEEP_SET" = "yes" || cleanup_set
   rm -f $RUNDIR/$SETNAME
   return 0
 }

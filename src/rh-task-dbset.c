@@ -282,6 +282,9 @@ static void init (struct vserver *vs)
   struct dbset_row *row;
   char select_cmd[256];
 
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
+
   logmsg(RH_LOG_NORMAL, "[%s] Task DBSET initialize..",
          vs->vserver_config->vserver_name);  
 

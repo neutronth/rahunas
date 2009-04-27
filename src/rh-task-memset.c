@@ -56,6 +56,9 @@ static void init (struct vserver *vs)
 {
   int size;
 
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
+
   logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET initialize..",
          vs->vserver_config->vserver_name);  
 
@@ -80,6 +83,9 @@ static void cleanup (struct vserver *vs)
   GList *runner = NULL;
   GList *deleting = NULL;
   struct rahunas_member *member = NULL;
+
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
 
   logmsg(RH_LOG_NORMAL, "[%s] Task MEMSET cleanup..",
          vs->vserver_config->vserver_name);  
