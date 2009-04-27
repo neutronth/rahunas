@@ -311,7 +311,7 @@ void vserver_unused_cleanup(struct main_server *ms)
       rh_task_cleanup(ms, lvserver);
       unregister_vserver(ms, lvserver->vserver_config->vserver_id);
 
-      ms->vserver_list = g_list_delete_link(ms->vserver_list, runner);
+      // Set runner to the first of list due to unregister may delete head
       runner = g_list_first(ms->vserver_list);
     } else {
       runner = g_list_next(runner);
