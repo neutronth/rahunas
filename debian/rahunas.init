@@ -78,6 +78,9 @@ stop () {
 }
 
 reload () {
+
+  $WEBLOGIN_CONFIG
+
   start-stop-daemon --stop --quiet --signal HUP \
     --pidfile $PID --name $NAME < /dev/null
   sleep 2
@@ -122,7 +125,7 @@ case "$1" in
       log_end_msg "disabled, to enable see $INIT"
     fi
     ;;
-  reload)
+  reload|force-reload)
     log_daemon_msg "Reloading $DESC" "$NAME"
     
     if reload ; then
