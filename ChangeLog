@@ -1,3 +1,7 @@
+2009-04-29  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/rahunas.init.in: Fix regenerate/reload weblogin PHP config file.
+
 2009-04-27  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-server.c: Fix the segfault on reloading config files.
