@@ -1,3 +1,7 @@
+2009-04-30  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* data/rahunas.db: Add table nas into schema.
+
 2009-04-29  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* example/rahunas.init.in: Fix regenerate/reload weblogin PHP config file.
