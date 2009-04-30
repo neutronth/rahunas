@@ -21,6 +21,10 @@ get_config_value () {
 # Main
 MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
 
+# DB
+RAHUNAS_DB=/etc/rahunas/rahunas.db
+SQLITE3=/usr/bin/sqlite3
+
 generate_config() {
   file=$1
   SETNAME=`get_section_name $file`
@@ -67,6 +71,22 @@ generate_config() {
   printf ");\n\n"
 }
 
+update_db () {
+  file=$1
+
+  SETNAME=`get_section_name $file`
+  VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+  NAS_IDENTIFIER=`get_config_value $SETNAME nas_identifier $file`
+
+  SQL="REPLACE INTO nas VALUES ('$VSERVER_ID','$NAS_IDENTIFIER')"
+  $SQLITE3 $RAHUNAS_DB "$SQL"
+}
+
+clear_nas_db () {
+  SQL="DELETE FROM nas"
+  $SQLITE3 $RAHUNAS_DB "$SQL"
+}
+
 destfile="@sysconfdir@/rahunas/config.php"
 if [ "$1" != "" ]; then
   destfile="$1"
@@ -79,3 +99,9 @@ for file in `find $MAIN_CONF_DIR -name '*.conf'`;
 do
   generate_config $file 
 done >> $destfile
+
+clear_nas_db
+for file in `find $MAIN_CONF_DIR -name '*.conf'`;
+do
+  update_db $file
+done
