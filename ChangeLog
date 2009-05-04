@@ -1,3 +1,7 @@
+2009-05-04  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +weblogin/ChangeLog: Fork the changelog for weblogin.
+
 2009-04-30  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* tools/weblogin-config-update.sh.in: Add the updating table nas in database.
