@@ -1,3 +1,7 @@
+2009-05-06  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* weblogin/squid_helper.php: Handle the virtual server for squid helper.
+
 2009-05-04  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* +weblogin/ChangeLog: Fork the changelog for weblogin.
