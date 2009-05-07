@@ -1,3 +1,7 @@
+2009-05-07  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* examples/rahunas.init.in: Fix mis-used log_end_msg with the log_action_msg. 
+
 2009-05-06  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* weblogin/squid_helper.php: Handle the virtual server for squid helper.
