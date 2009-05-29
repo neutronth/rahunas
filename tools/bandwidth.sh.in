@@ -78,7 +78,7 @@ bittorrent_setting () {
         classid 1:${BITTORRENT_ID} htb rate ${BITTORRENT_DOWNLOAD_MAX}Kbit
       $TC qdisc add dev $SHAPING_DOWN_INF parent 1:${BITTORRENT_ID} \
         handle ${BITTORRENT_ID}: sfq perturb 10
-      $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 5 \
+      $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 1 \
         handle 0x3 fw classid 1:${BITTORRENT_ID}
 
       # BITTORRENT Upload throttling
@@ -86,7 +86,7 @@ bittorrent_setting () {
         classid 2:${BITTORRENT_ID} htb rate ${BITTORRENT_UPLOAD_MAX}Kbit
       $TC qdisc add dev $SHAPING_UP_INF parent 2:${BITTORRENT_ID} \
         handle ${BITTORRENT_ID}: sfq perturb 10
-      $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 5 \
+      $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 1 \
         handle 0x3 fw classid 2:${BITTORRENT_ID}
       ;;
     stop)
@@ -142,13 +142,13 @@ bw_add() {
   $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
     classid 1:${ID} htb rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit
   $TC filter add dev $SHAPING_DOWN_INF parent 1: \
-    protocol ip prio 1 u32 match ip dst ${IP}/32 flowid 1:${ID}
+    protocol ip prio 2 u32 match ip dst ${IP}/32 flowid 1:${ID}
 
   # Uplink
   $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
     classid 2:${ID} htb rate ${UPSPEED}bit ceil ${UPSPEED}bit
   $TC filter add dev $SHAPING_UP_INF parent 2: \
-    protocol ip prio 1 u32 match ip src ${IP}/32 flowid 2:${ID}
+    protocol ip prio 2 u32 match ip src ${IP}/32 flowid 2:${ID}
 }
 
 bw_del() {
@@ -160,9 +160,9 @@ bw_del() {
   DOWN_HANDLE=`$TC filter show dev $SHAPING_DOWN_INF | grep -w "flowid 1:${ID} " | awk '{print $10}'`
   UP_HANDLE=`$TC filter show dev $SHAPING_UP_INF | grep -w "flowid 2:${ID} " | awk '{print $10}'`
   $TC filter del dev $SHAPING_DOWN_INF parent 1: \
-    prio 1 handle ${DOWN_HANDLE} u32
+    prio 2 handle ${DOWN_HANDLE} u32
   $TC filter del dev $SHAPING_UP_INF parent 2: \
-    prio 1 handle ${UP_HANDLE} u32
+    prio 2 handle ${UP_HANDLE} u32
 
   # Class Removal
   # Downlink/Uplink

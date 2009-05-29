@@ -484,7 +484,7 @@ rules () {
   # Note: 
   #   bittorrent-announce is customized pattern, warning if not exists.
   ##
-  if [ "$BITTORRENT" = "yes" -o -n "$BITTORRENT_ALLOW" ]; then
+  if [ "$BITTORRENT" = "yes" ] || [ -n "$BITTORRENT_ALLOW" ]; then
     if [ -n "$BITTORRENT_ALLOW" ]; then
       BITTORRENT_ALLOW_OPTIONS="-m set ! --set $P2P_ALLOW_SET"
 
@@ -492,7 +492,7 @@ rules () {
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS src -j DROP
     fi
-  else
+  elif [ "$BITTORRENT" = "block" ]; then
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
       $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
   fi
