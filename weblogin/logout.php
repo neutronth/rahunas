@@ -161,7 +161,7 @@ $valid_text = !$valid ? "" : "" .
   "<table>".
   " <tr>" .
   "   <td>&nbsp;<input type='hidden' name='do_logout' value='yes'></td>" .
-  "   <td><input type='button' value='" . _("Go! Go! Go!") . "' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
+  "   <td><input type='button' value='" . _("OK") . "' id='rh_goto_button' onClick='window.open(\"".$request_url."\");'></td>" .
   "   <td><input type='submit' value='" . _("Logout") . "' id='rh_logout_button'></td>" .
   " </tr>" .
   "</table>";

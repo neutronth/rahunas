@@ -1,3 +1,27 @@
+2009-05-07  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* examples/rahunas.init.in: Fix mis-used log_end_msg with the log_action_msg. 
+
+2009-05-06  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* weblogin/squid_helper.php: Handle the virtual server for squid helper.
+
+2009-05-04  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* +weblogin/ChangeLog: Fork the changelog for weblogin.
+
+2009-04-30  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* tools/weblogin-config-update.sh.in: Add the updating table nas in database.
+
+2009-04-30  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* data/rahunas.db: Add table nas into schema.
+
+2009-04-29  Neutron Soutmun <neo.neutron@gmail.com>
+
+	* example/rahunas.init.in: Fix regenerate/reload weblogin PHP config file.
+
 2009-04-27  Neutron Soutmun <neo.neutron@gmail.com>
 
 	* src/rh-server.c: Fix the segfault on reloading config files.

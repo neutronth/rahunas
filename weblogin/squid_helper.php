@@ -32,6 +32,7 @@
 */
 include_once 'config.php';
 require_once 'rahu_xmlrpc.class.php';
+require_once 'networkchk.php';
 
 define(CACHE_TIME, 120);
 
@@ -45,10 +46,13 @@ while (!feof(STDIN)) {
   $arg = trim(fgets(STDIN));
   $srcip = rawurldecode($arg);
 
+  $config = get_config_by_network(trim($srcip), $config_list);
+  $vserver_id = $config["VSERVER_ID"];
+
   // Check cache
-  if (!empty($user_list[$srcip]['username']) && 
-    (time() - $user_list[$srcip]['timestamp']) < CACHE_TIME) {
-    fwrite(STDOUT, "OK user=". $user_list[$srcip]['username']  ."\n");
+  if (!empty($user_list[$vserver_id][$srcip]['username']) && 
+    (time() - $user_list[$vserver_id][$srcip]['timestamp']) < CACHE_TIME) {
+    fwrite(STDOUT, "OK user=". $user_list[$vserver_id][$srcip]['username']  ."\n");
     continue;
   }
 
@@ -56,10 +60,10 @@ while (!feof(STDIN)) {
   $xmlrpc->host = $config["RAHUNAS_HOST"];
   $xmlrpc->port = $config["RAHUNAS_PORT"];
   try {
-    $retinfo = $xmlrpc->do_getsessioninfo($srcip);
+    $retinfo = $xmlrpc->do_getsessioninfo($vserver_id, $srcip);
     if (is_array($retinfo) && !empty($retinfo['session_id'])) {
-      $user_list[$srcip]['username'] = $retinfo['username'];      
-      $user_list[$srcip]['timestamp'] = time();      
+      $user_list[$vserver_id][$srcip]['username'] = $retinfo['username'];      
+      $user_list[$vserver_id][$srcip]['timestamp'] = time();      
       fwrite(STDOUT, "OK user=". $retinfo['username']  ."\n");
     } else {
       fwrite(STDOUT, "ERR\n");

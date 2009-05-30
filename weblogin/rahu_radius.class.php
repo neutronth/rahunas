@@ -189,8 +189,11 @@ class rahu_radius_acct {
     $randno2 = rand(0,65535);
     $randno3 = rand(0,65535);
     $randno4 = rand(0,65535);
-    $randno = sprintf("%s%s%s%s", dechex($randno1), dechex($randno2),
-                                    dechex($randno3), dechex($randno4));
+    $randno = sprintf("%s%s%s%s", 
+                str_pad(dechex($randno1), 4, "0", STR_PAD_LEFT), 
+                str_pad(dechex($randno2), 4, "0", STR_PAD_LEFT), 
+                str_pad(dechex($randno3), 4, "0", STR_PAD_LEFT), 
+                str_pad(dechex($randno4), 4, "0", STR_PAD_LEFT));
     $this->session_id = $randno;
                                                      
     return $this->session_id;
