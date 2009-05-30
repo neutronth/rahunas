@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Neutron Soutmun
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: RahuNAS Weblogin 0.1.1\n"
-"Report-Msgid-Bugs-To: neo.neutron@gmail.com\n"
-"POT-Creation-Date: 2008-11-27 22:18+0700\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-05-30 13:56+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,90 +16,102 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../weblogin/login.php:115 ../../weblogin/logout.php:100
+#: ../index.php:76
+msgid "If it is not redirecting within 3 seconds"
+msgstr ""
+
+#: ../index.php:76
+msgid "click"
+msgstr ""
+
+#: ../index.php:76
+msgid "Login Page"
+msgstr ""
+
+#: ../login.php:153 ../logout.php:139
 msgid "Username"
 msgstr ""
 
-#: ../../weblogin/login.php:117
+#: ../login.php:155
 msgid "Password"
 msgstr ""
 
-#: ../../weblogin/login.php:120
+#: ../login.php:158
 msgid "Login"
 msgstr ""
 
-#: ../../weblogin/logout.php:104
+#: ../logout.php:143
 msgid "Session Start"
 msgstr ""
 
-#: ../../weblogin/logout.php:108
+#: ../logout.php:147
 msgid "Session Time"
 msgstr ""
 
-#: ../../weblogin/logout.php:109
+#: ../logout.php:148
 msgid "seconds"
 msgstr ""
 
-#: ../../weblogin/logout.php:113
+#: ../logout.php:152
 msgid "Expired"
 msgstr ""
 
-#: ../../weblogin/logout.php:114
+#: ../logout.php:153
 msgid "Never"
 msgstr ""
 
-#: ../../weblogin/logout.php:118
+#: ../logout.php:157
 msgid "Request URL"
 msgstr ""
 
-#: ../../weblogin/logout.php:125
-msgid "Go! Go! Go!"
+#: ../logout.php:164
+msgid "OK"
 msgstr ""
 
-#: ../../weblogin/logout.php:126
+#: ../logout.php:165
 msgid "Logout"
 msgstr ""
 
-#: ../../weblogin/messages.php:3
+#: ../messages.php:35
 msgid "Error! Could not connect to the server"
 msgstr ""
 
-#: ../../weblogin/messages.php:4
+#: ../messages.php:36
 msgid "Error! Could not connect to the authenticator server"
 msgstr ""
 
-#: ../../weblogin/messages.php:5
+#: ../messages.php:37
 msgid "Error! User has been reach the maximum login"
 msgstr ""
 
-#: ../../weblogin/messages.php:6
+#: ../messages.php:38
 msgid "Error! User already login"
 msgstr ""
 
-#: ../../weblogin/messages.php:7
+#: ../messages.php:39
 msgid "Error! User expired"
 msgstr ""
 
-#: ../../weblogin/messages.php:8
+#: ../messages.php:40
 msgid "Error! Invalid IP address"
 msgstr ""
 
-#: ../../weblogin/messages.php:10
+#: ../messages.php:42
 msgid "Error! Invalid username or password"
 msgstr ""
 
-#: ../../weblogin/messages.php:11
+#: ../messages.php:43
 msgid "Error! Logout failed! please try again"
 msgstr ""
 
-#: ../../weblogin/messages.php:12
+#: ../messages.php:44
 msgid "Error! Please login"
 msgstr ""
 
-#: ../../weblogin/messages.php:15
+#: ../messages.php:47
 msgid "Success! User has been authorized, please wait a moment"
 msgstr ""
 
-#: ../../weblogin/messages.php:16
+#: ../messages.php:48
 msgid "Success! User has been logout"
 msgstr ""
