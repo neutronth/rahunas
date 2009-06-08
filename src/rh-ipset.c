@@ -121,7 +121,7 @@ struct set *set_adt_get(const char *name)
 
   req_adt_get.op = IP_SET_OP_ADT_GET;
   req_adt_get.version = IP_SET_PROTOCOL_VERSION;
-  strcpy(req_adt_get.set.name, name);
+  strncpy(req_adt_get.set.name, name, IP_SET_MAXNAMELEN);
   size = sizeof(struct ip_set_req_adt_get);
 
   kernel_getfrom((void *) &req_adt_get, &size);
@@ -149,6 +149,9 @@ void parse_ip(const char *str, ip_set_ip_t *ip)
 void parse_mac(const char *mac, unsigned char *ethernet)
 {
   unsigned int i = 0;
+  if (!mac)
+    return;
+
   if (strlen(mac) != ETH_ALEN * 3 - 1)
     return;
 
@@ -180,7 +183,7 @@ char *mac_tostring(unsigned char macaddress[ETH_ALEN])
 {
   static char mac_string[18] = "";
  
-  sprintf(mac_string, "%02X:%02X:%02X:%02X:%02X:%02X", 
+  snprintf(mac_string, sizeof (mac_string), "%02X:%02X:%02X:%02X:%02X:%02X", 
           macaddress[0], macaddress[1], macaddress[2],
           macaddress[3], macaddress[4], macaddress[5]);
   return mac_string; 
@@ -260,7 +263,7 @@ void set_flush(const char *name)
 
   req.op = IP_SET_OP_FLUSH;
   req.version = IP_SET_PROTOCOL_VERSION;
-  strcpy(req.name, name);
+  strncpy(req.name, name, IP_SET_MAXNAMELEN);
 
   kernel_sendto(&req, sizeof(struct ip_set_req_std));
 }
@@ -287,7 +290,7 @@ tryagain:
   /* Get max_sets */
   req_max_sets.op = IP_SET_OP_MAX_SETS;
   req_max_sets.version = IP_SET_PROTOCOL_VERSION;
-  strcpy(req_max_sets.set.name, name);
+  strncpy(req_max_sets.set.name, name, IP_SET_MAXNAMELEN);
   size = sizeof(req_max_sets);
   kernel_getfrom(&req_max_sets, &size);
 

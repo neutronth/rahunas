@@ -365,7 +365,8 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  sprintf(version, "Starting %s - Version %s", PROGRAM, RAHUNAS_VERSION);
+  snprintf(version, sizeof (version), "Starting %s - Version %s", PROGRAM, 
+           RAHUNAS_VERSION);
   logmsg(RH_LOG_NORMAL, version);
 
   rh_task_register(rh_main_server);

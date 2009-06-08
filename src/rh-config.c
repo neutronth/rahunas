@@ -369,7 +369,8 @@ GList *append_interface (GList *inf,
   while (runner != NULL)
     {
       iface = (struct interfaces *)runner->data;
-      if (strncmp(iface->dev_internal, inf_name, strlen(inf_name)) == 0)
+      if (iface->dev_internal &&
+          strncmp(iface->dev_internal, inf_name, strlen(inf_name)) == 0)
         {
           // Already in the list
           (iface->hit)++;
@@ -387,8 +388,8 @@ done:
       return inf;
     }
 
-  strncpy(item->dev_internal, inf_name, 32);
-  sprintf(item->dev_ifb, "ifb%d", ifb_ifno);
+  strncpy(item->dev_internal, inf_name, sizeof (item->dev_internal));
+  snprintf(item->dev_ifb, sizeof (item->dev_ifb), "ifb%d", ifb_ifno);
   item->init = 0;
   item->hit  = 1;
   DP ("Interface append: %s, %s", item->dev_internal, item->dev_ifb);
@@ -410,7 +411,8 @@ GList *remove_interface (GList *inf,
   while (runner != NULL)
     {
       iface = (struct interfaces *)runner->data;
-      if (strncmp (iface->dev_internal, inf_name, strlen (inf_name)) == 0)
+      if (iface->dev_internal &&
+          strncmp (iface->dev_internal, inf_name, strlen (inf_name)) == 0)
         {
           iface->hit--;
           if (iface->hit <=0 )

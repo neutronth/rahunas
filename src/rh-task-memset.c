@@ -199,19 +199,19 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
 
   switch (req->req_opt) {
     case RH_RADIUS_TERM_IDLE_TIMEOUT :
-      strcpy(cause, "idle timeout");
+      strncpy(cause, "idle timeout", sizeof (cause));
       break;
     case RH_RADIUS_TERM_SESSION_TIMEOUT :
-      strcpy(cause, "session timeout");
+      strncpy(cause, "session timeout", sizeof (cause));
       break;
     case RH_RADIUS_TERM_USER_REQUEST :
-      strcpy(cause, "user request");
+      strncpy(cause, "user request", sizeof (cause));
       break;
     case RH_RADIUS_TERM_NAS_REBOOT :
-      strcpy(cause, "nas reboot");
+      strncpy(cause, "nas reboot", sizeof (cause));
       break;
     case RH_RADIUS_TERM_ADMIN_RESET :
-      strcpy(cause, "admin reset");
+      strncpy(cause, "admin reset", sizeof (cause));
       break;
   }
   if (!member->username)

@@ -281,15 +281,15 @@ static int startsess (struct vserver *vs, struct task_req *req)
     return 0;
   
   // Formating the bandwidth request
-  sprintf(bw_req.ip, "%s", idtoip(vs->v_map, req->id));
-  sprintf(bw_req.bandwidth_max_down, "%lu", 
-    member->bandwidth_max_down);
-  sprintf(bw_req.bandwidth_max_up, "%lu", 
-    member->bandwidth_max_up);
+  snprintf(bw_req.ip, sizeof (bw_req.ip), "%s", idtoip(vs->v_map, req->id));
+  snprintf(bw_req.bandwidth_max_down, sizeof (bw_req.bandwidth_max_down), 
+           "%lu", member->bandwidth_max_down);
+  snprintf(bw_req.bandwidth_max_up, sizeof (bw_req.bandwidth_max_up), "%lu", 
+           member->bandwidth_max_up);
   
   while (max_try > 0) { 
     slot_id = _get_slot_id();
-    sprintf(bw_req.slot_id, "%d", slot_id);
+    snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
     if (bandwidth_add(vs, &bw_req) == 0)
       break;
     else
@@ -327,7 +327,7 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
   if (slot_id < 1)
     return 0;
 
-  sprintf(bw_req.slot_id, "%d", slot_id);
+  snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
 
   if (bandwidth_del(vs, &bw_req) == 0) {
     member->bandwidth_slot_id = 0;

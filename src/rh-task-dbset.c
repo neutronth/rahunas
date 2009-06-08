@@ -293,8 +293,9 @@ static void init (struct vserver *vs)
                  PROGRAM, NULL, NULL,
                  GDA_CONNECTION_OPTIONS_READ_ONLY, NULL);
 
-  sprintf(select_cmd, "SELECT * FROM dbset WHERE vserver_id='%d'",
-          vs->vserver_config->vserver_id);
+  snprintf(select_cmd, sizeof (select_cmd), 
+           "SELECT * FROM dbset WHERE vserver_id='%d'",
+           vs->vserver_config->vserver_id);
 
   DP("SQL: %s", select_cmd);
 
@@ -342,7 +343,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
   member = (struct rahunas_member *) member_node->data;
 
-  sprintf(startsess_cmd, "INSERT INTO dbset"
+  snprintf(startsess_cmd, sizeof (startsess_cmd), "INSERT INTO dbset"
          "(session_id,vserver_id,username,ip,mac,session_start,"
          "session_timeout,bandwidth_slot_id,bandwidth_max_down,"
          "bandwidth_max_up) "
@@ -393,7 +394,7 @@ static int stopsess (struct vserver *vs, struct task_req *req)
   DP("Username  : %s", member->username);
   DP("SessionID : %s", member->session_id);
 
-  sprintf(stopsess_cmd, "DELETE FROM dbset WHERE "
+  snprintf(stopsess_cmd, sizeof (stopsess_cmd), "DELETE FROM dbset WHERE "
          "session_id='%s' AND username='%s' AND vserver_id='%d'",
          member->session_id, 
          member->username,
