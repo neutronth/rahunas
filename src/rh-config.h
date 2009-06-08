@@ -19,9 +19,18 @@
 #define XMLSERVICE_PORT 80
 #define XMLSERVICE_URL  "/rahunas_service/xmlrpc_service.php"
 
+#define MAX_IFB_IFACE   64
+
 #define CONFIG_FILE RAHUNAS_CONF_DIR "rahunas.conf"
 #define DEFAULT_PID RAHUNAS_RUN_DIR "rahunasd.pid"
 #define DB_NAME "rahunas"
+
+struct interfaces {
+  char dev_internal[32];
+  char dev_ifb[32];
+  int  hit;
+  int  init;
+};
 
 struct rahunas_main_config {
   char *conf_dir;
@@ -39,6 +48,7 @@ struct rahunas_vserver_config {
   int  init_flag;
   char *dev_external;
   char *dev_internal;
+  struct interfaces *iface;
   char *vlan;
   char *vlan_raw_dev_external;
   char *vlan_raw_dev_internal;
@@ -90,6 +100,8 @@ enum vserver_config_init_flag {
   VS_DONE
 };
 
+extern GList *interfaces_list;
+
 int get_config(const char *cfg_file, union rahunas_config *config);
 int get_value(const char *cfg_file, const char *key, void **data, size_t *len);
 int get_vservers_config(const char *conf_dir, struct main_server *server);
@@ -97,4 +109,13 @@ int cleanup_vserver_config(struct rahunas_vserver_config *config);
 int cleanup_mainserver_config(struct rahunas_main_config *config);
 enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size, 
                                  void *user_data);
+
+GList *append_interface (GList *inf, 
+                         const char *inf_name);
+GList *remove_interface (GList *inf,
+                         const char *inf_name);
+struct interfaces *get_interface (GList *inf,
+                                  const char *inf_name);
+int    ifb_interface_reserve (void);
+void    ifb_interface_release (int ifno);
 #endif // __RH_CONFIG_H 

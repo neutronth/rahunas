@@ -8,15 +8,13 @@ exec_prefix=@exec_prefix@
 
 TC=/sbin/tc
 IP=/sbin/ip
+IFCONFIG=/sbin/ifconfig
 
 INIT=@sysconfdir@/default/rahunas
 RUN=@localstatedir@/run/rahunas-bandwidth
 
 # Interface Speed (Kbit), Default: 100 Mbps
 INTERFACE_SPEED=102400
-
-SHAPING_DOWN_INF=imq0
-SHAPING_UP_INF=imq1
 
 INTERFACE_ID=9999
 BITTORRENT_ID=9998
@@ -28,6 +26,9 @@ test -f $INIT || exit 0
 
 test "$RUN_DAEMON" = "yes" || exit 0
 test -f $RAHUNAS_CONFIG || exit 1
+
+SHAPING_DOWN_INF=""
+SHAPING_UP_INF=""
 
 set -e
 
@@ -55,17 +56,32 @@ interface_setting () {
         htb rate ${INTERFACE_SPEED}Kbit
 
       # Interface Uplink
+      $IFCONFIG $SHAPING_UP_INF up
       $TC qdisc add dev $SHAPING_UP_INF root handle 2: htb \
         default ${INTERFACE_ID} 
       $TC class add dev $SHAPING_UP_INF parent 2: classid 2:${INTERFACE_ID} \
         htb rate ${INTERFACE_SPEED}Kbit
+
+      # Redirect incoming traffic to IFB
+      $TC qdisc add dev $SHAPING_DOWN_INF ingress
+      $TC filter add dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 2 u32 \
+        match u32 0 0 flowid 1:${INTERFACE_ID} \
+        action mirred egress redirect dev $SHAPING_UP_INF
       ;;
   stop)
+      # Redirect incoming traffic to IFB
+      $TC filter del dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 2 u32 \
+        match u32 0 0 flowid 1:${INTERFACE_ID} \
+        action mirred egress redirect dev $SHAPING_UP_INF
+      $TC qdisc del dev $SHAPING_DOWN_INF ingress
+
       # Interface Downlink
       $TC qdisc del dev $SHAPING_DOWN_INF root
 
       # Interface Uplink
       $TC qdisc del dev $SHAPING_UP_INF root
+
+      $IFCONFIG $SHAPING_UP_INF down
       ;;
   esac
 }
@@ -113,16 +129,20 @@ stop () {
 }
 
 usage_add() {
-  echo "Usage: $1 add ID IP DOWNSPEED UPSPEED"
+  echo "Usage: $1 add ID IP DOWNSPEED UPSPEED DOWN_IF UP_IF"
   echo "         ID - ID number from 1 to 9900"
   echo "         IP - IPv4 Address"
   echo "  DOWNSPEED - Download speed (bits/s)"
   echo "    UPSPEED - Upload speed (bits/s)"
+  echo "    DOWN_IF - Downstream interface (eth0, eth1, vlan1, ...)"
+  echo "      UP_IF - Upstream interface (ifb0, ifb1, ...)"
 }
 
 usage_del() {
-  echo "Usage: $1 del ID"
+  echo "Usage: $1 del ID DOWN_IF UP_IF"
   echo "         ID - ID number from 1 to 9900"
+  echo "    DOWN_IF - Downstream interface (eth0, eth1, vlan1, ...)"
+  echo "      UP_IF - Upstream interface (ifb0, ifb1, ...)"
 }
 
 usage() {
@@ -174,22 +194,43 @@ N=@sysconfdir@/rahunas/bandwidth.sh
 
 case "$1" in
   start)
-    start || true 
+    if [ -z "$2" ] || [ -z "$3" ]; then
+      MESSAGE="NOT COMPLETED"  
+    else
+      SHAPING_DOWN_INF=$2
+      SHAPING_UP_INF=$3
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      start || true 
+    fi
+
     test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
     echo $MESSAGE
     ;;
   stop)
-    stop || true
+    if [ -z "$2" ] || [ -z "$3" ]; then
+      MESSAGE="NOT COMPLETED"  
+    else
+      SHAPING_DOWN_INF=$2
+      SHAPING_UP_INF=$3
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      stop || true
+    fi
+
     test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
     echo $MESSAGE
 
     ;;
   restart)
-    stop || true
-    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
-    echo $MESSAGE
+    if [ -z "$2" ] || [ -z "$3" ]; then
+      MESSAGE="NOT COMPLETED"  
+    else
+      SHAPING_DOWN_INF=$2
+      SHAPING_UP_INF=$3
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      stop || true
+      start || true
+    fi
 
-    start || true
     test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
     echo $MESSAGE
 
@@ -200,13 +241,20 @@ case "$1" in
       exit 3
     fi
 
-    if [ $# != 5 ]; then
+    if [ $# != 7 ]; then
       echo "Error: too few arguments"
       usage_add $N
       exit 1
     fi
 
-    bw_add $2 $3 $4 $5 || true
+    if [ -z "$6" ] || [ -z "$7" ]; then
+      MESSAGE="NOT COMPLETED"  
+    else
+      SHAPING_DOWN_INF=$6
+      SHAPING_UP_INF=$7
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      bw_add $2 $3 $4 $5 || true
+    fi
     echo $MESSAGE
     ;;
   del)
@@ -215,13 +263,19 @@ case "$1" in
       exit 3
     fi
 
-    if [ $# != 2 ]; then
+    if [ $# != 4 ]; then
       echo "Error: too few arguments"
       usage_del $N
       exit 1
     fi
-
-    bw_del $2 || true
+    if [ -z "$3" ] || [ -z "$4" ]; then
+      MESSAGE="NOT COMPLETED"  
+    else
+      SHAPING_DOWN_INF=$3
+      SHAPING_UP_INF=$4
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      bw_del $2 || true
+    fi
     echo $MESSAGE
     ;;
   *)

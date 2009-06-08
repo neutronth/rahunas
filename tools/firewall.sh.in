@@ -584,14 +584,6 @@ rules () {
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded \
       -j CONNMARK --set-mark 2
   done 
-  
-  ##
-  # Bandwidth Shaping: IMQ - Intermediate Queueing Device
-  ##
-  if [ "$BANDWIDTH_SHAPE" = "yes" ]; then
-    $IPTABLES -t mangle -I $CHAIN_MANGLE_POSTROUTING $DEV_OUT_PARAM $DEV_INTERNAL -j IMQ --todev 0
-    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING $DEV_IN_PARAM $DEV_INTERNAL -j IMQ --todev 1
-  fi
 
   ##
   # Return to main chains

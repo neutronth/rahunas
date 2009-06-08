@@ -18,8 +18,6 @@
 #include "rh-task-memset.h"
 #include "rh-utils.h"
 
-
-
 #define BANDWIDTH_WRAPPER "/etc/rahunas/bandwidth.sh"
 
 static unsigned short slot_flags[MAX_SLOT_PAGE] = {1};
@@ -135,35 +133,46 @@ int bandwidth_exec(struct vserver *vs, char *const args[])
   return ret;
 }
 
-int bandwidth_start(void)
+int bandwidth_start(struct vserver *vs)
 {
-  char *args[3];
+  char *args[5];
+  struct interfaces *iface = vs->vserver_config->iface;
+  int  ret;
 
   DP("Bandwidth: start");
 
   args[0] = BANDWIDTH_WRAPPER;
   args[1] = "start";
-  args[2] = (char *) 0;
+  args[2] = iface->dev_internal;
+  args[3] = iface->dev_ifb;
+  args[4] = (char *) 0;
 
-  return bandwidth_exec(NULL, args);
+  ret = bandwidth_exec(vs, args);
+  return ret; 
 }
 
-int bandwidth_stop(void)
+int bandwidth_stop(struct vserver *vs)
 {
-  char *args[3];
+  char *args[5];
+  struct interfaces *iface = vs->vserver_config->iface;
+  int  ret;
 
   DP("Bandwidth: stop");
 
   args[0] = BANDWIDTH_WRAPPER;
   args[1] = "stop";
-  args[2] = (char *) 0;
+  args[2] = iface->dev_internal;
+  args[3] = iface->dev_ifb;
+  args[4] = (char *) 0;
 
-  return bandwidth_exec(NULL, args);
+  ret = bandwidth_exec(vs, args);
+  return ret; 
 }
 
 int bandwidth_add(struct vserver *vs, struct bandwidth_req *bw_req)
 {
-  char *args[7];
+  char *args[9];
+  struct interfaces *iface = vs->vserver_config->iface;
 
   DP("Bandwidth: request %s %s %s %s", bw_req->slot_id, 
      bw_req->ip, bw_req->bandwidth_max_down, bw_req->bandwidth_max_up);
@@ -174,21 +183,26 @@ int bandwidth_add(struct vserver *vs, struct bandwidth_req *bw_req)
   args[3] = bw_req->ip;
   args[4] = bw_req->bandwidth_max_down;
   args[5] = bw_req->bandwidth_max_up;
-  args[6] = (char *) 0;
+  args[6] = iface->dev_internal;
+  args[7] = iface->dev_ifb;
+  args[8] = (char *) 0;
 
   return bandwidth_exec(vs, args);
 }
 
 int bandwidth_del(struct vserver *vs, struct bandwidth_req *bw_req)
 {
-  char *args[4];
+  char *args[6];
+  struct interfaces *iface = vs->vserver_config->iface;
 
   DP("Bandwidth: request %s", bw_req->slot_id);
 
   args[0] = BANDWIDTH_WRAPPER;
   args[1] = "del";
   args[2] = bw_req->slot_id;
-  args[3] = (char *) 0;
+  args[3] = iface->dev_internal;
+  args[4] = iface->dev_ifb;
+  args[5] = (char *) 0;
 
   return bandwidth_exec(vs, args);
 }
@@ -196,25 +210,53 @@ int bandwidth_del(struct vserver *vs, struct bandwidth_req *bw_req)
 /* Start service task */
 static int startservice (void)
 {
-  return bandwidth_start();
+  /* Do nothing */
 }
 
 /* Stop service task */
 static int stopservice (void)
 {
-  return bandwidth_stop();
+  /* Do nothing */
 }
 
 /* Initialize */
 static void init (struct vserver *vs)
 {
-  /* Do nothing */
+  struct interfaces *iface = NULL;
+  if (!vs)
+    return;
+
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
+
+  interfaces_list = append_interface (interfaces_list, 
+                                      vs->vserver_config->dev_internal);
+  vs->vserver_config->iface = get_interface (interfaces_list, 
+                                             vs->vserver_config->dev_internal);
+  iface = vs->vserver_config->iface;
+  if (!iface->init)
+    if (bandwidth_start(vs) >= 0)
+      iface->init = 1;
 }
 
 /* Cleanup */
 static int cleanup (struct vserver *vs)
 {
-  /* Do nothing */
+  struct interfaces *iface = NULL;
+  if (!vs)
+    return;
+
+  if (vs->vserver_config->init_flag == VS_RELOAD)
+    return;
+
+  iface = vs->vserver_config->iface;
+  DP ("Bandwidth Cleanup: init=%d, hit=%d", iface->init, iface->hit);
+  if (iface->init && iface->hit <= 1)
+    if (bandwidth_stop(vs) >= 0)
+      iface->init = 0;
+
+  interfaces_list = remove_interface (interfaces_list, 
+                                      vs->vserver_config->dev_internal);
 }
 
 /* Start session task */
