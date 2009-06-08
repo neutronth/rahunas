@@ -1,3 +1,9 @@
+rahunas (0.1.3.b3-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 30 May 2009 14:37:23 +0700
+
 rahunas (0.1.3.b2-2) unstable; urgency=low
 
   * debian/rahunas.init: 
