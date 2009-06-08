@@ -41,8 +41,17 @@ generate_config() {
   NAS_IDENTIFIER=`get_config_value $SETNAME nas_identifier $file`
   NAS_IP_ADDRESS=`get_config_value $SETNAME vserver_ip $file`
   NAS_LOGIN_HOST=`get_config_value $SETNAME vserver_fqdn $file`
-  NAS_LOGIN_PROTO="https"
-  NAS_LOGIN_PORT="443"
+  NAS_LOGIN_PROTO=`get_config_value $SETNAME nas_login_proto $file`
+  test -z "$NAS_LOGIN_PROTO" && NAS_LOGIN_PROTO="https"
+
+  NAS_LOGIN_PORT=`get_config_value $SETNAME nas_login_port $file`
+  if [ -z "$NAS_LOGIN_PORT" ]; then
+    if [ "$NAS_LOGIN_PROTO" = "https" ]; then
+      NAS_LOGIN_PORT="443"
+    else
+      NAS_LOGIN_PORT="80"
+    fi
+  fi
   NAS_PORT=`get_config_value $SETNAME nas_port $file`
   NAS_LOGIN_TITLE=`get_config_value $SETNAME nas_login_title $file`
   DEFAULT_REDIRECT_URL=`get_config_value $SETNAME nas_default_redirect $file`

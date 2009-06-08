@@ -535,17 +535,19 @@ rules () {
   ##
   # SQUID Cache-Proxy
   ##
-  if [ "$PROXY" = "yes" -o "$PROXY" = "transparent" ]; then
-    if [ "$PROXY_HOST" = "localhost" -o "$PROXY_HOST" = "127.0.0.1" ]; then
+  if [ "$PROXY" = "yes" ] || [ "$PROXY" = "transparent" ]; then
+    if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]; then
       $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp --dport $PROXY_PORT -j ACCEPT
     fi
 
     if [ "$PROXY" = "transparent" ]; then
-      if [ "$PROXY_HOST" = "localhost" -o "$PROXY_HOST" = "127.0.0.1" ]; then
+      if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]; then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+          -d ! $VSERVER_IP \
           -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
       else
         $IPTABLES -t nat -A $CHAIN_NAT_PRETROUTING -p tcp --dport http \
+          -d ! $VSERVER_IP \
           -m connmark --mark 2/2 \
           -j DNAT --to-destination $PROXY_HOST:$PROXY_PORT
       fi
