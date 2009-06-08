@@ -570,8 +570,7 @@ rules () {
   # MASQUERADE
   ##
   if [ "$MASQUERADE" = "yes" ]; then
-    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING $DEV_OUT_PARAM $DEV_EXTERNAL \
-      -j MASQUERADE
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j MASQUERADE
   fi
 
   ##
