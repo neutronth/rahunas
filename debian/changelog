@@ -1,3 +1,17 @@
+rahunas (0.1.4-1) unstable; urgency=low
+
+  * New upstream release. 
+  * debian/rahunas.init: Update to follow the new changes in new release.
+  * debian/control: 
+    - Add sqlite3 as depends, it needed by the rahunas-weblogin-config-update.
+    - Now freeradius only suggests not depends for rahunas-weblogin.
+    - Remove quilt.
+  * debian/rules: 
+    - Remove unnecessary quilt patch system.
+    - Remove tool scripts install, upstream added.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 09 Jun 2009 10:34:20 +0700
+
 rahunas (0.1.3.b3-1) unstable; urgency=low
 
   * New upstream release.

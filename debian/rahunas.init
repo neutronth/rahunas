@@ -16,12 +16,12 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/sbin:/usr/bin
 prefix=/usr
 exec_prefix=${prefix}
 
-DAEMON=${exec_prefix}/bin/rahunasd
+DAEMON=${exec_prefix}/sbin/rahunasd
 INIT=/etc/default/rahunas
-FIREWALL=/etc/rahunas/firewall.sh
-WEBLOGIN_CONFIG=/etc/rahunas/weblogin-config-update.sh
+FIREWALL=${exec_prefix}/sbin/rahunas-firewall
+WEBLOGIN_CONFIG=${exec_prefix}/sbin/rahunas-weblogin-config-update
 NAME=rahunasd
-DESC="RahuNAS - Rahu Network Access Server"
+DESC="Rahu Network Access Server"
 
 
 # This value is overriden in /etc/default/rahunas if it exists
@@ -90,16 +90,15 @@ reload () {
 
 case "$1" in
   start)
-    log_daemon_msg "Starting $DESC" "$NAME"
-  
     if [ "$RUN_DAEMON" = "yes" ]; then
+      log_daemon_msg "Starting $DESC" "$NAME"
       if start ; then
         log_end_msg $?
       else
         log_end_msg $?
       fi
     else
-      log_end_msg "disabled, to enable see $INIT"
+      log_action_msg "Not starting $DESC, as specified in $INIT"
     fi
     ;;
   stop)
@@ -112,17 +111,16 @@ case "$1" in
     fi
     ;;
   restart)
-    log_daemon_msg "Restarting $DESC" "$NAME"
-    stop || true
-
     if [ "$RUN_DAEMON" = "yes" ]; then
+      log_daemon_msg "Restarting $DESC" "$NAME"
+      stop || true
       if start ; then
         log_end_msg $?
       else
         log_end_msg $?
       fi
     else
-      log_end_msg "disabled, to enable see $INIT"
+      log_action_msg "Not restarting $DESC, as specified in $INIT"
     fi
     ;;
   reload|force-reload)

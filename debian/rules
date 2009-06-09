@@ -16,8 +16,6 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-include /usr/share/quilt/quilt.make
-
 # These are used for cross-compiling and for saving the configure script
 # from having to guess our platform (since we know it already)
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
@@ -44,7 +42,7 @@ endif
 	./autogen.sh
 	./configure $(CROSS) --prefix=/usr --sysconfdir=/etc --localstatedir=/var --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" LDFLAGS="-Wl,-z,defs"
 
-build: patch build-arch build-indep
+build: build-arch build-indep
 
 build-arch: build-arch-stamp
 build-arch-stamp: config.status 
@@ -57,7 +55,7 @@ build-indep-stamp: config.status
 
 	touch $@
 
-clean: unpatch
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp 
@@ -101,11 +99,6 @@ install-arch:
 	$(MAKE) DESTDIR=$(CURDIR)/debian/rahunas install
 
 	dh_install -s
-
-	install -D -m 0750 -o root -g root example/rahunas.conf debian/rahunas/usr/share/doc/rahunas/rahunas.conf
-	install -D -m 0750 -o root -g root tools/firewall.sh debian/rahunas/etc/rahunas/firewall.sh
-	install -D -m 0750 -o root -g root tools/bandwidth.sh debian/rahunas/etc/rahunas/bandwidth.sh
-	install -D -m 0750 -o root -g root tools/weblogin-config-update.sh debian/rahunas/etc/rahunas/weblogin-config-update.sh
 
 binary-common:
 	dh_testdir
