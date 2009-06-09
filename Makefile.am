@@ -1,2 +1,2 @@
 EXTRA_DIST = weblogin
-SUBDIRS = xmlrpc lcfg src data
+SUBDIRS = xmlrpc lcfg src data tools example

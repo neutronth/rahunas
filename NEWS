@@ -1,6 +1,21 @@
 RahuNAS
+0.1.4 (2009-06-09)
+=====
+- Bug fix and the major change of the IFB (Intermediate Functional Block) as the
+  replacement of IMQ (Intermediate Queueing Device) that more problem with the
+  SMP system.
 
-0.1.2 (2009-31-08)
+  * IFB is the replacement of IMQ. (IMQ now deprecated, not support anymore)
+  * Prevent double login.
+  * Reloading config files supported.
+  * HTTP login supported. (early only HTTPS supported)
+  * Bug fix.
+
+0.1.3 (Never Release)
+=====
+  * Only in the internal development test.
+
+0.1.2 (2009-03-31)
 =====
 - Bug fix and add virtual server to support multiple network (VLAN, 
   multiple ethernet) and support scripts to do the traffic shape and

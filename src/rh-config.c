@@ -13,6 +13,9 @@
 #include "rahunasd.h"
 #include "rh-config.h"
 
+GList *interfaces_list = NULL;
+static unsigned long ifb_reserved = 0;
+
 enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size, 
                                  void *user_data) {
   char *value = strndup(data, size);
@@ -344,4 +347,138 @@ int cleanup_mainserver_config(struct rahunas_main_config *config)
   rh_free(&(config->dhcp));
 
   return 0;
+}
+
+
+GList *append_interface (GList *inf, 
+                         const char *inf_name)
+{
+  GList *runner = NULL;
+  struct interfaces *iface = NULL;
+  struct interfaces *item  = NULL;
+  int    ifb_ifno;
+
+  if (!inf_name)
+    return inf;
+
+  item = (struct interfaces *) malloc (sizeof (struct interfaces));
+  if (!item)
+    return inf;
+
+  runner = g_list_first (inf);
+  while (runner != NULL)
+    {
+      iface = (struct interfaces *)runner->data;
+      if (iface->dev_internal &&
+          strncmp(iface->dev_internal, inf_name, strlen(inf_name)) == 0)
+        {
+          // Already in the list
+          (iface->hit)++;
+          free(item); 
+          return inf;
+        }
+      runner = g_list_next (runner);
+    }
+
+done:
+  ifb_ifno = ifb_interface_reserve ();
+  if (ifb_ifno < 0)
+    {
+      free (item);
+      return inf;
+    }
+
+  strncpy(item->dev_internal, inf_name, sizeof (item->dev_internal));
+  snprintf(item->dev_ifb, sizeof (item->dev_ifb), "ifb%d", ifb_ifno);
+  item->init = 0;
+  item->hit  = 1;
+  DP ("Interface append: %s, %s", item->dev_internal, item->dev_ifb);
+  
+  return g_list_append (inf, item);
+}
+
+GList *remove_interface (GList *inf,
+                         const char *inf_name)
+{
+  GList *runner = NULL;
+  struct interfaces *iface = NULL;
+  int    ifb_ifno;
+
+  if (!inf_name || !inf)
+    return inf;
+
+  runner = g_list_first (inf);
+  while (runner != NULL)
+    {
+      iface = (struct interfaces *)runner->data;
+      if (iface->dev_internal &&
+          strncmp (iface->dev_internal, inf_name, strlen (inf_name)) == 0)
+        {
+          iface->hit--;
+          if (iface->hit <=0 )
+            {
+              sscanf (iface->dev_ifb, "ifb%d", &ifb_ifno);
+              ifb_interface_release (ifb_ifno);
+              if (iface)
+                free (iface);
+
+              return g_list_delete_link (inf, runner);
+            }
+        }
+
+      runner = g_list_next (runner);
+    }
+
+  return inf;
+}
+
+
+struct interfaces *get_interface (GList *inf,
+                                  const char *inf_name)
+{
+  GList *runner = NULL;
+  struct interfaces *iface = NULL;
+  
+  if (!inf_name || !inf)
+    return NULL;
+
+  runner = g_list_first (inf);
+
+  while (runner != NULL)
+    {
+      iface = (struct interfaces *) runner->data;
+      if (strncmp (iface->dev_internal, inf_name, strlen (inf_name)) == 0)
+        return iface;
+
+      runner = g_list_next (runner);
+    } 
+
+  return NULL;
+}
+
+int ifb_interface_reserve (void)
+{
+  int i;
+  unsigned long mask = 1;
+
+  for (i=0; i < MAX_IFB_IFACE; i++)
+    {
+      mask <<= i;
+      if (!(ifb_reserved & mask))
+        {
+          ifb_reserved |= mask;
+          return i;
+        } 
+    }
+
+  return -1;
+}
+
+void ifb_interface_release (int ifno)
+{
+  unsigned long mask = 1;
+
+  mask <<= ifno;
+  mask = ~mask;
+  ifb_reserved &= mask;
 }

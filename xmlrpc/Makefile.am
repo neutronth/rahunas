@@ -2,6 +2,8 @@
 
 @SET_MAKE@
 
+MAINTAINERCLEANFILES = Makefile.in
+
 noinst_LIBRARIES = libgnetxmlrpc.a
 
 noinst_PROGRAMS = \

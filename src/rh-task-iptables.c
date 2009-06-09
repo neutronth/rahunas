@@ -16,8 +16,6 @@
 #include "rh-task.h"
 #include "rh-utils.h"
 
-#define IPTABLES_WRAPPER "/etc/rahunas/firewall.sh"
-
 int iptables_exec(struct vserver *vs, char *const args[])
 {
   pid_t ws;
@@ -77,7 +75,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
 
   if (pid == 0) {
     // Child
-    execve(IPTABLES_WRAPPER, args, env);
+    execve(RAHUNAS_FIREWALL_WRAPPER, args, env);
   } else if (pid < 0) {
     // Fork error
     logmsg(RH_LOG_ERROR, "Error: vfork()"); 
@@ -112,7 +110,7 @@ int iptables_start(struct vserver *vs)
 
   DP("IPTables: start");
 
-  args[0] = IPTABLES_WRAPPER;
+  args[0] = RAHUNAS_FIREWALL_WRAPPER;
   args[1] = "start-config";
   args[2] = (char *) 0;
 
@@ -125,7 +123,7 @@ int iptables_stop(struct vserver *vs)
 
   DP("IPTables: stop");
 
-  args[0] = IPTABLES_WRAPPER;
+  args[0] = RAHUNAS_FIREWALL_WRAPPER;
   args[1] = "stop-config";
   args[2] = (char *) 0;
 
