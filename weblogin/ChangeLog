@@ -1,4 +1,0 @@
-2009-05-04  Neutron Soutmun <neo.neutron@gmail.com>
-
-	* rahu_radius.class.php: 
-	  - Adjust the generated session_id to always be the same string length.
