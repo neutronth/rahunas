@@ -1,5 +1,7 @@
 # Rahunas configuration and database file
-configdir = $(sysconfdir)/rahunas
-config_DATA = rahunas.db
+MAINTAINERCLEANFILES = Makefile.in
 
-EXTRA_DIST = $(config_DATA)
+databasedir = $(localstatedir)/lib/rahunas
+database_DATA = rahunas.db
+
+EXTRA_DIST = $(database_DATA)

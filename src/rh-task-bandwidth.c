@@ -18,8 +18,6 @@
 #include "rh-task-memset.h"
 #include "rh-utils.h"
 
-#define BANDWIDTH_WRAPPER "/etc/rahunas/bandwidth.sh"
-
 static unsigned short slot_flags[MAX_SLOT_PAGE] = {1};
 static unsigned short slot_count = 0;
 
@@ -92,7 +90,7 @@ int bandwidth_exec(struct vserver *vs, char *const args[])
 
   if (pid == 0) {
     // Child
-    execv(BANDWIDTH_WRAPPER, args);
+    execv(RAHUNAS_BANDWIDTH_WRAPPER, args);
   } else if (pid < 0) {
     // Fork error
     logmsg(RH_LOG_ERROR, "Error: vfork()"); 
@@ -141,7 +139,7 @@ int bandwidth_start(struct vserver *vs)
 
   DP("Bandwidth: start");
 
-  args[0] = BANDWIDTH_WRAPPER;
+  args[0] = RAHUNAS_BANDWIDTH_WRAPPER;
   args[1] = "start";
   args[2] = iface->dev_internal;
   args[3] = iface->dev_ifb;
@@ -159,7 +157,7 @@ int bandwidth_stop(struct vserver *vs)
 
   DP("Bandwidth: stop");
 
-  args[0] = BANDWIDTH_WRAPPER;
+  args[0] = RAHUNAS_BANDWIDTH_WRAPPER;
   args[1] = "stop";
   args[2] = iface->dev_internal;
   args[3] = iface->dev_ifb;
@@ -177,7 +175,7 @@ int bandwidth_add(struct vserver *vs, struct bandwidth_req *bw_req)
   DP("Bandwidth: request %s %s %s %s", bw_req->slot_id, 
      bw_req->ip, bw_req->bandwidth_max_down, bw_req->bandwidth_max_up);
 
-  args[0] = BANDWIDTH_WRAPPER;
+  args[0] = RAHUNAS_BANDWIDTH_WRAPPER;
   args[1] = "add";
   args[2] = bw_req->slot_id;
   args[3] = bw_req->ip;
@@ -197,7 +195,7 @@ int bandwidth_del(struct vserver *vs, struct bandwidth_req *bw_req)
 
   DP("Bandwidth: request %s", bw_req->slot_id);
 
-  args[0] = BANDWIDTH_WRAPPER;
+  args[0] = RAHUNAS_BANDWIDTH_WRAPPER;
   args[1] = "del";
   args[2] = bw_req->slot_id;
   args[3] = iface->dev_internal;

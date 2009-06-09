@@ -53,15 +53,16 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([dup2])
 AC_CONFIG_FILES([
-	Makefile
-	xmlrpc/Makefile
+  Makefile
+  xmlrpc/Makefile
   lcfg/Makefile
-	src/Makefile
-	data/Makefile
-  src/include/linux/netfilter_ipv4/Makefile
-  tools/firewall.sh
-  tools/bandwidth.sh
-	tools/weblogin-config-update.sh
+  src/Makefile
+  data/Makefile
+  tools/Makefile
+  tools/rahunas-firewall
+  tools/rahunas-bandwidth
+  tools/rahunas-weblogin-config-update
+  example/Makefile
   example/rahunas.default
   example/rahunas.init
   example/rahunas.conf

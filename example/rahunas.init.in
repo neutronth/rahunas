@@ -16,10 +16,10 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 
-DAEMON=@bindir@/rahunasd
+DAEMON=@sbindir@/rahunasd
 INIT=@sysconfdir@/default/rahunas
-FIREWALL=@sysconfdir@/rahunas/firewall.sh
-WEBLOGIN_CONFIG=@sysconfdir@/rahunas/weblogin-config-update.sh
+FIREWALL=@sbindir@/rahunas-firewall
+WEBLOGIN_CONFIG=@sbindir@/rahunas-weblogin-config-update
 NAME=rahunasd
 DESC="Rahu Network Access Server"
 

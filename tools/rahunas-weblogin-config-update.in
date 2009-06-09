@@ -22,7 +22,7 @@ get_config_value () {
 MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
 
 # DB
-RAHUNAS_DB=/etc/rahunas/rahunas.db
+RAHUNAS_DB=@localstatedir@/lib/rahunas/rahunas.db
 SQLITE3=/usr/bin/sqlite3
 
 generate_config() {

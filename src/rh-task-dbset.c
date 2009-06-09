@@ -249,7 +249,7 @@ static int startservice ()
 {
   char ds_name[] = PROGRAM;
   char ds_provider[] = "SQLite";
-  char ds_cnc_string[] = "DB_DIR=" RAHUNAS_CONF_DIR ";DB_NAME=" DB_NAME; 
+  char ds_cnc_string[] = "DB_DIR=" RAHUNAS_DB_DIR ";DB_NAME=" DB_NAME; 
   char ds_desc[] = "RahuNAS DB Set";
 
   logmsg(RH_LOG_NORMAL, "Task DBSET start..");
