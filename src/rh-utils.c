@@ -43,7 +43,7 @@ void rh_free(void **data)
 const char *rh_string_get_sep(const char *haystack, const char *sep, 
                               unsigned short idx)
 {
-  char* result = NULL;
+  char  *result = NULL;
   gchar *pStart = NULL;
   gchar *pEnd   = NULL;
   gchar *pLast  = NULL;
@@ -70,6 +70,8 @@ const char *rh_string_get_sep(const char *haystack, const char *sep,
 
     if (current_idx == idx) {
       result = g_strndup(pStart, pEnd - pStart);
+      result = g_strchug (result);
+      result = g_strchomp (result);
       return result;
     } else {
       pEnd++;
