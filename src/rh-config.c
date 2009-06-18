@@ -463,7 +463,7 @@ int ifb_interface_reserve (void)
 
   for (i=0; i < MAX_IFB_IFACE; i++)
     {
-      mask <<= i;
+      mask = 1 << i;
       if (!(ifb_reserved & mask))
         {
           ifb_reserved |= mask;
