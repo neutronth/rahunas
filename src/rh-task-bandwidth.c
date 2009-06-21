@@ -225,10 +225,12 @@ static void init (struct vserver *vs)
     return;
 
   if (vs->vserver_config->init_flag == VS_RELOAD)
-    return;
+    goto initial;
 
   interfaces_list = append_interface (interfaces_list, 
                                       vs->vserver_config->dev_internal);
+
+initial:
   vs->vserver_config->iface = get_interface (interfaces_list, 
                                              vs->vserver_config->dev_internal);
   iface = vs->vserver_config->iface;
