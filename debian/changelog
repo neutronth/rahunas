@@ -1,3 +1,10 @@
+rahunas (0.1.5~b1) unstable; urgency=high
+
+  * New upstream release.
+  * Critical fix the malfunction in ifb_reserved.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Thu, 18 Jun 2009 20:58:04 +0700
+
 rahunas (0.1.4-1) unstable; urgency=low
 
   * New upstream release. 
