@@ -8,6 +8,6 @@
   create 640 root adm
   sharedscripts
   postrotate
-    /etc/init.d/rahunas restart > /dev/null
+    /etc/init.d/rahunas reload > /dev/null
   endscript
 }
