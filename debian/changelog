@@ -1,3 +1,17 @@
+rahunas (0.1.5-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix the ifb related problem.
+  * Adjust the rahunas-firewall 
+    + to handle the multiple external device (The load balance system issue).
+    + to check the proxy host which it is the local interface and open the
+      port on the firewall for authenticated users.
+  * debian/control: Standards-Version 3.8.2, no changes.
+  * +debian/rahunas.preinst: Remove the deprecated scripts and data files from 
+    /etc/rahunas/.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 04 Jul 2009 16:17:32 +0700
+
 rahunas (0.1.5~b1+a8b045f) unstable; urgency=low
 
   * Fix the ifb initial on config reloading.
