@@ -9,6 +9,7 @@ exec_prefix=@exec_prefix@
 
 IPTABLES=/sbin/iptables
 IPSET=/usr/sbin/ipset
+IFCONFIG=/sbin/ifconfig
 
 NAME="rahunas"
 INIT=@sysconfdir@/default/rahunas
@@ -72,6 +73,8 @@ if [ "$ENV_OVERRIDE" != "yes" ]; then
   VSERVER_PORTS_INTERCEPT=
   SETNAME=
 fi
+
+DEV_EXTERNAL_LIST=
 
 BANDWIDTH_SHAPE=
 BITTORRENT_DOWNLOAD_MAX=
@@ -173,6 +176,30 @@ get_config () {
 }
 
 ##
+# Extracting the external device list
+##
+dev_external_list () {
+  LIST=`echo $DEV_EXTERNAL | sed 's/,/ /g'`
+  for dev in $LIST; do
+    echo -n "$dev "  
+  done
+  echo ""
+}
+
+##
+# Detecting the parsing IP is the local
+##
+is_ip_local () {
+  IP=$1
+  $IFCONFIG | grep "inet addr" | grep -w "$IP" > /dev/null
+  if [ $? = 0 ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+##
 # Add set
 ##
 add_set () {
@@ -231,8 +258,10 @@ navigation_rules () {
 
   # INPUT from external
   # TODO: Make a common firewall to filter the external requests.
-  $IPTABLES $action INPUT \
-    $DEV_IN_PARAM $DEV_EXTERNAL -j ACCEPT 
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES $action INPUT \
+      $DEV_IN_PARAM $dev -j ACCEPT 
+  done
 
   # INPUT
   $IPTABLES $action INPUT \
@@ -268,9 +297,12 @@ navigation_rules () {
   $IPTABLES -t mangle $action PREROUTING \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_MANGLE_PREROUTING
-  $IPTABLES -t mangle $action PREROUTING \
-    $DEV_IN_PARAM $DEV_EXTERNAL -d $CLIENTS \
-    -j $CHAIN_MANGLE_PREROUTING
+  
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t mangle $action PREROUTING \
+      $DEV_IN_PARAM $dev -d $CLIENTS \
+      -j $CHAIN_MANGLE_PREROUTING
+  done
 
   $IPTABLES -t mangle $action FORWARD \
     $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
@@ -282,24 +314,31 @@ navigation_rules () {
   $IPTABLES -t mangle $action POSTROUTING \
     $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
     -j $CHAIN_MANGLE_POSTROUTING
-  $IPTABLES -t mangle $action POSTROUTING \
-    $DEV_OUT_PARAM $DEV_EXTERNAL -s $CLIENTS \
-    -j $CHAIN_MANGLE_POSTROUTING
+
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t mangle $action POSTROUTING \
+      $DEV_OUT_PARAM $dev -s $CLIENTS \
+      -j $CHAIN_MANGLE_POSTROUTING
+  done
 
   # NAT
   $IPTABLES -t nat $action PREROUTING \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_NAT_PREROUTING
-  $IPTABLES -t nat $action PREROUTING \
-    $DEV_IN_PARAM $DEV_EXTERNAL -d $CLIENTS \
-    -j $CHAIN_NAT_PREROUTING
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t nat $action PREROUTING \
+      $DEV_IN_PARAM $dev -d $CLIENTS \
+      -j $CHAIN_NAT_PREROUTING
+  done
 
   $IPTABLES -t nat $action POSTROUTING \
     $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
     -j $CHAIN_NAT_POSTROUTING
-  $IPTABLES -t nat $action POSTROUTING \
-    $DEV_OUT_PARAM $DEV_EXTERNAL -s $CLIENTS \
-    -j $CHAIN_NAT_POSTROUTING
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t nat $action POSTROUTING \
+      $DEV_OUT_PARAM $dev -s $CLIENTS \
+      -j $CHAIN_NAT_POSTROUTING
+  done
 }
 
 ##
@@ -538,15 +577,24 @@ rules () {
   if [ "$PROXY" = "yes" ] || [ "$PROXY" = "transparent" ]; then
     if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]; then
       $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp --dport $PROXY_PORT -j ACCEPT
+    else
+      # PROXY_HOST specify, check if it local
+      is_ip_local $PROXY_HOST
+      PROXY_LOCAL=$?
+      if [ $PROXY_LOCAL = 1 ]; then
+        $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp -d $PROXY_HOST \
+          --dport $PROXY_PORT -j ACCEPT
+      fi
     fi
 
     if [ "$PROXY" = "transparent" ]; then
-      if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]; then
+      if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]
+      then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
           -d ! $VSERVER_IP \
           -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
       else
-        $IPTABLES -t nat -A $CHAIN_NAT_PRETROUTING -p tcp --dport http \
+        $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
           -d ! $VSERVER_IP \
           -m connmark --mark 2/2 \
           -j DNAT --to-destination $PROXY_HOST:$PROXY_PORT
@@ -602,6 +650,10 @@ do_get_config () {
   file=$1
   opt=$2
   get_config $file $opt || true
+
+  # Extract the external device into list
+  DEV_EXTERNAL_LIST=`dev_external_list`
+
   if [ $? -eq 1 ]; then
     echo "Error: Could not parsing $file, file does not exists"
     return 1
