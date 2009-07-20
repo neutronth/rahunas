@@ -30,7 +30,7 @@ test -f $RAHUNAS_CONFIG || exit 1
 SHAPING_DOWN_INF=""
 SHAPING_UP_INF=""
 
-MSG_NOT_COMPLETED="NOT COMPLETED"
+set -e
 
 get_config_value () {
   section=$1
@@ -190,76 +190,48 @@ bw_del() {
   $TC class del dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} classid 2:${ID}
 }
 
-chk_interface () {
-  SHAPING_DOWN_INF=$1
-  SHAPING_UP_INF=$2
-
-  iface_list=`$IFCONFIG -a | grep "Link encap" | awk '{print $1}'`
-
-  echo $iface_list | grep -w "$SHAPING_DOWN_INF" > /dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    return 1
-  fi
-
-  echo $iface_list | grep -w "$SHAPING_UP_INF" > /dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    return 1
-  fi
-
-  return 0
-}
-
 N=@sysconfdir@/rahunas/bandwidth.sh
 
 case "$1" in
   start)
     if [ -z "$2" ] || [ -z "$3" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="NOT COMPLETED"  
     else
-      chk_interface $2 $3
-      if [ $? -eq 0 ]; then
-        RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        start 
-      else
-        MESSAGE="$MSG_NOT_COMPLETED"
-      fi
+      SHAPING_DOWN_INF=$2
+      SHAPING_UP_INF=$3
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      start || true 
     fi
 
-    test -n "$MESSAGE" || MESSAGE="$MSG_NOT_COMPLETED"
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
     echo $MESSAGE
     ;;
   stop)
     if [ -z "$2" ] || [ -z "$3" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="NOT COMPLETED"  
     else
-      chk_interface $2 $3
-      if [ $? -eq 0 ]; then
-        RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        stop 
-      else
-        MESSAGE="$MSG_NOT_COMPLETED"
-      fi
+      SHAPING_DOWN_INF=$2
+      SHAPING_UP_INF=$3
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      stop || true
     fi
 
-    test -n "$MESSAGE" || MESSAGE="$MSG_NOT_COMPLETED"
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
     echo $MESSAGE
 
     ;;
   restart)
     if [ -z "$2" ] || [ -z "$3" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="NOT COMPLETED"  
     else
-      chk_interface $2 $3
-      if [ $? -eq 0 ]; then
-        RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        stop 
-        start 
-      else
-        MESSAGE="$MSG_NOT_COMPLETED"
-      fi
+      SHAPING_DOWN_INF=$2
+      SHAPING_UP_INF=$3
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      stop || true
+      start || true
     fi
 
-    test -n "$MESSAGE" || MESSAGE="$MSG_NOT_COMPLETED"
+    test -n "$MESSAGE" || MESSAGE="NOT COMPLETED"
     echo $MESSAGE
 
     ;;
@@ -276,15 +248,12 @@ case "$1" in
     fi
 
     if [ -z "$6" ] || [ -z "$7" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="NOT COMPLETED"  
     else
-      chk_interface $6 $7
-      if [ $? -eq 0 ]; then
-        RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        bw_add $2 $3 $4 $5 
-      else
-        MESSAGE="$MSG_NOT_COMPLETED"
-      fi
+      SHAPING_DOWN_INF=$6
+      SHAPING_UP_INF=$7
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      bw_add $2 $3 $4 $5 || true
     fi
     echo $MESSAGE
     ;;
@@ -300,15 +269,12 @@ case "$1" in
       exit 1
     fi
     if [ -z "$3" ] || [ -z "$4" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="NOT COMPLETED"  
     else
-      chk_interface $3 $4
-      if [ $? -eq 0 ]; then
-        RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        bw_del $2 
-      else
-        MESSAGE="$MSG_NOT_COMPLETED"
-      fi
+      SHAPING_DOWN_INF=$3
+      SHAPING_UP_INF=$4
+      RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
+      bw_del $2 || true
     fi
     echo $MESSAGE
     ;;

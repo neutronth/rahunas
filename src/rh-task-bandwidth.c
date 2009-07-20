@@ -126,9 +126,6 @@ int bandwidth_exec(struct vserver *vs, char *const args[])
     } 
   }
 
-  if ((buffer != NULL) && (strncmp (buffer, "NOT COMPLETED", 13) == 0))
-    ret = -2;  // Not complete need to retry
-
   close(exec_pipe[0]);
   close(exec_pipe[1]);
   return ret;
@@ -295,10 +292,8 @@ static int startsess (struct vserver *vs, struct task_req *req)
     snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
     if (bandwidth_add(vs, &bw_req) == 0)
       break;
-    else {
+    else
       max_try--;
-      sleep (1); 
-    }
   }
 
 
