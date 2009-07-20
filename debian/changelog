@@ -1,3 +1,17 @@
+rahunas (0.1.5-2) unstable; urgency=low
+
+  * debian/{control,rules}: Add the quilt patch-sys.
+  * debian/patches/100-prevent-bandwidth-script-from-non-existing-iface.patch:
+    Cherry-pick the patch from upstream git.
+    + Prevent the bandwidth script from non-existing interface name.
+    + State the return message "NOT COMPLETED" from bandwidth script is error,
+      which need to do something such as in the add and remove bandwidth slot to
+      retry for 3 times when this error occured before give up.
+  * debian/rahunas.postinst: 
+    + Prevent the config file installation for user removed config file.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 20 Jul 2009 15:19:41 +0700
+
 rahunas (0.1.5-1) unstable; urgency=low
 
   * New upstream release.

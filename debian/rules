@@ -10,6 +10,8 @@
 # Modified to make a template file for a multi-binary package with separated
 # build-arch and build-indep targets  by Bill Allombert 2001
 
+include /usr/share/quilt/quilt.make
+
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
@@ -42,7 +44,7 @@ endif
 	./autogen.sh
 	./configure $(CROSS) --prefix=/usr --sysconfdir=/etc --localstatedir=/var --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" LDFLAGS="-Wl,-z,defs"
 
-build: build-arch build-indep
+build: patch build-arch build-indep
 
 build-arch: build-arch-stamp
 build-arch-stamp: config.status 
@@ -55,7 +57,7 @@ build-indep-stamp: config.status
 
 	touch $@
 
-clean:
+clean: unpatch
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp 
