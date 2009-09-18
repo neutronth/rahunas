@@ -182,7 +182,7 @@ void rh_reload()
            rh_main_server->main_config->log_file);
     rh_main_server->log_fd = rh_openlog(rh_main_server->main_config->log_file);
 
-    if (!rh_main_server->log_fd) {
+    if (rh_main_server->log_fd == -1) {
       syslog(LOG_ERR, "Could not open log file %s\n", 
              rh_main_server->main_config->log_file);
       exit(EXIT_FAILURE);
@@ -346,7 +346,7 @@ int main(int argc, char **argv)
            rh_main_server->main_config->log_file);
     rh_main_server->log_fd = rh_openlog(rh_main_server->main_config->log_file);
 
-    if (!rh_main_server->log_fd) {
+    if (rh_main_server->log_fd == -1) {
       syslog(LOG_ERR, "Could not open log file %s\n", 
              rh_main_server->main_config->log_file);
       exit(EXIT_FAILURE);
