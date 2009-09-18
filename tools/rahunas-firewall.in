@@ -486,10 +486,15 @@ rules () {
   fi 
 
   ##
-  # Allow incoming to our HTTP server for login page
+  # Allow incoming to allowed ports with rate limit setting
   ##
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP\
-     --dports $VSERVER_PORTS_ALLOW \
+
+  # Ignore rate limit checking for the requester that initiate from localhost
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -s 127.0.0.1 \
+    -d $VSERVER_IP --dports $VSERVER_PORTS_ALLOW -j ACCEPT 
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
     -m recent --rcheck --seconds 6 --name incoming_throttle -j DROP
 
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
@@ -772,7 +777,7 @@ case "$1" in
     fi
     ;;
   *)
-    N=@sysconfdir@/rahunas/firewall.sh
+    N=@sbindir@/rahunas-firewall
     echo "Usage: $N {start|stop|restart}"
     exit 3
     ;;
