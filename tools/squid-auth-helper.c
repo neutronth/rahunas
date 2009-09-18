@@ -103,8 +103,6 @@ int ftw_read_vserver (const char *fpath, const struct stat *sb, int typeflag)
 int
 main(int argc, char *argv[])
 {
-  GNetXmlRpcClient *client;
-  gint port = 8123;
   gchar line[1024];
   GList *vs;
 
@@ -113,14 +111,6 @@ main(int argc, char *argv[])
   /* read vserver config */
   ftw ("/etc/rahunas/rahunas.d", ftw_read_vserver, 20);
 
-  client = gnet_xmlrpc_client_new ("localhost", "/RPC2", port);
-  if (!client)
-    {
-      printf ("ERR message=\"Failed connecting to localhost XMLRPC\"");
-      fflush (stdout);
-      goto exit_1;
-    }
-  
   /* read input from squid */
   while (fgets (line, sizeof line, stdin))
     {
@@ -130,6 +120,8 @@ main(int argc, char *argv[])
       guint    vserver_id;
       gchar    query[32];
       gchar   *reply;
+      GNetXmlRpcClient *client;
+      gint port = 8123;
 
       len = strlen (line);
       if (line[len] == '\n')
@@ -137,7 +129,8 @@ main(int argc, char *argv[])
 
       if (inet_aton (line, &ip_addr) == 0)
         {
-          printf ("ERR message=\"Invalid source IP address '%s'\"", line);
+          /* ERR: Invalid source IP address */
+          printf ("OK user=%s\n", line);
           fflush (stdout);
           continue;
         }
@@ -156,12 +149,22 @@ main(int argc, char *argv[])
 
       if (vserver_id == ~0)
         {
-          printf ("ERR message=\"vserver_id not found for '%s'", line);
+          /* ERR: vserver_id not found */
+          printf ("OK user=%s\n", line);
           fflush (stdout);
           continue;
         }
 
       /* query RahuNAS daemon for user name via xmlrpc */
+      client = gnet_xmlrpc_client_new ("localhost", "/RPC2", port);
+      if (!client)
+        {
+          /* ERR: Failed to connect to localhost XMLRPC */
+          printf ("OK user=%s\n", line);
+          fflush (stdout);
+          continue;
+        }
+  
       snprintf (query, sizeof query, "%s|%d", line, vserver_id);
       if (gnet_xmlrpc_client_call (client,
 			           "getsessioninfo",
@@ -177,11 +180,16 @@ main(int argc, char *argv[])
           fflush (stdout);
           g_free (reply);
         }
+      else
+        {
+          /* ERR: Error calling 'getsessioninfo' XMLRPC */
+          printf ("OK user=%s\n", line);
+          fflush (stdout);
+        }
+
+      gnet_xmlrpc_client_delete (client);
     }
 
-  gnet_xmlrpc_client_delete (client);
-
-exit_1:
   for (vs = vservers; vs; vs = vs->next)
     free (vs->data);
   g_list_free (vservers);
