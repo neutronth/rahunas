@@ -1,4 +1,12 @@
 RahuNAS
+
+0.1.6 (2009-09-19)
+=====
+- Bugs fix.
+- New squid external authentication helper wrote in C
+  (supercede for the PHP scripts that is memory hungry)
+- Add common firewall for external interfaces.
+
 0.1.4 (2009-06-09)
 =====
 - Bug fix and the major change of the IFB (Intermediate Functional Block) as the

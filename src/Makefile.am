@@ -7,7 +7,7 @@ IPSET_VERSION:=2.3.3
 AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
   $(LIBGDA_CFLAGS) \
-  -I$(top_builddir)/src/include/ \
+  -I$(top_srcdir)/src/include/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
   -DIPSET_VERSION=\"$(IPSET_VERSION)\" \

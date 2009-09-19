@@ -51,6 +51,11 @@ MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAH
 MAIN_BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG`
 MAIN_DHCP=`get_config_value main dhcp $RAHUNAS_CONFIG`
 
+MAIN_EXT_IFACE_FIREWALL=`get_config_value main external_iface_firewall $RAHUNAS_CONFIG`
+MAIN_EXT_IFACE_PORTS_ALLOW=`get_config_value main external_iface_ports_allow $RAHUNAS_CONFIG`
+MAIN_EXT_IFACE_PING_ACCEPT=`get_config_value main external_iface_ping_accept $RAHUNAS_CONFIG`
+MAIN_EXT_IFACE_LIST=
+
 if [ "$ENV_OVERRIDE" != "yes" ]; then
   # Virtual Server : config
   VSERVER_ID=
@@ -257,10 +262,13 @@ navigation_rules () {
   fi
 
   # INPUT from external
-  # TODO: Make a common firewall to filter the external requests.
   for dev in $DEV_EXTERNAL_LIST; do
-    $IPTABLES $action INPUT \
-      $DEV_IN_PARAM $dev -j ACCEPT 
+    # Filter duplicated external interfaces
+    if ! echo $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
+      MAIN_EXT_IFACE_LIST=`echo "$MAIN_EXT_IFACE_LIST $dev"`
+
+      $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+    fi
   done
 
   # INPUT
@@ -434,6 +442,38 @@ policy () {
     $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
     $IPTABLES -A FORWARD -p udp --dport 67:68 -j ACCEPT
   fi
+
+  $IPTABLES -N ${NAME}_ext_fw
+
+  if [ "x$MAIN_EXT_IFACE_FIREWALL" = "xyes" ]; then
+    # Accept all connections that made by server itself
+    $IPTABLES -A ${NAME}_ext_fw -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    # Accept DNS reply
+    $IPTABLES -A ${NAME}_ext_fw -p udp --sport 53 \
+      -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    if [ -n "$MAIN_EXT_IFACE_PORTS_ALLOW" ]; then
+      $IPTABLES -A ${NAME}_ext_fw -p tcp \
+        -m multiport --dports ${MAIN_EXT_IFACE_PORTS_ALLOW} -j ACCEPT
+    fi
+
+    if [ "x$MAIN_EXT_IFACE_PING_ACCEPT" = "xyes" ]; then
+      # Accept echo-request from outside
+      $IPTABLES -A ${NAME}_ext_fw -p icmp --icmp-type 8 \
+        -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+    fi
+
+    # Accept echo-reply from outside
+    $IPTABLES -A ${NAME}_ext_fw -p icmp --icmp-type 0 \
+      -m state --state ESTABLISHED,RELATED -j ACCEPT
+  else
+    if [ "x$MAIN_EXT_IFACE_FIREWALL" = "xaccept" -o "x$MAIN_EXT_IFACE_FIREWALL" = "x" ]; then
+      $IPTABLES -A ${NAME}_ext_fw -j ACCEPT
+    fi
+  fi
+
+  $IPTABLES -A ${NAME}_ext_fw -j RETURN
 }
 
 cleanup_policy () {
@@ -456,6 +496,9 @@ cleanup_policy () {
     $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
     $IPTABLES -D FORWARD -p udp --dport 67:68 -j ACCEPT
   fi
+
+  $IPTABLES -F ${NAME}_ext_fw
+  $IPTABLES -X ${NAME}_ext_fw
 }
 
 rules () {
@@ -486,10 +529,15 @@ rules () {
   fi 
 
   ##
-  # Allow incoming to our HTTP server for login page
+  # Allow incoming to allowed ports with rate limit setting
   ##
-  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP\
-     --dports $VSERVER_PORTS_ALLOW \
+
+  # Ignore rate limit checking for the requester that initiate from localhost
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -s 127.0.0.1 \
+    -d $VSERVER_IP --dports $VSERVER_PORTS_ALLOW -j ACCEPT 
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
     -m recent --rcheck --seconds 6 --name incoming_throttle -j DROP
 
   $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
@@ -772,7 +820,7 @@ case "$1" in
     fi
     ;;
   *)
-    N=@sysconfdir@/rahunas/firewall.sh
+    N=@sbindir@/rahunas-firewall
     echo "Usage: $N {start|stop|restart}"
     exit 3
     ;;
