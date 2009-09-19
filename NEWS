@@ -1,5 +1,10 @@
 RahuNAS
 
+0.1.7 (2009-09-19)
+=====
+- Critical bug fix, the firewall script does not actually add or 
+  remove _ext_fw, cause the start and stop script failed.
+
 0.1.6 (2009-09-19)
 =====
 - Bugs fix.
