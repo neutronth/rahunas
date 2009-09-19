@@ -262,14 +262,20 @@ navigation_rules () {
   fi
 
   # INPUT from external
-  for dev in $DEV_EXTERNAL_LIST; do
-    # Filter duplicated external interfaces
-    if ! echo $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
-      MAIN_EXT_IFACE_LIST=`echo "$MAIN_EXT_IFACE_LIST $dev"`
+  if [ "$opt" = "start" ]; then
+    for dev in $DEV_EXTERNAL_LIST; do
+      # Filter duplicated external interfaces
+      if ! echo $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
+        MAIN_EXT_IFACE_LIST=`echo "$MAIN_EXT_IFACE_LIST $dev"`
 
+        $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+      fi
+    done
+  else #stop
+    for dev in $MAIN_EXT_IFACE_LIST; do
       $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
-    fi
-  done
+    done
+  fi
 
   # INPUT
   $IPTABLES $action INPUT \
