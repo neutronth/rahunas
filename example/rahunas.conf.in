@@ -13,4 +13,8 @@ main = {
   bandwidth_shape = "yes"  
   bittorrent_download_max = "512"
   bittorrent_upload_max = "256"
+
+  external_iface_firewall = "yes"
+  external_iface_ports_allow = "22,80,443"
+  external_iface_ping_accept = "yes"
 }
