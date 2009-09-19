@@ -16,6 +16,7 @@ INIT=@sysconfdir@/default/rahunas
 RUN=@localstatedir@/run/rahunas-firewall
 RUNDIR=@localstatedir@/run/rahunas-set
 VSERVER_LIST=@localstatedir@/run/rahunas-vserver
+MAIN_EXT_IFACE_LIST=@localstatedir@/run/rahunas_ext_iface_list
 
 RUN_DAEMON=no
 
@@ -54,7 +55,6 @@ MAIN_DHCP=`get_config_value main dhcp $RAHUNAS_CONFIG`
 MAIN_EXT_IFACE_FIREWALL=`get_config_value main external_iface_firewall $RAHUNAS_CONFIG`
 MAIN_EXT_IFACE_PORTS_ALLOW=`get_config_value main external_iface_ports_allow $RAHUNAS_CONFIG`
 MAIN_EXT_IFACE_PING_ACCEPT=`get_config_value main external_iface_ping_accept $RAHUNAS_CONFIG`
-MAIN_EXT_IFACE_LIST=
 
 if [ "$ENV_OVERRIDE" != "yes" ]; then
   # Virtual Server : config
@@ -265,15 +265,16 @@ navigation_rules () {
   if [ "$opt" = "start" ]; then
     for dev in $DEV_EXTERNAL_LIST; do
       # Filter duplicated external interfaces
-      if ! echo $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
-        MAIN_EXT_IFACE_LIST=`echo "$MAIN_EXT_IFACE_LIST $dev"`
+      if ! cat $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
+        echo "$dev" >> $MAIN_EXT_IFACE_LIST
 
         $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
       fi
     done
   else #stop
-    for dev in $MAIN_EXT_IFACE_LIST; do
+    for dev in `cat $MAIN_EXT_IFACE_LIST`; do
       $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+      sed -i "/$dev/d" $MAIN_EXT_IFACE_LIST
     done
   fi
 
