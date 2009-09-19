@@ -1,3 +1,15 @@
+rahunas (0.1.6-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/control: 
+    - Bump Standards-Version to 3.8.3, no changes needed.
+    - Remove quilt, no needed.
+  * debian/patches: All patches included in upstream.
+  * debian/rahunas.postinst: Do not install the example vserver script.
+    User have to copy from /usr/share/doc/rahunas/example manually.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 19 Sep 2009 16:28:50 +0700
+
 rahunas (0.1.5-2) unstable; urgency=low
 
   * debian/{control,rules}: Add the quilt patch-sys.

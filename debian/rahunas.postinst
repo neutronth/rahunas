@@ -16,15 +16,6 @@ ucf /usr/share/doc/rahunas/rahunas.conf /etc/rahunas/rahunas.conf
 
 case "$1" in
   install)
-    ucf /usr/share/doc/rahunas/rahunas-vserver.conf \
-      /etc/rahunas/rahunas.d/01_rahunas-vserver.conf
-    ;;
-  upgrade)
-    # Prevent the config file installation for user removed config file
-    if [ -f /etc/rahunas/rahunas.d/01_rahunas-vserver.conf]; then 
-      ucf /usr/share/doc/rahunas/rahunas-vserver.conf \
-        /etc/rahunas/rahunas.d/01_rahunas-vserver.conf
-    fi
     ;;
   *)
     ;;
