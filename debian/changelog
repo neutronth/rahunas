@@ -1,3 +1,10 @@
+rahunas (0.1.7-1) unstable; urgency=medium
+
+  * New upstream bug fix release.
+  * urgency set to medium
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 19 Sep 2009 18:47:34 +0700
+
 rahunas (0.1.6-1) unstable; urgency=low
 
   * New upstream release.
