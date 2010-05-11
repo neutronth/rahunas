@@ -795,7 +795,7 @@ stop () {
    
   cleanup_policy
 
-  killall farpd > /dev/null
+  killall farpd >/dev/null 2>&1
 
   rm -f $RUN
   echo "" > $VSERVER_LIST
