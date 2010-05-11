@@ -10,6 +10,7 @@ exec_prefix=@exec_prefix@
 IPTABLES=/sbin/iptables
 IPSET=/usr/sbin/ipset
 IFCONFIG=/sbin/ifconfig
+FARPD=/usr/sbin/farpd
 
 NAME="rahunas"
 INIT=@sysconfdir@/default/rahunas
@@ -77,6 +78,8 @@ if [ "$ENV_OVERRIDE" != "yes" ]; then
   VSERVER_PORTS_ALLOW=
   VSERVER_PORTS_INTERCEPT=
   SETNAME=
+  VIPMAP=
+  VIPMAP_FAKE_ARP=
 fi
 
 DEV_EXTERNAL_LIST=
@@ -97,6 +100,8 @@ CHAIN_MANGLE_POSTROUTING=
 CHAIN_NAT_PREROUTING=
 CHAIN_NAT_POSTROUTING=
 CHAIN_NAT_AUTHEN=
+CHAIN_NAT_VIP_PREROUTING=
+CHAIN_NAT_VIP_POSTROUTING=
 CHAIN_P2P_DETECT=
 CHAIN_P2P_RECHECK=
 CHAIN_P2P_CHECK=
@@ -145,6 +150,9 @@ get_config () {
     BITTORRENT_ALLOW=`get_config_value $SETNAME bittorrent_allow $file`
     VSERVER_PORTS_ALLOW=`get_config_value $SETNAME vserver_ports_allow $file`
     VSERVER_PORTS_INTERCEPT=`get_config_value $SETNAME vserver_ports_intercept $file`
+    VIPMAP=`get_config_value $SETNAME vipmap $file`
+    VIPMAP_NETWORK=`get_config_value $SETNAME vipmap_network $file`
+    VIPMAP_FAKE_ARP=`get_config_value $SETNAME vipmap_fake_arp $file`
   fi
  
   BANDWIDTH_SHAPE=$MAIN_BANDWIDTH_SHAPE
@@ -171,6 +179,8 @@ get_config () {
   CHAIN_NAT_PREROUTING="${SETNAME}_nat_pre"
   CHAIN_NAT_POSTROUTING="${SETNAME}_nat_post"
   CHAIN_NAT_AUTHEN="${SETNAME}_nat_authen"
+  CHAIN_NAT_VIP_PREROUTING="${SETNAME}_nat_vip_pre"
+  CHAIN_NAT_VIP_POSTROUTING="${SETNAME}_nat_vip_post"
   
   # P2P checking chains declaration
   CHAIN_P2P_DETECT="${SETNAME}_p2p_detect"
@@ -219,6 +229,10 @@ add_set () {
   
   $IPSET -N $SETNAME rahunas $ipset_opt $ipset_ignoremac 
 
+  if [ "$VIPMAP" = "yes" ]; then
+    $IPSET -N ${SETNAME}-vip rahunas $ipset_opt $ipset_ignoremac
+  fi
+
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPSET -N $P2P_SET iphash
   fi
@@ -238,6 +252,11 @@ add_set () {
 cleanup_set () {
   $IPSET -F $SETNAME
   $IPSET -X $SETNAME
+
+  if [ "$VIPMAP" = "yes" ]; then
+    $IPSET -F ${SETNAME}-vip
+    $IPSET -X ${SETNAME}-vip
+  fi
 
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPSET -F $P2P_SET
@@ -393,6 +412,14 @@ cleanup () {
   $IPTABLES -t nat -F $CHAIN_NAT_AUTHEN
   $IPTABLES -t nat -X $CHAIN_NAT_AUTHEN
 
+  if [ "$VIPMAP" = "yes" ]; then
+    $IPTABLES -t nat -F $CHAIN_NAT_VIP_PREROUTING
+    $IPTABLES -t nat -X $CHAIN_NAT_VIP_PREROUTING
+
+    $IPTABLES -t nat -F $CHAIN_NAT_VIP_POSTROUTING
+    $IPTABLES -t nat -X $CHAIN_NAT_VIP_POSTROUTING
+  fi
+
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -F $CHAIN_P2P_CHECK
     $IPTABLES -t mangle -X $CHAIN_P2P_CHECK
@@ -419,6 +446,11 @@ new_chains () {
   $IPTABLES -t nat -N $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
+
+  if [ "$VIPMAP" = "yes" ]; then
+    $IPTABLES -t nat -N $CHAIN_NAT_VIP_PREROUTING
+    $IPTABLES -t nat -N $CHAIN_NAT_VIP_POSTROUTING
+  fi
 
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -N $CHAIN_P2P_CHECK
@@ -642,6 +674,11 @@ rules () {
       fi
     fi
 
+    if [ "$VIPMAP" = "yes" ]; then
+      $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
+        -m set --set ${SETNAME}-vip src -j $CHAIN_NAT_VIP_PREROUTING
+    fi
+
     if [ "$PROXY" = "transparent" ]; then
       if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]
       then
@@ -672,6 +709,11 @@ rules () {
   ##
   # MASQUERADE
   ##
+  if [ "$VIPMAP" = "yes" ]; then
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING \
+      -m set --set ${SETNAME}-vip src -j $CHAIN_NAT_VIP_POSTROUTING
+  fi
+
   if [ "$MASQUERADE" = "yes" ]; then
     $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j MASQUERADE
   fi
@@ -699,6 +741,17 @@ rules () {
   $IPTABLES -t mangle -A $CHAIN_MANGLE_POSTROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN
+
+  if [ "$VIPMAP" = "yes" ]; then
+    $IPTABLES -t nat -A $CHAIN_NAT_VIP_PREROUTING -j RETURN
+    $IPTABLES -t nat -A $CHAIN_NAT_VIP_POSTROUTING -j RETURN
+  fi
+
+  if [ "$VIPMAP" = "yes" ] -a [ "$VIPMAP_FAKE_ARP" = "yes" ]; then
+    for dev in $DEV_EXTERNAL_LIST; do
+      $FARPD -i $dev $VIPMAP_NETWORK
+    done
+  fi
 }
 
 do_get_config () {
@@ -741,6 +794,8 @@ stop () {
   test -f $RUN || return 0
    
   cleanup_policy
+
+  killall farpd > /dev/null
 
   rm -f $RUN
   echo "" > $VSERVER_LIST

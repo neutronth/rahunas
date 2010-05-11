@@ -57,6 +57,8 @@ generate_config() {
   DEFAULT_REDIRECT_URL=`get_config_value $SETNAME nas_default_redirect $file`
   DEFAULT_LANGUAGE=`get_config_value $SETNAME nas_default_language $file`
   UAM_TEMPLATE=`get_config_value $SETNAME nas_weblogin_template $file`
+  VIPMAP=`get_config_value $SETNAME vipmap $file`
+  VIPMAP_ATTRIBUTE=`get_config_value $SETNAME vipmap_attribute $file`
 
   printf "\$config_list['%s'] = array(\n"            "$CLIENTS"
   printf "\t\"VSERVER_ID\" => \"%s\",\n"             "$VSERVER_ID"
@@ -77,6 +79,8 @@ generate_config() {
   printf "\t\"DEFAULT_REDIRECT_URL\" => \"%s\",\n"   "$DEFAULT_REDIRECT_URL"
   printf "\t\"DEFAULT_LANGUAGE\" => \"%s\",\n"       "$DEFAULT_LANGUAGE"
   printf "\t\"UAM_TEMPLATE\" => \"%s\",\n"           "$UAM_TEMPLATE"
+  printf "\t\"VIPMAP\" => \"%s\",\n"                 "$VIPMAP"
+  printf "\t\"VIPMAP_ATTRIBUTE\" => \"%s\",\n"       "$VIPMAP_ATTRIBUTE"
   printf ");\n\n"
 }
 

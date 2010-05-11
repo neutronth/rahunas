@@ -33,4 +33,9 @@ rahunas_default = {
   nas_default_redirect = "http://www.rahunas.org"
   nas_default_language = "Thai"
   nas_weblogin_template = "rahunas"
+
+  vipmap = "no"
+  vipmap_attribute = ""
+  vipmap_network = ""
+  vipmap_fake_arp = "no"
 }
