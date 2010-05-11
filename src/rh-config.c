@@ -233,6 +233,13 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_vserver.vipmap != NULL)
           free(config->rh_vserver.vipmap);
         config->rh_vserver.vipmap = strdup(value);
+
+        if (strncmp(config->rh_vserver.vipmap, "yes", strlen("yes")) == 0) {
+          config->rh_vserver.vipmap_enable = 1;
+
+          config->rh_vserver.vserver_vip_name =
+            g_strdup_printf ("%s-vip", config->rh_vserver.vserver_name);
+        }
       }
       break;
   }

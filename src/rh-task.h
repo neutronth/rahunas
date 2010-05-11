@@ -23,6 +23,8 @@ struct task_req {
   unsigned long bandwidth_max_down;
   unsigned long bandwidth_max_up;
   unsigned short req_opt;
+  unsigned int  vip_user;
+  const char *vip_ip;
 };
 
 struct task {

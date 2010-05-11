@@ -16,7 +16,8 @@ AM_CFLAGS = \
   -DRAHUNAS_LOG_DIR=\"$(localstatedir)/log/rahunas/\" \
   -DRAHUNAS_RUN_DIR=\"$(localstatedir)/run/\" \
   -DRAHUNAS_FIREWALL_WRAPPER=\"$(sbindir)/rahunas-firewall\" \
-  -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\"
+  -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\" \
+  -DRAHUNAS_VIPMAP_WRAPPER=\"$(sbindir)/rahunas-vipmap\"
 
 rahunasd_SOURCES = \
   rahunasd.c \
@@ -43,6 +44,8 @@ rahunasd_SOURCES = \
   rh-task-dbset.h \
   rh-task-bandwidth.c \
   rh-task-bandwidth.h \
+  rh-task-vipmap.c \
+  rh-task-vipmap.h \
   rh-radius.h \
   rh-config.c \
   rh-config.h

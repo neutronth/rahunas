@@ -170,6 +170,7 @@ class rahu_radius_acct {
   var $secret;
   var $framed_ip_address;
   var $calling_station_id;
+  var $called_station_id;
   var $terminate_cause;
   var $nas_identifier;
   var $nas_ip_address;
@@ -228,6 +229,7 @@ class rahu_radius_acct {
     $racct->putAttribute(RADIUS_NAS_IDENTIFIER, $this->nas_identifier);
     $racct->putAttribute(RADIUS_NAS_IP_ADDRESS, ip2long($this->nas_ip_address));
     $racct->putAttribute(RADIUS_NAS_PORT, $this->nas_port);
+    $racct->putAttribute(RADIUS_CALLED_STATION_ID, $this->called_station_id);
 
     switch($accttype) {
       case "Start":

@@ -116,6 +116,11 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
     .rh_vserver.nas_default_redirect = NULL,
     .rh_vserver.nas_default_language = NULL,
     .rh_vserver.nas_weblogin_template = NULL,
+    .rh_vserver.vipmap = NULL,
+    .rh_vserver.vipmap_attribute = NULL,
+    .rh_vserver.vipmap_network = NULL,
+    .rh_vserver.vipmap_fake_arp = NULL,
+    .rh_vserver.vipmap_enable = 0,
   };
 
   cfg_file = fopen(vserver_cfg_file, "r");

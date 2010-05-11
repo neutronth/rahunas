@@ -677,6 +677,8 @@ rules () {
     if [ "$VIPMAP" = "yes" ]; then
       $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
         -m set --set ${SETNAME}-vip src -j $CHAIN_NAT_VIP_PREROUTING
+
+      $IPTABLES -t nat -A $CHAIN_NAT_VIP_PREROUTING -j ACCEPT
     fi
 
     if [ "$PROXY" = "transparent" ]; then

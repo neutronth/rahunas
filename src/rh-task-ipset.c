@@ -65,6 +65,11 @@ static void init (struct vserver *vs)
     return;
 
   vs->v_set = set_adt_get(vs->vserver_config->vserver_name);
+
+  if (vs->vserver_config->vipmap_enable) {
+    vs->v_vip_set = set_adt_get(vs->vserver_config->vserver_vip_name);
+  }
+
   logmsg(RH_LOG_NORMAL, "[%s] Task IPSET initialize..",
          vs->vserver_config->vserver_name);  
 
@@ -74,6 +79,10 @@ static void init (struct vserver *vs)
 
   /* Ensure the set is empty */
   set_flush(vs->vserver_config->vserver_name);
+
+  if (vs->vserver_config->vipmap_enable) {
+    set_flush(vs->vserver_config->vserver_vip_name);
+  }
 }
 
 /* Cleanup */
@@ -88,7 +97,14 @@ static void cleanup (struct vserver *vs)
   walk_through_set(&set_cleanup, vs);
 
   set_flush(vs->vserver_config->vserver_name);
+
+  if (vs->vserver_config->vserver_vip_name != NULL)
+    set_flush(vs->vserver_config->vserver_vip_name);
+
   rh_free(&(vs->v_set));
+
+  if (vs->v_vip_set != NULL)
+    rh_free(&(vs->v_vip_set));
 }
 
 /* Start session task */
@@ -99,6 +115,12 @@ static int startsess (struct vserver *vs, struct task_req *req)
   parse_ip(idtoip(vs->v_map, req->id), &ip);
 
   res = set_adtip_nb(vs->v_set, &ip, req->mac_address, IP_SET_OP_ADD_IP);
+
+  if (vs->vserver_config->vipmap_enable && req->vip_user)
+    {
+      res = set_adtip_nb(vs->v_vip_set, &ip, req->mac_address,
+                         IP_SET_OP_ADD_IP);
+    }
 
   return res;
 }
@@ -111,6 +133,12 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
   parse_ip(idtoip(vs->v_map, req->id), &ip);
 
   res = set_adtip_nb(vs->v_set, &ip, req->mac_address, IP_SET_OP_DEL_IP);
+
+  if (vs->vserver_config->vipmap_enable && req->vip_user)
+    {
+      res = set_adtip_nb(vs->v_vip_set, &ip, req->mac_address,
+                         IP_SET_OP_DEL_IP);
+    }
 
   return res;
 }

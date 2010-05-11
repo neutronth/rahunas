@@ -44,6 +44,7 @@ struct rahunas_main_config {
 
 struct rahunas_vserver_config {
   char *vserver_name;
+  char *vserver_vip_name;
   int  vserver_id;
   int  init_flag;
   char *dev_external;
@@ -84,6 +85,7 @@ struct rahunas_vserver_config {
   char *vipmap_attribute;
   char *vipmap_network;
   char *vipmap_fake_arp;
+  int  vipmap_enable;
 };
 
 union rahunas_config {

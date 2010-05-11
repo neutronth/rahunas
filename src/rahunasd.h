@@ -61,6 +61,7 @@ struct rahunas_member {
   char *username;
   char *session_id;
   unsigned char mac_address[ETH_ALEN];
+  char *vip_ip;
 };
 
 void rh_free_member(struct rahunas_member *member);
