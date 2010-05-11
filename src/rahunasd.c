@@ -26,8 +26,6 @@
 const char *termstring = '\0';
 pid_t pid, sid;
 
-int getline(int fd, char *buf, size_t size);
-
 struct main_server rh_main_server_instance = {
   .vserver_list = NULL,
   .task_list = NULL,
@@ -61,29 +59,6 @@ void rh_sighandler(int sig)
       break;
   }
   return;
-}
-
-int getline(int fd, char *buf, size_t size)
-{
-  char cbuf;
-  char *current;
-
-  if (!buf || fd < 0)
-    return 0;
-
-  current = buf;
-
-  while (read(fd, &cbuf, 1) > 0) {
-    *current = cbuf;
-    if (cbuf == '\n') {
-      *current = '\0';
-      break;
-    } else if ((current - buf) < (size - 1)) {
-      current++;
-    }
-  }
-
-  return (current - buf);
 }
 
 size_t expired_check(void *data)

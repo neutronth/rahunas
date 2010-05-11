@@ -214,6 +214,25 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_vserver.nas_weblogin_template != NULL)
           free(config->rh_vserver.nas_weblogin_template);
         config->rh_vserver.nas_weblogin_template = strdup(value);
+      } else if (strncmp(sub_key, "vipmap_attribute",
+                 strlen("vipmap_attribute")) == 0) {
+        if (config->rh_vserver.vipmap_attribute != NULL)
+          free(config->rh_vserver.vipmap_attribute);
+        config->rh_vserver.vipmap_attribute = strdup(value);
+      } else if (strncmp(sub_key, "vipmap_network",
+                 strlen("vipmap_network")) == 0) {
+        if (config->rh_vserver.vipmap_network != NULL)
+          free(config->rh_vserver.vipmap_network);
+        config->rh_vserver.vipmap_network = strdup(value);
+      } else if (strncmp(sub_key, "vipmap_fake_arp",
+                 strlen("vipmap_fake_arp")) == 0) {
+        if (config->rh_vserver.vipmap_fake_arp != NULL)
+          free(config->rh_vserver.vipmap_fake_arp);
+        config->rh_vserver.vipmap_fake_arp = strdup(value);
+      } else if (strncmp(sub_key, "vipmap", strlen("vipmap")) == 0) {
+        if (config->rh_vserver.vipmap != NULL)
+          free(config->rh_vserver.vipmap);
+        config->rh_vserver.vipmap = strdup(value);
       }
       break;
   }
@@ -336,6 +355,10 @@ int cleanup_vserver_config(struct rahunas_vserver_config *config)
   rh_free(&(config->nas_default_redirect));
   rh_free(&(config->nas_default_language));
   rh_free(&(config->nas_weblogin_template));
+  rh_free(&(config->vipmap));
+  rh_free(&(config->vipmap_attribute));
+  rh_free(&(config->vipmap_network));
+  rh_free(&(config->vipmap_fake_arp));
 
   return 0;
 }

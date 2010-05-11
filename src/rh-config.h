@@ -80,6 +80,10 @@ struct rahunas_vserver_config {
   char *nas_default_redirect;
   char *nas_default_language;
   char *nas_weblogin_template;
+  char *vipmap;
+  char *vipmap_attribute;
+  char *vipmap_network;
+  char *vipmap_fake_arp;
 };
 
 union rahunas_config {

@@ -27,7 +27,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
   int ret = 0;
   int fd = 0;
   int i = 0;
-  char *env[22];
+  char *env[25];
 
   env[0]  = g_strdup("ENV_OVERRIDE=yes");
   env[1]  = g_strdup_printf("SETNAME=%s", vs->vserver_config->vserver_name);
@@ -52,12 +52,18 @@ int iptables_exec(struct vserver *vs, char *const args[])
                             vs->vserver_config->vserver_ports_allow);
   env[19] = g_strdup_printf("VSERVER_PORTS_INTERCEPT=%s", 
                             vs->vserver_config->vserver_ports_intercept);
-  env[20] = g_strdup_printf("KEEP_SET=%s", 
+  env[20] = g_strdup_printf("VIPMAP=%s",
+                            vs->vserver_config->vipmap);
+  env[21] = g_strdup_printf("VIPMAP_NETWORK=%s",
+                            vs->vserver_config->vipmap_network);
+  env[22] = g_strdup_printf("VIPMAP_FAKE_ARP=%s",
+                            vs->vserver_config->vipmap_fake_arp);
+  env[23] = g_strdup_printf("KEEP_SET=%s",
                             vs->vserver_config->init_flag == VS_RELOAD ?
                             "yes" : "no");
-  env[21] = (char *) 0;
+  env[24] = (char *) 0;
 
-  for (i = 0; i < 21; i++) {
+  for (i = 0; i < 23; i++) {
     if (env[i] != NULL) 
       DP("%s", env[i]);
   }
@@ -97,7 +103,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
   close(exec_pipe[1]);
 
  
-  for (i = 0; i < 21; i++) {
+  for (i = 0; i < 24; i++) {
     g_free(env[i]);
   } 
   

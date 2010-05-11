@@ -745,12 +745,12 @@ rules () {
   if [ "$VIPMAP" = "yes" ]; then
     $IPTABLES -t nat -A $CHAIN_NAT_VIP_PREROUTING -j RETURN
     $IPTABLES -t nat -A $CHAIN_NAT_VIP_POSTROUTING -j RETURN
-  fi
 
-  if [ "$VIPMAP" = "yes" ] -a [ "$VIPMAP_FAKE_ARP" = "yes" ]; then
-    for dev in $DEV_EXTERNAL_LIST; do
-      $FARPD -i $dev $VIPMAP_NETWORK
-    done
+    if [ "$VIPMAP_FAKE_ARP" = "yes" ]; then
+      for dev in $DEV_EXTERNAL_LIST; do
+        $FARPD -i $dev $VIPMAP_NETWORK
+      done
+    fi
   fi
 }
 
