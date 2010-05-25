@@ -157,6 +157,9 @@ static int startsess (struct vserver *vs, struct task_req *req)
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
 
+  if (!req->vip_user)
+    return 0;
+
   member_node = member_get_node_by_id(vs, req->id);
   if (member_node == NULL)
     return -1;
@@ -177,6 +180,9 @@ static int stopsess (struct vserver *vs, struct task_req *req)
   struct vipmap_req vip_req;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
+
+  if (!req->vip_user)
+    return 0;
 
   member_node = member_get_node_by_id(vs, req->id);
   if (member_node == NULL)
