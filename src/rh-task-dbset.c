@@ -73,7 +73,7 @@ gboolean *parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
            column_id++) {
 
       title = gda_data_model_get_column_title(dm, column_id);
-      value = gda_data_model_get_value_at (dm, column_id, row_id);
+      value = gda_data_model_get_value_at (dm, column_id, row_id, NULL);
       str = gda_value_stringify(value);
                
       if (strncmp("session_id", title, 10) == 0) {
@@ -109,73 +109,56 @@ gboolean *parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
 
 GList *execute_sql_command(GdaConnection *connection, const gchar *buffer)
 {
-  GdaCommand *command;
+  GdaSqlParser *parser = NULL;
+  GdaStatement *stmt   = NULL;
+  GdaSet       *params = NULL;
   GList *data_list = NULL;
   GList *list;
   GList *node;
   GdaDataModel *dm;
   gboolean errors = FALSE;
 
+  stmt = gda_sql_parser_parse_string (parser, buffer, NULL, NULL);
+  gda_statement_get_parameters (stmt, &params, NULL);
 
-  command = gda_command_new (buffer, GDA_COMMAND_TYPE_SQL,
-                             GDA_COMMAND_OPTION_STOP_ON_ERRORS);
+  dm = gda_connection_statement_execute_select (connection, stmt, params, NULL);
+  parse_dm_to_struct (&data_list, dm);
+  g_object_unref (dm);
 
-  list = gda_connection_execute_command (connection, command, NULL, NULL);
-  if (list != NULL) {
-    for (node = list; node != NULL; node = g_list_next(node)) {
-      if (GDA_IS_DATA_MODEL(node->data)) {
-        dm = (GdaDataModel *) node->data;
-        parse_dm_to_struct(&data_list, dm);
-        g_object_unref(dm);
-      } else {
-        get_errors (connection);
-        errors = TRUE;  
-      }
-    }
-  }
-
-  gda_command_free(command);
+  g_object_unref (params);
+  g_object_unref (stmt);
   
   return errors == TRUE ? NULL : data_list;
 }
 
 void execute_sql(GdaConnection *connection, const gchar *buffer)
 {
-  GdaCommand *command;
-  
-  command = gda_command_new (buffer, GDA_COMMAND_TYPE_SQL,
-                             GDA_COMMAND_OPTION_STOP_ON_ERRORS);
-  gda_connection_execute_select_command (connection, command, NULL, NULL);
+  GdaSqlParser *parser = NULL;
+  GdaStatement *stmt   = NULL;
+  GdaSet       *params = NULL;
+  gint         res     = 0;
 
-  gda_command_free (command);
+  stmt = gda_sql_parser_parse_string (parser, buffer, NULL, NULL);
+  gda_statement_get_parameters (stmt, &params, NULL);
+
+  res = gda_connection_statement_execute_non_select (connection, stmt, params,
+                                                     NULL, NULL);
+  g_object_unref (params);
+  g_object_unref (stmt);
 }
 
 void list_datasource (void)
 {
   GList *ds_list;
   GList *node;
-  GdaDataSourceInfo *info;
+  GdaDsnInfo *info;
 
-  ds_list = gda_config_get_data_source_list();
+  info = gda_config_get_dsn_info (PROGRAM);
 
-  for (node = g_list_first(ds_list); node != NULL; node = g_list_next(node)) {
-    info = (GdaDataSourceInfo *) node->data;
-
-    if (strncmp(info->name, PROGRAM, strlen(PROGRAM)) == 0) {
-      logmsg(RH_LOG_NORMAL, "Datasource: NAME: %s PROVIDER: %s",
-             info->name, info->provider);
-      logmsg(RH_LOG_NORMAL, "  CNC: %s", info->cnc_string);
-      logmsg(RH_LOG_NORMAL, "  DESC: %s", info->description);
-    }
-  }
-
-  gda_config_free_data_source_list(ds_list);
-}
-
-GdaConnection *get_connection(GdaClient *client)
-{
-  return gda_client_open_connection (client, PROGRAM, NULL, NULL,
-                                     GDA_CONNECTION_OPTIONS_NONE, NULL);
+  logmsg(RH_LOG_NORMAL, "Datasource: NAME: %s PROVIDER: %s",
+         info->name, info->provider);
+  logmsg(RH_LOG_NORMAL, "  CNC: %s", info->cnc_string);
+  logmsg(RH_LOG_NORMAL, "  DESC: %s", info->description);
 }
 
 void free_data_list(GList *data_list)
@@ -247,19 +230,23 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
 /* Start service task */
 static int startservice ()
 {
-  char ds_name[] = PROGRAM;
-  char ds_provider[] = "SQLite";
-  char ds_cnc_string[] = "DB_DIR=" RAHUNAS_DB_DIR ";DB_NAME=" DB_NAME; 
-  char ds_desc[] = "RahuNAS DB Set";
+  GError *error = NULL;
+  GdaDsnInfo dsn_info = {
+    .name        = PROGRAM,
+    .provider    = "SQLite",
+    .cnc_string  = "DB_DIR=" RAHUNAS_DB_DIR ";DB_NAME=" DB_NAME,
+    .description = "RahuNAS DB Set",
+  };
 
   logmsg(RH_LOG_NORMAL, "Task DBSET start..");
    
-  gda_init(ds_name, RAHUNAS_VERSION, NULL, NULL);
+  gda_init();
     
-  gda_config_save_data_source(ds_name, ds_provider, 
-                              ds_cnc_string, ds_desc,
-                              NULL, NULL, FALSE);
-   
+  if (!gda_config_define_dsn (&dsn_info, &error)) {
+    logmsg (RH_LOG_ERROR, "Could not define DSN");
+    g_error_free (error);
+  }
+
   list_datasource();
 
   return 0;
@@ -268,14 +255,13 @@ static int startservice ()
 /* Stop service task */
 static int stopservice  ()
 {
-  gda_config_remove_data_source (PROGRAM);
+  gda_config_remove_dsn (PROGRAM, NULL);
   return 0;
 }
 
 /* Initialize */
 static void init (struct vserver *vs)
 {
-  GdaClient *client;
   GdaConnection *connection;
   GList *data_list;
   GList *node;
@@ -288,10 +274,9 @@ static void init (struct vserver *vs)
   logmsg(RH_LOG_NORMAL, "[%s] Task DBSET initialize..",
          vs->vserver_config->vserver_name);  
 
-  client = gda_client_new ();
-  connection = gda_client_open_connection (client, 
-                 PROGRAM, NULL, NULL,
-                 GDA_CONNECTION_OPTIONS_READ_ONLY, NULL);
+  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
+                                             GDA_CONNECTION_OPTIONS_READ_ONLY,
+                                             NULL);
 
   snprintf(select_cmd, sizeof (select_cmd), 
            "SELECT * FROM dbset WHERE vserver_id='%d'",
@@ -305,9 +290,7 @@ static void init (struct vserver *vs)
 
   free_data_list(data_list);
 
-  gda_client_close_all_connections (client);
-
-  g_object_unref(G_OBJECT(client));
+  g_object_unref(G_OBJECT(connection));
 }
 
 /* Cleanup */
@@ -319,7 +302,6 @@ static void cleanup (struct vserver *vs)
 /* Start session task */
 static int startsess (struct vserver *vs, struct task_req *req)
 {
-  GdaClient *client;
   GdaConnection *connection;
   gint res;
   char startsess_cmd[256];
@@ -328,10 +310,9 @@ static int startsess (struct vserver *vs, struct task_req *req)
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
 
-  client = gda_client_new ();
-  connection = gda_client_open_connection (client, 
-                 PROGRAM, NULL, NULL,
-                 GDA_CONNECTION_OPTIONS_NONE, NULL);
+  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
+                                             GDA_CONNECTION_OPTIONS_NONE,
+                                             NULL);
 
   strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
   strftime(&time_str2, sizeof time_str2, "%s", 
@@ -363,9 +344,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
   execute_sql(connection, startsess_cmd);
 
-  gda_client_close_all_connections (client);
-
-  g_object_unref(G_OBJECT(client)); 
+  g_object_unref(G_OBJECT(connection));
 
   return 0;
 }
@@ -373,7 +352,6 @@ static int startsess (struct vserver *vs, struct task_req *req)
 /* Stop session task */
 static int stopsess (struct vserver *vs, struct task_req *req)
 {
-  GdaClient *client;
   GdaConnection *connection;
   gint res;
   char stopsess_cmd[256];
@@ -386,10 +364,9 @@ static int stopsess (struct vserver *vs, struct task_req *req)
 
   member = (struct rahunas_member *) member_node->data;
 
-  client = gda_client_new ();
-  connection = gda_client_open_connection (client, 
-                 PROGRAM, NULL, NULL,
-                 GDA_CONNECTION_OPTIONS_NONE, NULL);
+  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
+                                             GDA_CONNECTION_OPTIONS_NONE,
+                                             NULL);
 
   DP("Username  : %s", member->username);
   DP("SessionID : %s", member->session_id);
@@ -404,9 +381,7 @@ static int stopsess (struct vserver *vs, struct task_req *req)
 
   execute_sql(connection, stopsess_cmd);
 
-  gda_client_close_all_connections (client);
-
-  g_object_unref(G_OBJECT(client)); 
+  g_object_unref(G_OBJECT(connection));
 
   return 0;
 }
