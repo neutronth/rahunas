@@ -17,7 +17,7 @@ size_t set_cleanup(void *data)
   struct processing_set *process = (struct processing_set *) data;
   struct ip_set_list *setlist = (struct ip_set_list *) process->list;
   size_t offset;
-  struct ip_set_rahunas *table = NULL;
+  struct ip_set_rahu *table = NULL;
   struct task_req req;
   unsigned int id;
   char *ip = NULL;

@@ -9,8 +9,8 @@
 
 #include "rahunasd.h"
 #include <linux/if_ether.h>
-#include <linux/netfilter_ipv4/ip_set.h>
-#include <linux/netfilter_ipv4/ip_set_rahunas.h>
+#include <ipset/ip_set.h>
+#include <ipset/ip_set_rahunas.h>
 
 #define GETSOCK_TRIES 5
 #define LIST_TRIES 5

@@ -7,6 +7,7 @@ IPSET_VERSION:=4.2
 AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
   $(LIBGDA_CFLAGS) \
+  -I$(top_srcdir)/src/ \
   -I$(top_srcdir)/src/include/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
