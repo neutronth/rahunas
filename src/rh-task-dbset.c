@@ -129,8 +129,11 @@ GList *execute_sql_command(GdaConnection *connection, const gchar *buffer)
     g_object_unref (dm);
   }
 
-  g_object_unref (params);
-  g_object_unref (stmt);
+  if (params)
+    g_object_unref (params);
+
+  if (stmt)
+    g_object_unref (stmt);
   
   return errors == TRUE ? NULL : data_list;
 }
@@ -149,8 +152,11 @@ void execute_sql(GdaConnection *connection, const gchar *buffer)
 
   res = gda_connection_statement_execute_non_select (connection, stmt, params,
                                                      NULL, NULL);
-  g_object_unref (params);
-  g_object_unref (stmt);
+  if (params)
+    g_object_unref (params);
+
+  if (stmt)
+    g_object_unref (stmt);
 }
 
 void list_datasource (void)
@@ -311,7 +317,8 @@ static void init (struct vserver *vs)
 
   free_data_list(data_list);
 
-  g_object_unref(G_OBJECT(connection));
+  if (connection)
+    g_object_unref(G_OBJECT(connection));
 }
 
 /* Cleanup */
@@ -363,7 +370,8 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
   execute_sql(connection, startsess_cmd);
 
-  g_object_unref(G_OBJECT(connection));
+  if (connection)
+    g_object_unref(G_OBJECT(connection));
 
   return 0;
 }
@@ -398,7 +406,8 @@ static int stopsess (struct vserver *vs, struct task_req *req)
 
   execute_sql(connection, stopsess_cmd);
 
-  g_object_unref(G_OBJECT(connection));
+  if (connection)
+    g_object_unref(G_OBJECT(connection));
 
   return 0;
 }
