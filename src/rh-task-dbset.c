@@ -118,12 +118,16 @@ GList *execute_sql_command(GdaConnection *connection, const gchar *buffer)
   GdaDataModel *dm;
   gboolean errors = FALSE;
 
+  parser = g_object_get_data (G_OBJECT (connection), "parser");
+
   stmt = gda_sql_parser_parse_string (parser, buffer, NULL, NULL);
   gda_statement_get_parameters (stmt, &params, NULL);
 
   dm = gda_connection_statement_execute_select (connection, stmt, params, NULL);
-  parse_dm_to_struct (&data_list, dm);
-  g_object_unref (dm);
+  if (dm) {
+    parse_dm_to_struct (&data_list, dm);
+    g_object_unref (dm);
+  }
 
   g_object_unref (params);
   g_object_unref (stmt);
@@ -137,6 +141,8 @@ void execute_sql(GdaConnection *connection, const gchar *buffer)
   GdaStatement *stmt   = NULL;
   GdaSet       *params = NULL;
   gint         res     = 0;
+
+  parser = g_object_get_data (G_OBJECT (connection), "parser");
 
   stmt = gda_sql_parser_parse_string (parser, buffer, NULL, NULL);
   gda_statement_get_parameters (stmt, &params, NULL);
@@ -227,6 +233,23 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
   return TRUE;
 }
 
+
+GdaConnection *openconn (GdaConnectionOptions options)
+{
+  GdaConnection *connection = NULL;
+  GdaSqlParser  *parser = NULL;
+  connection = gda_connection_open_from_dsn (PROGRAM, NULL, options, NULL);
+
+  parser = gda_connection_create_parser (connection);
+  if (!parser) {
+    parser = gda_sql_parser_new ();
+  }
+
+  g_object_set_data_full (G_OBJECT (connection), "parser", parser, g_object_unref);
+
+  return connection;
+}
+
 /* Start service task */
 static int startservice ()
 {
@@ -274,9 +297,7 @@ static void init (struct vserver *vs)
   logmsg(RH_LOG_NORMAL, "[%s] Task DBSET initialize..",
          vs->vserver_config->vserver_name);  
 
-  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
-                                             GDA_CONNECTION_OPTIONS_READ_ONLY,
-                                             NULL);
+  connection = openconn (GDA_CONNECTION_OPTIONS_READ_ONLY);
 
   snprintf(select_cmd, sizeof (select_cmd), 
            "SELECT * FROM dbset WHERE vserver_id='%d'",
@@ -310,9 +331,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
 
-  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
-                                             GDA_CONNECTION_OPTIONS_NONE,
-                                             NULL);
+  connection = openconn (GDA_CONNECTION_OPTIONS_NONE);
 
   strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
   strftime(&time_str2, sizeof time_str2, "%s", 
@@ -364,9 +383,7 @@ static int stopsess (struct vserver *vs, struct task_req *req)
 
   member = (struct rahunas_member *) member_node->data;
 
-  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
-                                             GDA_CONNECTION_OPTIONS_NONE,
-                                             NULL);
+  connection = openconn (GDA_CONNECTION_OPTIONS_NONE);
 
   DP("Username  : %s", member->username);
   DP("SessionID : %s", member->session_id);
