@@ -99,6 +99,9 @@ void parse_mac(const char *mac, unsigned char *ethernet);
 char *ip_tostring(ip_set_ip_t ip);
 char *mac_tostring(unsigned char macaddress[ETH_ALEN]);
 
+struct ip_set_req_rahunas *get_data_from_set (void *data, unsigned int id,
+                                              const struct rahunas_map *map);
+
 #define BITSPERBYTE (8*sizeof(char))
 #define ID2BYTE(id) ((id)/BITSPERBYTE)
 #define ID2MASK(id) (1 << ((id)%BITSPERBYTE))

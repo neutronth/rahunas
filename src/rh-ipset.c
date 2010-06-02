@@ -13,6 +13,10 @@
 #include "rh-utils.h"
 
 ip_set_id_t max_sets;
+static int protocol_version = 0;
+
+#define DONT_ALIGN    (protocol_version == IP_SET_PROTOCOL_UNALIGNED)
+#define ALIGNED(len)  IPSET_VALIGN(len, DONT_ALIGN)
 
 int kernel_getsocket(void)
 {
@@ -84,8 +88,10 @@ int kernel_sendto_handleerrno(unsigned op, void *data, socklen_t size)
   int res = wrapped_setsockopt(data, size);
 
   if (res !=0) {
-    DP("res=%d errno=%d", res, errno);
-    return -1;
+    if (errno == EEXIST)
+      return -1;
+    else
+      DP("res=%d errno=%d", res, errno);
   }
 
   return 0;
@@ -104,11 +110,40 @@ int kernel_getfrom_handleerrno(void *data, size_t * size)
   int res = wrapped_getsockopt(data, size);
 
   if (res != 0) {
-    DP("res=%d errno=%d", res, errno);
-    return -1;
+    if (errno == EAGAIN)
+      return -1;
+    else
+      DP("res=%d errno=%d", res, errno);
   }
 
   return 0;
+}
+
+static void check_protocolversion(void)
+{
+  struct ip_set_req_version req_version;
+  socklen_t size = sizeof(struct ip_set_req_version);
+  int res;
+
+  if (protocol_version)
+    return;
+
+  req_version.op = IP_SET_OP_VERSION;
+  res = wrapped_getsockopt(&req_version, &size);
+
+  if (res != 0)
+    logmsg(RH_LOG_ERROR, "Couldn't verify kernel module version!");
+
+  if (!(req_version.version == IP_SET_PROTOCOL_VERSION
+        || req_version.version == IP_SET_PROTOCOL_UNALIGNED)) {
+    logmsg(RH_LOG_ERROR, "Kernel ip_set module is of protocol version %u."
+         "I'm of protocol version %u.\n"
+         "Please upgrade your kernel and/or ipset(8) utillity.",
+         req_version.version, IP_SET_PROTOCOL_VERSION);
+  }
+
+  protocol_version = req_version.version;
+  DP ("Protocol Version %u", protocol_version);
 }
 
 struct set *set_adt_get(const char *name)
@@ -119,8 +154,10 @@ struct set *set_adt_get(const char *name)
 
   DP("%s", name);
 
+  check_protocolversion ();
+
   req_adt_get.op = IP_SET_OP_ADT_GET;
-  req_adt_get.version = IP_SET_PROTOCOL_VERSION;
+  req_adt_get.version = protocol_version;
   strncpy(req_adt_get.set.name, name, IP_SET_MAXNAMELEN);
   size = sizeof(struct ip_set_req_adt_get);
 
@@ -210,10 +247,12 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
   void *data;
   int res = 0;
 
+  check_protocolversion ();
+
   if (rahunas_set == NULL)
     return -1;
 
-  size = sizeof(struct ip_set_req_adt) + sizeof(struct ip_set_req_rahunas);
+  size = ALIGNED(sizeof(struct ip_set_req_adt)) + sizeof(struct ip_set_req_rahunas);
   data = rh_malloc(size);
 
   memcpy(&req.ip, adtip, sizeof(ip_set_ip_t));
@@ -222,7 +261,7 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
   req_adt = (struct ip_set_req_adt *) data;
   req_adt->op = op;
   req_adt->index = rahunas_set->index;
-  memcpy(data + sizeof(struct ip_set_req_adt), &req, 
+  memcpy(data + ALIGNED(sizeof(struct ip_set_req_adt)), &req,
            sizeof(struct ip_set_req_rahunas));
 
   if (kernel_sendto_handleerrno(op, data, size) == -1)
@@ -261,8 +300,10 @@ void set_flush(const char *name)
 {
   struct ip_set_req_std req;
 
+  check_protocolversion ();
+
   req.op = IP_SET_OP_FLUSH;
-  req.version = IP_SET_PROTOCOL_VERSION;
+  req.version = protocol_version;
   strncpy(req.name, name, IP_SET_MAXNAMELEN);
 
   kernel_sendto(&req, sizeof(struct ip_set_req_std));
@@ -280,6 +321,8 @@ size_t load_set_list(struct vserver *vs, const char name[IP_SET_MAXNAMELEN],
   socklen_t size, req_size;
   int repeated = 0, res = 0;
 
+  check_protocolversion ();
+
   DP("%s %s", cmd == CMD_MAX_SETS ? "MAX_SETS"
         : cmd == CMD_LIST_SIZE ? "LIST_SIZE"
         : "SAVE_SIZE",
@@ -289,7 +332,7 @@ tryagain:
 
   /* Get max_sets */
   req_max_sets.op = IP_SET_OP_MAX_SETS;
-  req_max_sets.version = IP_SET_PROTOCOL_VERSION;
+  req_max_sets.version = protocol_version;
   strncpy(req_max_sets.set.name, name, IP_SET_MAXNAMELEN);
   size = sizeof(req_max_sets);
   kernel_getfrom(&req_max_sets, &size);
@@ -306,8 +349,8 @@ tryagain:
   }
 
   /* Get setnames */
-  size = req_size = sizeof(struct ip_set_req_setnames) 
-        + req_max_sets.sets * sizeof(struct ip_set_name_list);
+  size = req_size = ALIGNED(sizeof(struct ip_set_req_setnames))
+        + req_max_sets.sets * ALIGNED(sizeof(struct ip_set_name_list));
   data = rh_malloc(size);
   ((struct ip_set_req_setnames *) data)->op = op;
   ((struct ip_set_req_setnames *) data)->index = *idx;
@@ -347,6 +390,8 @@ int get_header_from_set (struct vserver *vs)
   if (vs == NULL)
     return (-1);
 
+  check_protocolversion ();
+
   size = req_size = load_set_list(vs, vs->vserver_config->vserver_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 
@@ -369,7 +414,7 @@ int get_header_from_set (struct vserver *vs)
     size = 0;
   }
 
-  offset = sizeof(struct ip_set_list);
+  offset = ALIGNED(sizeof(struct ip_set_list));
   header = (struct ip_set_req_rahunas_create *) (data + offset);
 
   first_ip = htonl(header->from); 
@@ -401,6 +446,8 @@ int walk_through_set (int (*callback)(void *), struct vserver *vs)
   socklen_t size, req_size;
   int res = 0;
    
+  check_protocolversion ();
+
   size = req_size = load_set_list(vs, vs->vserver_config->vserver_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
 
@@ -428,4 +475,37 @@ int walk_through_set (int (*callback)(void *), struct vserver *vs)
 
   rh_free(&data);
   return res;
+}
+
+struct ip_set_req_rahunas *get_data_from_set (void *data, unsigned int id,
+                                              const struct rahunas_map *map)
+{
+  struct ip_set_list *setlist = NULL;
+  size_t header_offset = 0;
+  size_t offset = 0;
+  struct ip_set_req_rahunas *d = NULL;
+  ip_set_ip_t ip;
+
+  if (data == NULL || map == NULL)
+    return NULL;
+
+  ip = ntohl (map->first_ip) + id;
+
+  setlist = (struct ip_set_list *) (data);
+
+  header_offset = ALIGNED(sizeof(struct ip_set_list)) + setlist->header_size;
+
+  DP ("members_size %u", setlist->members_size);
+
+  while (offset < setlist->members_size) {
+    d = data + header_offset + offset;
+    DP ("req_ip: %u, seek_ip: %u", ip, d->ip);
+
+    if (ip == d->ip)
+      return d;
+
+    offset += ALIGNED (sizeof (struct ip_set_req_rahunas));
+  }
+
+  return NULL;
 }

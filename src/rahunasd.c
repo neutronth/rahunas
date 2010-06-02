@@ -64,14 +64,12 @@ void rh_sighandler(int sig)
 size_t expired_check(void *data)
 {
   struct processing_set *process = (struct processing_set *) data;
-  struct ip_set_list *setlist = (struct ip_set_list *) process->list;
-  size_t offset;
-  struct ip_set_rahu *table = NULL;
+  struct ip_set_req_rahunas *d = NULL;
   struct task_req req;
   unsigned int id;
   char *ip = NULL;
   int res  = 0;
-  GList *runner = g_list_first(process->vs->v_map->members);
+  GList *runner = NULL;
   struct rahunas_member *member = NULL;
 
   if (process == NULL)
@@ -80,8 +78,7 @@ size_t expired_check(void *data)
   if (process->list == NULL)
     return (-1); 
 
-  offset = sizeof(struct ip_set_list) + setlist->header_size;
-  table = (struct ip_set_rahu *)(process->list + offset);
+  runner = g_list_first(process->vs->v_map->members);
 
   while (runner != NULL) {
     member = (struct rahunas_member *)runner->data;
@@ -89,17 +86,22 @@ size_t expired_check(void *data)
 
     id = member->id;
 
+    d = get_data_from_set (process->list, id, process->vs->v_map);
+    if (d == NULL)
+      continue;
+
     DP("Processing id = %d", id);
 
-    DP("Time diff = %d, idle_timeout=%d", (time(NULL) - table[id].timestamp),
+    DP("Time now: %d, Time get: %d", time(NULL), d->timestamp);
+    DP("Time diff = %d, idle_timeout=%d", (time(NULL) - d->timestamp),
          process->vs->vserver_config->idle_timeout);
 
-    if ((time(NULL) - table[id].timestamp) > 
+    if ((time(NULL) - d->timestamp) >
          process->vs->vserver_config->idle_timeout) {
       // Idle Timeout
       DP("Found IP: %s idle timeout", idtoip(process->vs->v_map, id));
       req.id = id;
-      memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
+      memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
       send_xmlrpc_stopacct(process->vs, id, 
                            RH_RADIUS_TERM_IDLE_TIMEOUT);
@@ -109,7 +111,7 @@ size_t expired_check(void *data)
       // Session Timeout (Expired)
       DP("Found IP: %s session timeout", idtoip(process->vs->v_map, id));
       req.id = id;
-      memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
+      memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
       send_xmlrpc_stopacct(process->vs, id, 
                            RH_RADIUS_TERM_SESSION_TIMEOUT);
