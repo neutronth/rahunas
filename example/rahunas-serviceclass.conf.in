@@ -1,0 +1,67 @@
+// **
+// * The service class example config file
+// **
+// The "service_class = { ... }" main key is required for each service class
+// config declarations.
+//
+// The config could separate to several files or just a single file.
+// If none of any service class config files are present, RahuNAS will disable
+// the class of service feature automatically.
+//
+// service_class = {
+//  name = "Text"
+//  description = "Text"
+//  network = "CIDR"
+//  fake_arpd = "yes|no"
+//  fake_arpd_iface = "Interface Name"
+// }
+//
+// Key: name
+// Syntax: name = "Text"
+// Description: Class-Of-Service name
+//   A unique name which identify each class of service configs
+//
+// Key: description
+// Syntax: description = "Text"
+// Description: Class-Of-Service description
+//   The additional description that describe the current class that served to
+//   the login user.
+//
+// Key: network
+// Syntax: network = "CIDR"
+// Description: Mapping network
+//   The network that defined in CIDR form "NetworkAddress/Mask", such as
+//   "10.0.0.0/24" etc should available for mapping to current users' IP.
+//   The users in the class should translate into this network one by one
+//   before going outside and translate back when it's return.
+//
+// Key: fake_arpd
+// Syntax: fake_arpd = "yes|no"
+// Description: Running fake arp daemon
+//   The fake arp daemon should response to the ARP request to specified
+//   network which every packets that their source address translated to
+//   this network will return to our box.
+//   It's required if running box connect to outside directly (Layer 2).
+//   It's no needs to enable this daemon on Layer 3 network but the routing
+//   policy should setup the return path of specified network to this box.
+//
+// Key: fake_arpd_iface
+// Syntax: fake_arpd_iface = "Interface Name"
+// Description: The listening interface of fake arp daemon
+//   The fake arp daemon should binding to this interface
+
+service_class = {
+  name = "class_silver"
+  description = "Silver service class"
+  network = "10.10.10.0/24"
+  fake_arpd = "no"
+  fake_arpd_iface = ""
+}
+
+service_class = {
+  name = "class_gold"
+  description = "Gold service class"
+  network = "10.10.11.0/24"
+  fake_arpd = "yes"
+  fake_arpd_iface = "eth0"
+}
