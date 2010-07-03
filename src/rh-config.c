@@ -25,6 +25,7 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
   char *main_key = NULL;
   char *sub_key = NULL;
   enum config_type cfg_type;
+  int  valid = 1;
 
   if(config == NULL)
     return lcfg_status_error;
@@ -43,6 +44,9 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
 
   if (strncmp(main_key, "main", 4) == 0) {
     cfg_type = MAIN;
+
+  } if (strncmp(main_key, "service_class", strlen ("service_class")) == 0) {
+    cfg_type = SERVICECLASS;
   } else {
     cfg_type = VSERVER;
     if (config->rh_vserver.vserver_name == NULL)
@@ -75,6 +79,75 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
       } else if (strncmp(sub_key, "polling_interval", 16) == 0) {
         config->rh_main.polling_interval = atoi(value);
       }      
+      break;
+
+    case SERVICECLASS:
+      if (strncmp (sub_key, "name", strlen("name")) == 0) {
+        if (config->rh_serviceclass.name != NULL)
+          free(config->rh_serviceclass.name);
+        config->rh_serviceclass.name = strdup(value);
+      } else if (strncmp (sub_key, "description", strlen("description")) == 0) {
+        if (config->rh_serviceclass.description != NULL)
+          free(config->rh_serviceclass.description);
+        config->rh_serviceclass.description = strdup(value);
+      } else if (strncmp (sub_key, "network", strlen("network")) == 0) {
+        if ((sep = strchr (value, '/')) != NULL) {
+          if (config->rh_serviceclass.network != NULL)
+            free(config->rh_serviceclass.network);
+
+          config->rh_serviceclass.network = strdup(value);
+
+          sep++;
+          config->rh_serviceclass.network_size = atoi (sep);
+
+          if (config->rh_serviceclass.network_size != 0) {
+            config->rh_serviceclass.network_size =
+              (1 << (32 - config->rh_serviceclass.network_size)) - 2;
+          }
+
+          sep = strsep (&value, "/");
+          if (sep != NULL) {
+            if (inet_aton (sep, &config->rh_serviceclass.start_addr) == 0)
+              {
+                valid = 0;
+              }
+            else
+              {
+                // Start address should not be the network address
+                config->rh_serviceclass.start_addr.s_addr += 1;
+                DP ("service_class: %s - start ip = %s, size: %d",
+                    config->rh_serviceclass.name,
+                    inet_ntoa (config->rh_serviceclass.start_addr),
+                    config->rh_serviceclass.network_size);
+              }
+          } else {
+            config->rh_serviceclass.network_size = 0;
+            valid = 0;
+          }
+        } else {
+          valid = 0;
+        }
+
+        if (!valid) {
+          if (config->rh_serviceclass.name != NULL) {
+            syslog(LOG_ERR, "\"%s\" service_class config config error: "
+                            "invalid network %s",
+                            config->rh_serviceclass.name, value);
+          } else {
+            syslog(LOG_ERR, "unknown service_class config error: "
+                            "invalid network %s", value);
+          }
+        }
+      } else if (strncmp (sub_key, "fake_arpd", strlen("fake_arpd")) == 0) {
+        if (config->rh_serviceclass.fake_arpd != NULL)
+          free(config->rh_serviceclass.fake_arpd);
+        config->rh_serviceclass.fake_arpd = strdup(value);
+      } else if (strncmp (sub_key, "fake_arpd_iface",
+                 strlen("fake_arpd_iface")) == 0) {
+        if (config->rh_serviceclass.fake_arpd_iface != NULL)
+          free(config->rh_serviceclass.fake_arpd_iface);
+        config->rh_serviceclass.fake_arpd_iface = strdup(value);
+      }
       break;
 
     case VSERVER:
@@ -214,32 +287,6 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_vserver.nas_weblogin_template != NULL)
           free(config->rh_vserver.nas_weblogin_template);
         config->rh_vserver.nas_weblogin_template = strdup(value);
-      } else if (strncmp(sub_key, "vipmap_attribute",
-                 strlen("vipmap_attribute")) == 0) {
-        if (config->rh_vserver.vipmap_attribute != NULL)
-          free(config->rh_vserver.vipmap_attribute);
-        config->rh_vserver.vipmap_attribute = strdup(value);
-      } else if (strncmp(sub_key, "vipmap_network",
-                 strlen("vipmap_network")) == 0) {
-        if (config->rh_vserver.vipmap_network != NULL)
-          free(config->rh_vserver.vipmap_network);
-        config->rh_vserver.vipmap_network = strdup(value);
-      } else if (strncmp(sub_key, "vipmap_fake_arp",
-                 strlen("vipmap_fake_arp")) == 0) {
-        if (config->rh_vserver.vipmap_fake_arp != NULL)
-          free(config->rh_vserver.vipmap_fake_arp);
-        config->rh_vserver.vipmap_fake_arp = strdup(value);
-      } else if (strncmp(sub_key, "vipmap", strlen("vipmap")) == 0) {
-        if (config->rh_vserver.vipmap != NULL)
-          free(config->rh_vserver.vipmap);
-        config->rh_vserver.vipmap = strdup(value);
-
-        if (strncmp(config->rh_vserver.vipmap, "yes", strlen("yes")) == 0) {
-          config->rh_vserver.vipmap_enable = 1;
-
-          config->rh_vserver.vserver_vip_name =
-            g_strdup_printf ("%s-vip", config->rh_vserver.vserver_name);
-        }
       }
       break;
   }
@@ -362,10 +409,17 @@ int cleanup_vserver_config(struct rahunas_vserver_config *config)
   rh_free(&(config->nas_default_redirect));
   rh_free(&(config->nas_default_language));
   rh_free(&(config->nas_weblogin_template));
-  rh_free(&(config->vipmap));
-  rh_free(&(config->vipmap_attribute));
-  rh_free(&(config->vipmap_network));
-  rh_free(&(config->vipmap_fake_arp));
+
+  return 0;
+}
+
+int cleanup_serviceclass_config(struct rahunas_serviceclass_config *config)
+{
+  rh_free(&(config->name));
+  rh_free(&(config->description));
+  rh_free(&(config->network));
+  rh_free(&(config->fake_arpd));
+  rh_free(&(config->fake_arpd_iface));
 
   return 0;
 }

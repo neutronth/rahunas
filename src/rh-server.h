@@ -14,7 +14,6 @@ struct vserver {
   struct rahunas_vserver_config *dummy_config;
   struct rahunas_map *v_map;
   struct set *v_set;
-  struct set *v_vip_set;
 };
 
 struct main_server {

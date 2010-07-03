@@ -34,7 +34,7 @@ int do_startsession(GNetXmlRpcServer *server,
   gchar *session_timeout = NULL;
   gchar *bandwidth_max_down = NULL;
   gchar *bandwidth_max_up = NULL;
-  gchar *vip_user = NULL;
+  gchar *service_class = NULL;
   gchar *vserver_id = NULL;
   uint32_t id;
   GList *member_node = NULL;
@@ -52,7 +52,7 @@ int do_startsession(GNetXmlRpcServer *server,
   session_timeout    = rh_string_get_sep(param, "|", 5);
   bandwidth_max_down = rh_string_get_sep(param, "|", 6);
   bandwidth_max_up   = rh_string_get_sep(param, "|", 7);
-  vip_user           = rh_string_get_sep(param, "|", 8);
+  service_class      = rh_string_get_sep(param, "|", 8);
   vserver_id         = rh_string_get_sep(param, "|", 9);
 
   if (ip == NULL || username == NULL || session_id == NULL 
@@ -103,8 +103,6 @@ int do_startsession(GNetXmlRpcServer *server,
   else
     req.bandwidth_max_up = 0;
 
-  req.vip_user = atoi (vip_user);
-
   rh_task_startsess(vs, &req);
   member_node = member_get_node_by_id(vs, id);
 
@@ -131,7 +129,7 @@ cleanup:
   g_free(session_timeout);
   g_free(bandwidth_max_down);
   g_free(bandwidth_max_up);
-  g_free(vip_user);
+  g_free(service_class);
   g_free(vserver_id);
   return 0;
 }

@@ -40,11 +40,11 @@ struct rahunas_main_config {
   int  bittorrent_download_max;
   int  bittorrent_upload_max;
   int  polling_interval;
+  int  service_class_enabled;
 };
 
 struct rahunas_vserver_config {
   char *vserver_name;
-  char *vserver_vip_name;
   int  vserver_id;
   int  init_flag;
   char *dev_external;
@@ -81,21 +81,28 @@ struct rahunas_vserver_config {
   char *nas_default_redirect;
   char *nas_default_language;
   char *nas_weblogin_template;
-  char *vipmap;
-  char *vipmap_attribute;
-  char *vipmap_network;
-  char *vipmap_fake_arp;
-  int  vipmap_enable;
+};
+
+struct rahunas_serviceclass_config {
+  char *name;
+  char *description;
+  char *network;
+  struct in_addr start_addr;
+  uint32_t network_size;
+  char *fake_arpd;
+  char *fake_arpd_iface;
 };
 
 union rahunas_config {
   struct rahunas_main_config rh_main;
   struct rahunas_vserver_config rh_vserver;
+  struct rahunas_serviceclass_config rh_serviceclass;
 };
 
 enum config_type {
   MAIN,
-  VSERVER
+  VSERVER,
+  SERVICECLASS
 };
 
 enum vserver_config_init_flag {
@@ -112,6 +119,7 @@ int get_config(const char *cfg_file, union rahunas_config *config);
 int get_value(const char *cfg_file, const char *key, void **data, size_t *len);
 int get_vservers_config(const char *conf_dir, struct main_server *server);
 int cleanup_vserver_config(struct rahunas_vserver_config *config);
+int cleanup_serviceclass_config(struct rahunas_serviceclass_config *config);
 int cleanup_mainserver_config(struct rahunas_main_config *config);
 enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size, 
                                  void *user_data);

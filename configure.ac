@@ -68,6 +68,7 @@ AC_CONFIG_FILES([
   example/rahunas.init
   example/rahunas.conf
   example/rahunas-vserver.conf
+  example/rahunas-serviceclass.conf
 ])
 
 AC_OUTPUT

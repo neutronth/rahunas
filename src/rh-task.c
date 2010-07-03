@@ -11,7 +11,6 @@
 #include "rh-task-ipset.h"
 #include "rh-task-dbset.h"
 #include "rh-task-bandwidth.h"
-#include "rh-task-vipmap.h"
 
 void task_register(struct main_server *ms, struct task *task)
 {
@@ -58,8 +57,6 @@ void rh_task_register(struct main_server *ms)
 
     if (ms->main_config->bandwidth_shape)
       rh_task_bandwidth_reg(ms);
-
-    rh_task_vipmap_reg(ms);
 
     rh_task_dbset_reg(ms);
     task_registered = 1;
