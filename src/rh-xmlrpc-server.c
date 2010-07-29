@@ -34,7 +34,7 @@ int do_startsession(GNetXmlRpcServer *server,
   gchar *session_timeout = NULL;
   gchar *bandwidth_max_down = NULL;
   gchar *bandwidth_max_up = NULL;
-  gchar *service_class = NULL;
+  gchar *serviceclass_name = NULL;
   gchar *vserver_id = NULL;
   uint32_t id;
   GList *member_node = NULL;
@@ -52,7 +52,7 @@ int do_startsession(GNetXmlRpcServer *server,
   session_timeout    = rh_string_get_sep(param, "|", 5);
   bandwidth_max_down = rh_string_get_sep(param, "|", 6);
   bandwidth_max_up   = rh_string_get_sep(param, "|", 7);
-  service_class      = rh_string_get_sep(param, "|", 8);
+  serviceclass_name  = rh_string_get_sep(param, "|", 8);
   vserver_id         = rh_string_get_sep(param, "|", 9);
 
   if (ip == NULL || username == NULL || session_id == NULL 
@@ -110,9 +110,11 @@ greeting:
   if (member_node != NULL) {
     member = (struct rahunas_member *)member_node->data;
     *reply_string = g_strdup_printf("Greeting! Got: IP %s, User %s, ID %s, "
-                                    "VIP-IP %s",
+                                    "Service Class %s, Mapping %s",
                                     ip, member->username, 
-                                    member->session_id, "");
+                                    member->session_id,
+                                    member->serviceclass_name,
+                                    member->mapping_ip);
     goto cleanup;
   }
 
@@ -129,7 +131,7 @@ cleanup:
   g_free(session_timeout);
   g_free(bandwidth_max_down);
   g_free(bandwidth_max_up);
-  g_free(service_class);
+  g_free(serviceclass_name);
   g_free(vserver_id);
   return 0;
 }

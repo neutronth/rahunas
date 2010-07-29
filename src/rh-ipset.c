@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <ipset/ip_set_rahunas_ipiphash.h>
 #include "rh-ipset.h"
 #include "rh-utils.h"
 
@@ -289,6 +290,76 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
       break;
     default:
       break;   
+    }
+
+  rh_free(&data);
+
+  return res;
+}
+
+int set_ipiphash_adtip(struct set *rahunas_set, const char *ip,
+                       const char *ip1, unsigned op)
+{
+  ip_set_ip_t _ip;
+  ip_set_ip_t _ip1;
+  parse_ip(ip, &_ip);
+  parse_ip(ip1, &_ip1);
+
+  return set_adtip_nb(rahunas_set, &_ip, &_ip1, op);
+}
+
+int set_ipiphash_adtip_nb(struct set *rahunas_set, ip_set_ip_t *ip,
+                          ip_set_ip_t *ip1, unsigned op)
+{
+  struct ip_set_req_adt *req_adt = NULL;
+  struct ip_set_req_rahunas_ipiphash req;
+
+  size_t size;
+  void *data;
+  int res = 0;
+
+  check_protocolversion ();
+
+  if (rahunas_set == NULL)
+    return -1;
+
+  size = ALIGNED(sizeof(struct ip_set_req_adt)) + sizeof(struct ip_set_req_rahunas_ipiphash);
+  data = rh_malloc(size);
+
+  memcpy(&req.ip, ip, sizeof(ip_set_ip_t));
+  memcpy(&req.ip1, ip1, sizeof(ip_set_ip_t));
+
+  req_adt = (struct ip_set_req_adt *) data;
+  req_adt->op = op;
+  req_adt->index = rahunas_set->index;
+  memcpy(data + ALIGNED(sizeof(struct ip_set_req_adt)), &req,
+           sizeof(struct ip_set_req_rahunas_ipiphash));
+
+  if (kernel_sendto_handleerrno(op, data, size) == -1)
+    switch (op) {
+    case IP_SET_OP_ADD_IP:
+      DP("%s:%s is already in set", ip_tostring(ip), ip_tostring(ip1));
+      res = RH_IS_IN_SET;
+      break;
+    case IP_SET_OP_DEL_IP:
+      DP("%s:%s is not in set", ip_tostring(ip), ip_tostring(ip1));
+      res = RH_IS_NOT_IN_SET;
+      break;
+    case IP_SET_OP_TEST_IP:
+      DP("%s:%s is in set", ip_tostring(ip), ip_tostring(ip1));
+      res = RH_IS_IN_SET;
+      break;
+    default:
+      break;
+    }
+  else
+    switch (op) {
+    case IP_SET_OP_TEST_IP:
+      DP("%s:%s is not in set", ip_tostring(ip), ip_tostring(ip1));
+      res = RH_IS_NOT_IN_SET;
+      break;
+    default:
+      break;
     }
 
   rh_free(&data);

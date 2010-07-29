@@ -45,7 +45,6 @@ require_once 'networkchk.php';
 $ip = $_SERVER['REMOTE_ADDR'];
 $config = get_config_by_network($ip, $config_list);
 $vserver_id = $config["VSERVER_ID"];
-$vip_user = 0;
 
 $forward = false;
 $LogoutURL  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
@@ -102,12 +101,6 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
     $racct->calling_station_id = returnMacAddress();
     $racct->gen_session_id();
 
-    if ($config["VIPMAP"] == "yes" &&
-          !empty ($rauth->attributes[$config["VIPMAP_ATTRIBUTE"]])) {
-      $vip_user = 1;
-    }
-
-
     try {
       $prepareData = array (
         "IP" => $ip,
@@ -117,14 +110,14 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
         "Session-Timeout" => $rauth->attributes['session_timeout'],
         "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
         "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up'],
-        "Vip_User" => $vip_user,
+        "Class-Of-Service" => $rauth->attributes['WISPr-Billing-Class-Of-Service'],
       );
       $result = $xmlrpc->do_startsession($vserver_id, $prepareData);
       if (strstr($result,"Client already login")) {
         $message = get_message('ERR_ALREADY_LOGIN');
         $forward = false;
       } else if (strstr($result, "Greeting")) {
-        $split = explode ("VIP-IP ", $result);
+        $split = explode ("Mapping ", $result);
         $called_station_id = $split[1];
         if (!empty ($called_station_id))
           $racct->called_station_id = $called_station_id;

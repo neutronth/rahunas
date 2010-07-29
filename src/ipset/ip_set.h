@@ -1,6 +1,8 @@
 #ifndef _IP_SET_H
 #define _IP_SET_H
 
+#include <inttypes.h>
+
 /* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
  *                         Patrick Schaaf <bof@bof.de>
  *                         Martin Josefsson <gandalf@wlug.westbo.se>

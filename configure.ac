@@ -61,7 +61,6 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/rahunas-firewall
   tools/rahunas-bandwidth
-  tools/rahunas-vipmap
   tools/rahunas-weblogin-config-update
   example/Makefile
   example/rahunas.default

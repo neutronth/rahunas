@@ -44,8 +44,7 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
 
   if (strncmp(main_key, "main", 4) == 0) {
     cfg_type = MAIN;
-
-  } if (strncmp(main_key, "service_class", strlen ("service_class")) == 0) {
+  } else if (strncmp(main_key, "service_class", strlen ("service_class")) == 0) {
     cfg_type = SERVICECLASS;
   } else {
     cfg_type = VSERVER;
@@ -59,6 +58,10 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_main.conf_dir != NULL)
           free(config->rh_main.conf_dir);
         config->rh_main.conf_dir = strdup(value);
+      } else if (strncmp(sub_key, "serviceclass_conf_dir", 21) == 0) {
+        if (config->rh_main.serviceclass_conf_dir != NULL)
+          free(config->rh_main.serviceclass_conf_dir);
+        config->rh_main.serviceclass_conf_dir = strdup(value);
       } else if (strncmp(sub_key, "log_file", 8) == 0) {
         if (config->rh_main.log_file != NULL)
           free(config->rh_main.log_file);
@@ -67,11 +70,10 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_main.dhcp != NULL)
           free(config->rh_main.dhcp);
         config->rh_main.dhcp = strdup(value);
+      } else if (strncmp(sub_key, "serviceclass", 12) == 0) {
+        config->rh_main.serviceclass = strncmp(value, "yes", 3) == 0 ? 1 : 0;
       } else if (strncmp(sub_key, "bandwidth_shape", 15) == 0) {
-        if (strncmp(value, "yes", 3) == 0)
-          config->rh_main.bandwidth_shape = 1; 
-        else
-          config->rh_main.bandwidth_shape = 0;
+        config->rh_main.bandwidth_shape = strncmp(value, "yes", 3) == 0 ? 1 : 0;
       } else if (strncmp(sub_key, "bittorrent_download_max", 23) == 0) {
         config->rh_main.bittorrent_download_max = atoi(value); 
       } else if (strncmp(sub_key, "bittorrent_upload_max", 21) == 0) {
@@ -82,10 +84,13 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
       break;
 
     case SERVICECLASS:
-      if (strncmp (sub_key, "name", strlen("name")) == 0) {
-        if (config->rh_serviceclass.name != NULL)
-          free(config->rh_serviceclass.name);
-        config->rh_serviceclass.name = strdup(value);
+      if (strncmp (sub_key, "serviceclass_id",
+            strlen("serviceclass_id")) == 0) {
+        config->rh_serviceclass.serviceclass_id = atoi (value);
+      } else if (strncmp (sub_key, "serviceclass_name", strlen("serviceclass_name")) == 0) {
+        if (config->rh_serviceclass.serviceclass_name != NULL)
+          free(config->rh_serviceclass.serviceclass_name);
+        config->rh_serviceclass.serviceclass_name = strdup(value);
       } else if (strncmp (sub_key, "description", strlen("description")) == 0) {
         if (config->rh_serviceclass.description != NULL)
           free(config->rh_serviceclass.description);
@@ -113,10 +118,8 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
               }
             else
               {
-                // Start address should not be the network address
-                config->rh_serviceclass.start_addr.s_addr += 1;
                 DP ("service_class: %s - start ip = %s, size: %d",
-                    config->rh_serviceclass.name,
+                    config->rh_serviceclass.serviceclass_name,
                     inet_ntoa (config->rh_serviceclass.start_addr),
                     config->rh_serviceclass.network_size);
               }
@@ -129,24 +132,24 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         }
 
         if (!valid) {
-          if (config->rh_serviceclass.name != NULL) {
+          if (config->rh_serviceclass.serviceclass_name != NULL) {
             syslog(LOG_ERR, "\"%s\" service_class config config error: "
                             "invalid network %s",
-                            config->rh_serviceclass.name, value);
+                            config->rh_serviceclass.serviceclass_name, value);
           } else {
             syslog(LOG_ERR, "unknown service_class config error: "
                             "invalid network %s", value);
           }
         }
-      } else if (strncmp (sub_key, "fake_arpd", strlen("fake_arpd")) == 0) {
-        if (config->rh_serviceclass.fake_arpd != NULL)
-          free(config->rh_serviceclass.fake_arpd);
-        config->rh_serviceclass.fake_arpd = strdup(value);
       } else if (strncmp (sub_key, "fake_arpd_iface",
                  strlen("fake_arpd_iface")) == 0) {
         if (config->rh_serviceclass.fake_arpd_iface != NULL)
           free(config->rh_serviceclass.fake_arpd_iface);
         config->rh_serviceclass.fake_arpd_iface = strdup(value);
+      } else if (strncmp (sub_key, "fake_arpd", strlen("fake_arpd")) == 0) {
+        if (config->rh_serviceclass.fake_arpd != NULL)
+          free(config->rh_serviceclass.fake_arpd);
+        config->rh_serviceclass.fake_arpd = strdup(value);
       }
       break;
 
@@ -373,6 +376,35 @@ int get_vservers_config(const char *conf_dir, struct main_server *server)
   return 0;
 }
 
+int get_serviceclass_config(const char *conf_dir, struct main_server *server)
+{
+  DIR *dp;
+  struct dirent *dirp;
+  void *data = NULL;
+  size_t len;
+  char conf_file[200];
+
+  if ((dp = opendir(conf_dir)) == NULL)
+    return errno;
+
+  while ((dirp = readdir(dp)) != NULL) {
+    if (strstr(dirp->d_name, ".conf") == NULL)
+      continue;
+
+    memset(conf_file, 0, sizeof(conf_file));
+
+    strncat(conf_file, conf_dir, sizeof(conf_file));
+    strncat(conf_file, "/", 1);
+    strncat(conf_file, dirp->d_name, sizeof(conf_file));
+
+    syslog(LOG_INFO, "Loading service class config file: %s", conf_file);
+
+    register_serviceclass(server, conf_file);
+  }
+
+  closedir(dp);
+  return 0;
+}
 
 int cleanup_vserver_config(struct rahunas_vserver_config *config)
 {
@@ -415,7 +447,7 @@ int cleanup_vserver_config(struct rahunas_vserver_config *config)
 
 int cleanup_serviceclass_config(struct rahunas_serviceclass_config *config)
 {
-  rh_free(&(config->name));
+  rh_free(&(config->serviceclass_name));
   rh_free(&(config->description));
   rh_free(&(config->network));
   rh_free(&(config->fake_arpd));
@@ -427,6 +459,7 @@ int cleanup_serviceclass_config(struct rahunas_serviceclass_config *config)
 int cleanup_mainserver_config(struct rahunas_main_config *config)
 {
   rh_free(&(config->conf_dir));  
+  rh_free(&(config->serviceclass_conf_dir));
   rh_free(&(config->log_file));
   rh_free(&(config->dhcp));
 

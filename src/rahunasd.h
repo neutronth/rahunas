@@ -58,6 +58,9 @@ struct rahunas_member {
   long bandwidth_max_down;
   long bandwidth_max_up;
   unsigned short bandwidth_slot_id;
+  char *serviceclass_name;
+  uint32_t serviceclass_slot_id;
+  char *mapping_ip;
   char *username;
   char *session_id;
   unsigned char mac_address[ETH_ALEN];

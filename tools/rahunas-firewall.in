@@ -39,7 +39,7 @@ get_config_value () {
   key=$2
   file=$3
 
-  cat $file | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+  cat $file | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key[ ]*=" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
 }
 
 ##
@@ -48,6 +48,7 @@ get_config_value () {
 
 # Main
 MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
+MAIN_SERVICECLASS=`get_config_value main serviceclass $RAHUNAS_CONFIG`
 MAIN_BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG`
@@ -78,8 +79,6 @@ if [ "$ENV_OVERRIDE" != "yes" ]; then
   VSERVER_PORTS_ALLOW=
   VSERVER_PORTS_INTERCEPT=
   SETNAME=
-  VIPMAP=
-  VIPMAP_FAKE_ARP=
 fi
 
 DEV_EXTERNAL_LIST=
@@ -100,8 +99,6 @@ CHAIN_MANGLE_POSTROUTING=
 CHAIN_NAT_PREROUTING=
 CHAIN_NAT_POSTROUTING=
 CHAIN_NAT_AUTHEN=
-CHAIN_NAT_VIP_PREROUTING=
-CHAIN_NAT_VIP_POSTROUTING=
 CHAIN_P2P_DETECT=
 CHAIN_P2P_RECHECK=
 CHAIN_P2P_CHECK=
@@ -150,9 +147,6 @@ get_config () {
     BITTORRENT_ALLOW=`get_config_value $SETNAME bittorrent_allow $file`
     VSERVER_PORTS_ALLOW=`get_config_value $SETNAME vserver_ports_allow $file`
     VSERVER_PORTS_INTERCEPT=`get_config_value $SETNAME vserver_ports_intercept $file`
-    VIPMAP=`get_config_value $SETNAME vipmap $file`
-    VIPMAP_NETWORK=`get_config_value $SETNAME vipmap_network $file`
-    VIPMAP_FAKE_ARP=`get_config_value $SETNAME vipmap_fake_arp $file`
   fi
  
   BANDWIDTH_SHAPE=$MAIN_BANDWIDTH_SHAPE
@@ -179,8 +173,6 @@ get_config () {
   CHAIN_NAT_PREROUTING="${SETNAME}_nat_pre"
   CHAIN_NAT_POSTROUTING="${SETNAME}_nat_post"
   CHAIN_NAT_AUTHEN="${SETNAME}_nat_authen"
-  CHAIN_NAT_VIP_PREROUTING="${SETNAME}_nat_vip_pre"
-  CHAIN_NAT_VIP_POSTROUTING="${SETNAME}_nat_vip_post"
   
   # P2P checking chains declaration
   CHAIN_P2P_DETECT="${SETNAME}_p2p_detect"
@@ -229,10 +221,6 @@ add_set () {
   
   $IPSET -N $SETNAME rahunas $ipset_opt $ipset_ignoremac 
 
-  if [ "$VIPMAP" = "yes" ]; then
-    $IPSET -N ${SETNAME}-vip rahunas $ipset_opt $ipset_ignoremac
-  fi
-
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPSET -N $P2P_SET iphash
   fi
@@ -252,11 +240,6 @@ add_set () {
 cleanup_set () {
   $IPSET -F $SETNAME
   $IPSET -X $SETNAME
-
-  if [ "$VIPMAP" = "yes" ]; then
-    $IPSET -F ${SETNAME}-vip
-    $IPSET -X ${SETNAME}-vip
-  fi
 
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPSET -F $P2P_SET
@@ -373,7 +356,10 @@ navigation_rules () {
       $DEV_OUT_PARAM $dev -s $CLIENTS \
       -j $CHAIN_NAT_POSTROUTING
   done
+
+
 }
+
 
 ##
 # Cleanup old rules
@@ -412,14 +398,6 @@ cleanup () {
   $IPTABLES -t nat -F $CHAIN_NAT_AUTHEN
   $IPTABLES -t nat -X $CHAIN_NAT_AUTHEN
 
-  if [ "$VIPMAP" = "yes" ]; then
-    $IPTABLES -t nat -F $CHAIN_NAT_VIP_PREROUTING
-    $IPTABLES -t nat -X $CHAIN_NAT_VIP_PREROUTING
-
-    $IPTABLES -t nat -F $CHAIN_NAT_VIP_POSTROUTING
-    $IPTABLES -t nat -X $CHAIN_NAT_VIP_POSTROUTING
-  fi
-
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -F $CHAIN_P2P_CHECK
     $IPTABLES -t mangle -X $CHAIN_P2P_CHECK
@@ -446,11 +424,6 @@ new_chains () {
   $IPTABLES -t nat -N $CHAIN_NAT_PREROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
   $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
-
-  if [ "$VIPMAP" = "yes" ]; then
-    $IPTABLES -t nat -N $CHAIN_NAT_VIP_PREROUTING
-    $IPTABLES -t nat -N $CHAIN_NAT_VIP_POSTROUTING
-  fi
 
   if [ "$BITTORRENT" = "throttle" ]; then
     $IPTABLES -t mangle -N $CHAIN_P2P_CHECK
@@ -674,22 +647,20 @@ rules () {
       fi
     fi
 
-    if [ "$VIPMAP" = "yes" ]; then
+    if [ "$MAIN_SERVICECLASS" = "yes" ]; then
       $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
-        -m set --set ${SETNAME}-vip src -j $CHAIN_NAT_VIP_PREROUTING
-
-      $IPTABLES -t nat -A $CHAIN_NAT_VIP_PREROUTING -j ACCEPT
+        -m set --set rahunas_serviceclass src -j ACCEPT
     fi
 
     if [ "$PROXY" = "transparent" ]; then
       if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]
       then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
-          -d ! $VSERVER_IP \
+          ! -d $VSERVER_IP \
           -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
       else
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
-          -d ! $VSERVER_IP \
+          ! -d $VSERVER_IP \
           -m connmark --mark 2/2 \
           -j DNAT --to-destination $PROXY_HOST:$PROXY_PORT
       fi
@@ -701,7 +672,7 @@ rules () {
   ##
   
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
-    --dports $VSERVER_PORTS_INTERCEPT -d ! $VSERVER_IP \
+    --dports $VSERVER_PORTS_INTERCEPT ! -d $VSERVER_IP \
     -m connmark ! --mark 2/2 \
     -j $CHAIN_NAT_AUTHEN
   
@@ -711,11 +682,6 @@ rules () {
   ##
   # MASQUERADE
   ##
-  if [ "$VIPMAP" = "yes" ]; then
-    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING \
-      -m set --set ${SETNAME}-vip src -j $CHAIN_NAT_VIP_POSTROUTING
-  fi
-
   if [ "$MASQUERADE" = "yes" ]; then
     $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j MASQUERADE
   fi
@@ -743,16 +709,41 @@ rules () {
   $IPTABLES -t mangle -A $CHAIN_MANGLE_POSTROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -j RETURN
   $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN
+}
 
-  if [ "$VIPMAP" = "yes" ]; then
-    $IPTABLES -t nat -A $CHAIN_NAT_VIP_PREROUTING -j RETURN
-    $IPTABLES -t nat -A $CHAIN_NAT_VIP_POSTROUTING -j RETURN
+##
+# Service class set
+##
+serviceclass_set () {
+  opt=$1
+  if [ "$opt" = "start" ]; then
+    $IPSET -N rahunas_serviceclass rahunas_ipiphash
+  elif [ "$opt" = "cleanup" ]; then
+    $IPSET -F rahunas_serviceclass
+    $IPSET -X rahunas_serviceclass
+  fi
+}
 
-    if [ "$VIPMAP_FAKE_ARP" = "yes" ]; then
-      for dev in $DEV_EXTERNAL_LIST; do
-        $FARPD -i $dev $VIPMAP_NETWORK
-      done
-    fi
+##
+# Service class rules
+##
+serviceclass_rules () {
+  opt=$1
+  if [ "$opt" = "start" ]; then
+    action="-I"
+  elif [ "$opt" = "stop" ]; then
+    action="-D"
+  fi
+
+  if [ "$MAIN_SERVICECLASS" = "yes" -o "$opt" = "stop" ]; then
+    # RAW - Service class
+    $IPTABLES -t raw $action PREROUTING \
+      -m set --set rahunas_serviceclass src \
+      -j RAHURAWDNAT --bind-set rahunas_serviceclass
+
+    $IPTABLES -t rawpost $action POSTROUTING \
+      -m set --set rahunas_serviceclass dst \
+      -j RAHURAWSNAT --bind-set rahunas_serviceclass
   fi
 }
 
@@ -789,11 +780,19 @@ start () {
 
   policy 
 
+  if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    serviceclass_set start
+    serviceclass_rules start
+  fi
+
   touch $RUN
 }
 
 stop () {
   test -f $RUN || return 0
+
+  serviceclass_rules stop
+  serviceclass_set cleanup
    
   cleanup_policy
 

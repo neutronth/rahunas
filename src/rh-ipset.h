@@ -82,7 +82,12 @@ int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac,
               unsigned op);
 
 int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip, 
-                     unsigned char adtmac[ETH_ALEN], unsigned op);
+                 unsigned char adtmac[ETH_ALEN], unsigned op);
+
+int set_ipiphash_adtip(struct set *rahunas_set, const char *ip,
+                       const char *ip1, unsigned op);
+int set_ipiphash_adtip_nb(struct set *rahunas_set, ip_set_ip_t *ip,
+                          ip_set_ip_t *ip1, unsigned op);
 
 void set_flush(const char *name);
 

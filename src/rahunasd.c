@@ -28,6 +28,7 @@ pid_t pid, sid;
 
 struct main_server rh_main_server_instance = {
   .vserver_list = NULL,
+  .serviceclass_list = NULL,
   .task_list = NULL,
 };
 struct main_server *rh_main_server = &rh_main_server_instance;
@@ -176,6 +177,18 @@ void rh_reload()
     exit(EXIT_FAILURE);
   }
 
+  /* Get serviceclass config, again */
+  if (rh_main_server->main_config->serviceclass_conf_dir != NULL) {
+    get_serviceclass_config(rh_main_server->main_config->serviceclass_conf_dir,
+                            rh_main_server);
+  } else {
+    syslog(LOG_ERR, "The main configuration file is incompleted, lack of serviceclass_conf_dir\n");
+    exit(EXIT_FAILURE);
+  }
+
+  walk_through_serviceclass(&serviceclass_reload, rh_main_server);
+  serviceclass_unused_cleanup(rh_main_server);
+
   walk_through_vserver(&vserver_reload, rh_main_server);
   vserver_unused_cleanup(rh_main_server);
   
@@ -283,6 +296,12 @@ void rh_free_member (struct rahunas_member *member)
 
   if (member->session_id && member->session_id != termstring)
     free(member->session_id);
+
+  if (member->serviceclass_name && member->serviceclass_name != termstring)
+    free(member->serviceclass_name);
+
+  if (member->mapping_ip && member->mapping_ip != termstring)
+    free(member->mapping_ip);
 }
 
 
@@ -298,10 +317,12 @@ int main(int argc, char **argv)
 
   union rahunas_config rh_main_config = {
     .rh_main.conf_dir = NULL,
+    .rh_main.serviceclass_conf_dir = NULL,
     .rh_main.log_file = NULL,
     .rh_main.dhcp = NULL,
     .rh_main.polling_interval = POLLING,
     .rh_main.bandwidth_shape = BANDWIDTH_SHAPE,
+    .rh_main.serviceclass = 0,
   };
 
   GNetXmlRpcServer *server = NULL;
@@ -342,12 +363,27 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
+  if (rh_main_server->main_config->serviceclass) {
+    /* Get serviceclass config */
+    if (rh_main_server->main_config->serviceclass_conf_dir != NULL) {
+      get_serviceclass_config(rh_main_server->main_config->serviceclass_conf_dir,
+                              rh_main_server);
+    } else {
+      syslog(LOG_ERR, "The main configuration file is incompleted, lack of serviceclass_conf_dir\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+
   snprintf(version, sizeof (version), "Starting %s - Version %s", PROGRAM, 
            RAHUNAS_VERSION);
   logmsg(RH_LOG_NORMAL, version);
 
   rh_task_register(rh_main_server);
   rh_task_startservice(rh_main_server);
+
+  if (rh_main_server->main_config->serviceclass)
+    walk_through_serviceclass(&serviceclass_init, rh_main_server);
 
   walk_through_vserver(&rh_task_init, rh_main_server);
 

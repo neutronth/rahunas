@@ -55,6 +55,9 @@ void rh_task_register(struct main_server *ms)
     rh_task_memset_reg(ms);
     rh_task_ipset_reg(ms);
 
+    if (ms->main_config->serviceclass)
+      rh_task_serviceclass_reg(ms);
+
     if (ms->main_config->bandwidth_shape)
       rh_task_bandwidth_reg(ms);
 

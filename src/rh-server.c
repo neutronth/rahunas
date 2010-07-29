@@ -175,6 +175,7 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
 
   new_vserver->vserver_config = vserver_config;
 
+  new_vserver->main_server = ms;
   new_vserver->vserver_config->init_flag = VS_INIT;
   ms->vserver_list = g_list_append(ms->vserver_list, new_vserver);
   return 0; 

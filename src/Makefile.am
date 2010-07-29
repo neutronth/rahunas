@@ -8,7 +8,6 @@ AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
   $(LIBGDA_CFLAGS) \
   -I$(top_srcdir)/src/ \
-  -I$(top_srcdir)/src/include/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
   -DIPSET_VERSION=\"$(IPSET_VERSION)\" \
@@ -44,17 +43,16 @@ rahunasd_SOURCES = \
   rh-task-dbset.h \
   rh-task-bandwidth.c \
   rh-task-bandwidth.h \
+  rh-task-serviceclass.c \
+  rh-task-serviceclass.h \
   rh-radius.h \
   rh-config.c \
-  rh-config.h
+  rh-config.h \
+  rh-serviceclass.h \
+  rh-serviceclass.c
 
 rahunasd_LDADD =  \
   $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
   $(top_builddir)/lcfg/liblcfg.a \
   $(LIBGNET_LIBS) \
   $(LIBGDA_LIBS)
-
-noinst_HEADERS = \
-  include/linux/netfilter_ipv4/ip_set.h \
-  include/linux/netfilter_ipv4/ip_set_rahunas.h
-

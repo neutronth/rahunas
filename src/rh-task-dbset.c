@@ -25,6 +25,8 @@ struct dbset_row {
   unsigned short bandwidth_slot_id; 
   long bandwidth_max_down;
   long bandwidth_max_up;
+  gchar *service_class;
+  uint32_t service_class_slot_id;
 };
 
 gboolean get_errors (GdaConnection * connection)
@@ -100,6 +102,12 @@ gboolean *parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
         row->bandwidth_max_down = atol(str);
       } else if (strncmp("bandwidth_max_up", title, 18) == 0) {
         row->bandwidth_max_up = atol(str);
+      } else if (strncmp("service_class_slot_id", title,
+                         strlen("service_class_slot_id")) == 0) {
+          row->service_class_slot_id = atol(str);
+      } else if (strncmp("service_class", title,
+                         strlen("service_class")) == 0) {
+          row->service_class = g_strdup(str);
       }
     }
   }
@@ -186,6 +194,7 @@ void free_data_list(GList *data_list)
     g_free(row->username);
     g_free(row->ip);
     g_free(row->mac);
+    g_free(row->service_class);
   }
   
   g_list_free (data_list);  
@@ -233,6 +242,9 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
     req.bandwidth_slot_id = row->bandwidth_slot_id;
     req.bandwidth_max_down = row->bandwidth_max_down; 
     req.bandwidth_max_up = row->bandwidth_max_up;
+
+    req.serviceclass_name = row->service_class;
+    req.serviceclass_slot_id = row->service_class_slot_id;
 
     rh_task_startsess(vs, &req);
   }
@@ -353,8 +365,8 @@ static int startsess (struct vserver *vs, struct task_req *req)
   snprintf(startsess_cmd, sizeof (startsess_cmd), "INSERT INTO dbset"
          "(session_id,vserver_id,username,ip,mac,session_start,"
          "session_timeout,bandwidth_slot_id,bandwidth_max_down,"
-         "bandwidth_max_up) "
-         "VALUES('%s','%d','%s','%s','%s',%s,%s,%u,%lu,%lu)",
+         "bandwidth_max_up,service_class,service_class_slot_id) "
+         "VALUES('%s','%d','%s','%s','%s',%s,%s,%u,%lu,%lu,'%s',%lu)",
          req->session_id, 
          vs->vserver_config->vserver_id, 
          req->username, 
@@ -364,7 +376,9 @@ static int startsess (struct vserver *vs, struct task_req *req)
          time_str2,
          member->bandwidth_slot_id, 
          req->bandwidth_max_down,
-         req->bandwidth_max_up);
+         req->bandwidth_max_up,
+         member->serviceclass_name,
+         member->serviceclass_slot_id);
 
   DP("SQL: %s", startsess_cmd);
 

@@ -9,19 +9,21 @@
 #include <glib.h>
 #include "rh-config.h"
 
+struct main_server {
+  struct rahunas_main_config *main_config;
+  GList *vserver_list;
+  GList *serviceclass_list;
+  GList *task_list;
+  int log_fd;
+  int polling_blocked;
+};
+
 struct vserver {
   struct rahunas_vserver_config *vserver_config;
   struct rahunas_vserver_config *dummy_config;
   struct rahunas_map *v_map;
   struct set *v_set;
-};
-
-struct main_server {
-  struct rahunas_main_config *main_config;
-  GList *vserver_list;
-  GList *task_list;
-  int log_fd;
-  int polling_blocked;
+  struct main_server *main_server;
 };
 
 struct vserver *vserver_exists(GList *vserver_list, int vserver_id, 

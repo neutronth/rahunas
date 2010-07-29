@@ -8,6 +8,7 @@
 
 #include "../lcfg/lcfg_static.h"
 #include "rh-server.h"
+#include "rh-serviceclass.h"
 
 #define DEFAULT_LOG RAHUNAS_LOG_DIR "rahunas.log"
 #define VSERVER_ID 99
@@ -34,13 +35,14 @@ struct interfaces {
 
 struct rahunas_main_config {
   char *conf_dir;
+  char *serviceclass_conf_dir;
   char *log_file;
   char *dhcp;
+  int  serviceclass;
   int  bandwidth_shape;
   int  bittorrent_download_max;
   int  bittorrent_upload_max;
   int  polling_interval;
-  int  service_class_enabled;
 };
 
 struct rahunas_vserver_config {
@@ -84,7 +86,9 @@ struct rahunas_vserver_config {
 };
 
 struct rahunas_serviceclass_config {
-  char *name;
+  char *serviceclass_name;
+  int  serviceclass_id;
+  int  init_flag;
   char *description;
   char *network;
   struct in_addr start_addr;
@@ -113,11 +117,20 @@ enum vserver_config_init_flag {
   VS_DONE
 };
 
+enum serviceclass_config_init_flag {
+  SC_NONE,
+  SC_INIT,
+  SC_RELOAD,
+  SC_RESET,
+  SC_DONE
+};
+
 extern GList *interfaces_list;
 
 int get_config(const char *cfg_file, union rahunas_config *config);
 int get_value(const char *cfg_file, const char *key, void **data, size_t *len);
 int get_vservers_config(const char *conf_dir, struct main_server *server);
+int get_serviceclass_config(const char *conf_dir, struct main_server *server);
 int cleanup_vserver_config(struct rahunas_vserver_config *config);
 int cleanup_serviceclass_config(struct rahunas_serviceclass_config *config);
 int cleanup_mainserver_config(struct rahunas_main_config *config);

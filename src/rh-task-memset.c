@@ -148,6 +148,12 @@ static int startsess (struct vserver *vs, struct task_req *req)
   if (member->session_id && member->username != termstring)
     free(member->session_id);
 
+  if (member->serviceclass_name && member->serviceclass_name != termstring)
+    free(member->serviceclass_name);
+
+  if (member->mapping_ip && member->mapping_ip != termstring)
+    free(member->mapping_ip);
+
   member->username   = strdup(req->username);
   if (!member->username)
     member->username = termstring;
@@ -155,6 +161,10 @@ static int startsess (struct vserver *vs, struct task_req *req)
   member->session_id = strdup(req->session_id);
   if (!member->session_id)
     member->session_id = termstring;
+
+  member->serviceclass_name    = NULL;
+  member->serviceclass_slot_id = 0;
+  member->mapping_ip = termstring;
 
   if (req->session_start == 0) {
     time(&(req->session_start));
