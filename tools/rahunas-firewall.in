@@ -18,6 +18,7 @@ RUN=@localstatedir@/run/rahunas-firewall
 RUNDIR=@localstatedir@/run/rahunas-set
 VSERVER_LIST=@localstatedir@/run/rahunas-vserver
 MAIN_EXT_IFACE_LIST=@localstatedir@/run/rahunas_ext_iface_list
+SERVICECLASS_STATE=@localstatedir@/run/rahunas-serviceclass
 
 RUN_DAEMON=no
 
@@ -263,7 +264,7 @@ navigation_rules () {
     action="-D"
   fi
 
-  # INPUT from external
+  # INPUT from external (External Firewall) and Service Class
   if [ "$opt" = "start" ]; then
     for dev in $DEV_EXTERNAL_LIST; do
       # Filter duplicated external interfaces
@@ -271,11 +272,34 @@ navigation_rules () {
         echo "$dev" >> $MAIN_EXT_IFACE_LIST
 
         $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+
+        if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+          # RAW - Service class
+          $IPTABLES -t raw $action PREROUTING -i $dev \
+            -m set --set rahunas_serviceclass dst \
+            -j RAHURAWDNAT --bind-set rahunas_serviceclass
+
+          $IPTABLES -t rawpost $action POSTROUTING -o $dev\
+            -m set --set rahunas_serviceclass src \
+            -j RAHURAWSNAT --bind-set rahunas_serviceclass
+        fi
       fi
     done
   else #stop
     for dev in `cat $MAIN_EXT_IFACE_LIST`; do
       $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+
+      if [ -f $SERVICECLASS_STATE ]; then
+        # RAW - Service class
+        $IPTABLES -t raw $action PREROUTING -i $dev \
+          -m set --set rahunas_serviceclass dst \
+          -j RAHURAWDNAT --bind-set rahunas_serviceclass
+
+        $IPTABLES -t rawpost $action POSTROUTING -o $dev\
+          -m set --set rahunas_serviceclass src \
+          -j RAHURAWSNAT --bind-set rahunas_serviceclass
+      fi
+
       sed -i "/$dev/d" $MAIN_EXT_IFACE_LIST
     done
   fi
@@ -632,6 +656,20 @@ rules () {
   $IPTABLES -A $CHAIN_FORWARD_AUTH -j ACCEPT
 
   ##
+  # Bypass the service class clients (do not do conntrack NAT)
+  ##
+  if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
+      -m set --set rahunas_serviceclass src -j ACCEPT
+    $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
+      -m set --set rahunas_serviceclass dst -j ACCEPT
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING \
+      -m set --set rahunas_serviceclass src -j ACCEPT
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING \
+      -m set --set rahunas_serviceclass dst -j ACCEPT
+  fi
+
+  ##
   # SQUID Cache-Proxy
   ##
   if [ "$PROXY" = "yes" ] || [ "$PROXY" = "transparent" ]; then
@@ -645,11 +683,6 @@ rules () {
         $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp -d $PROXY_HOST \
           --dport $PROXY_PORT -j ACCEPT
       fi
-    fi
-
-    if [ "$MAIN_SERVICECLASS" = "yes" ]; then
-      $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
-        -m set --set rahunas_serviceclass src -j ACCEPT
     fi
 
     if [ "$PROXY" = "transparent" ]; then
@@ -724,29 +757,6 @@ serviceclass_set () {
   fi
 }
 
-##
-# Service class rules
-##
-serviceclass_rules () {
-  opt=$1
-  if [ "$opt" = "start" ]; then
-    action="-I"
-  elif [ "$opt" = "stop" ]; then
-    action="-D"
-  fi
-
-  if [ "$MAIN_SERVICECLASS" = "yes" -o "$opt" = "stop" ]; then
-    # RAW - Service class
-    $IPTABLES -t raw $action PREROUTING \
-      -m set --set rahunas_serviceclass src \
-      -j RAHURAWDNAT --bind-set rahunas_serviceclass
-
-    $IPTABLES -t rawpost $action POSTROUTING \
-      -m set --set rahunas_serviceclass dst \
-      -j RAHURAWSNAT --bind-set rahunas_serviceclass
-  fi
-}
-
 do_get_config () {
   file=$1
   opt=$2
@@ -781,8 +791,8 @@ start () {
   policy 
 
   if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    touch $SERVICECLASS_STATE
     serviceclass_set start
-    serviceclass_rules start
   fi
 
   touch $RUN
@@ -791,8 +801,10 @@ start () {
 stop () {
   test -f $RUN || return 0
 
-  serviceclass_rules stop
-  serviceclass_set cleanup
+  if [ -f $SERVICECLASS_STATE ]; then
+    serviceclass_set cleanup
+    rm -f $SERVICECLASS_STATE
+  fi
    
   cleanup_policy
 

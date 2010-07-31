@@ -103,6 +103,9 @@ int do_startsession(GNetXmlRpcServer *server,
   else
     req.bandwidth_max_up = 0;
 
+  req.serviceclass_name    = serviceclass_name;
+  req.serviceclass_slot_id = 0;
+
   rh_task_startsess(vs, &req);
   member_node = member_get_node_by_id(vs, id);
 

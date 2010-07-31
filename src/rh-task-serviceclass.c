@@ -182,6 +182,13 @@ failed:
                          idtoip(vs->v_map, req->id),
                          req->serviceclass_name);
 
+  if (member->serviceclass_name != NULL &&
+        member->serviceclass_name != termstring) {
+    free (member->serviceclass_name);
+    member->serviceclass_name    = NULL;
+    member->serviceclass_slot_id = 0;
+  }
+
   return 0;
 }
 
@@ -196,14 +203,14 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
 
-  if (req->serviceclass_name == NULL)
-    return 0;
-
   member_node = member_get_node_by_id(vs, req->id);
   if (member_node == NULL)
     return (-1);
 
   member = (struct rahunas_member *) member_node->data;
+
+  if (member->serviceclass_name == NULL)
+    return 0;
 
   sc = serviceclass_exists(vs->main_server->serviceclass_list, -1,
                            member->serviceclass_name);
