@@ -344,7 +344,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 {
   GdaConnection *connection;
   gint res;
-  char startsess_cmd[256];
+  char startsess_cmd[512];
   char time_str[32];
   char time_str2[32];
   GList *member_node = NULL;
@@ -366,7 +366,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
          "(session_id,vserver_id,username,ip,mac,session_start,"
          "session_timeout,bandwidth_slot_id,bandwidth_max_down,"
          "bandwidth_max_up,service_class,service_class_slot_id) "
-         "VALUES('%s','%d','%s','%s','%s',%s,%s,%u,%lu,%lu,'%s',%lu)",
+         "VALUES('%s','%d','%s','%s','%s',%s,%s,%u,%lu,%lu,'%s',%u)",
          req->session_id, 
          vs->vserver_config->vserver_id, 
          req->username, 

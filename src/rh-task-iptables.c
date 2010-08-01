@@ -28,6 +28,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
   int fd = 0;
   int i = 0;
   char *env[22];
+  int env_size = (sizeof (env) / sizeof (char *));
 
   env[0]  = g_strdup("ENV_OVERRIDE=yes");
   env[1]  = g_strdup_printf("SETNAME=%s", vs->vserver_config->vserver_name);
@@ -57,7 +58,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
                             "yes" : "no");
   env[21] = (char *) 0;
 
-  for (i = 0; i < sizeof (env); i++) {
+  for (i = 0; i < env_size; i++) {
     if (env[i] != NULL) 
       DP("%s", env[i]);
   }
@@ -97,7 +98,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
   close(exec_pipe[1]);
 
  
-  for (i = 0; i < 24; i++) {
+  for (i = 0; i < env_size; i++) {
     g_free(env[i]);
   } 
   
