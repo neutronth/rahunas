@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 m4_define(major, 0)
-m4_define(minor, 1)
-m4_define(micro, 8)
+m4_define(minor, 2)
+m4_define(micro, 0)
 
 AC_PREREQ(2.61)
 AC_INIT([RahuNAS], major.minor.micro,[neo.neutron@gmail.com] )
