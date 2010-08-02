@@ -23,12 +23,13 @@ rahunas_default = {
 
   radius_host = "localhost"
   radius_secret = "testing123"
-  radius_encrypt = "CHAP_MD5"
+  radius_encrypt = "PAP"
   radius_auth_port = "0"
   radius_account_port = "0"
 
   nas_identifier = "RahuNAS-01"
   nas_port = "1"
+  nas_login_proto = "https"
   nas_login_title = "RahuNAS Network"
   nas_default_redirect = "http://www.rahunas.org"
   nas_default_language = "Thai"

@@ -1,14 +1,18 @@
 //////////////////////////////////////////////////////////
 // RahuNAS Configuration                                //
 // Author: Neutron Soutmun <neo.neutron@gmail.com>      //
-// Date: 2008-11-26                                     //
+// Date: 2010-08-02                                     //
 //////////////////////////////////////////////////////////
 
 main = {
   conf_dir = "@sysconfdir@/rahunas/rahunas.d"
+  serviceclass_conf_dir = "@sysconfdir@/rahunas/serviceclass.d"
   log_file = "@localstatedir@/log/rahunas/rahunas.log"
 
   dhcp = "yes"
+
+  serviceclass = "no"
+  serviceclass_attribute = "WISPr-Billing-Class-Of-Service"
 
   bandwidth_shape = "yes"  
   bittorrent_download_max = "512"

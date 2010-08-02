@@ -20,6 +20,7 @@ get_config_value () {
 
 # Main
 MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
+MAIN_SERVICECLASS_ATTRIBUTE=`get_config_value main serviceclass_attribute $RAHUNAS_CONFIG`
 
 # DB
 RAHUNAS_DB=@localstatedir@/lib/rahunas/rahunas.db
@@ -103,6 +104,7 @@ fi
 
 # Clear old config
 echo "<?php" > $destfile
+echo "define('SERVICECLASS_ATTRIBUTE', '$MAIN_SERVICECLASS_ATTRIBUTE');" >> $destfile
 
 for file in `find $MAIN_CONF_DIR -name '*.conf'`;
 do

@@ -49,6 +49,7 @@ get_config_value () {
 
 # Main
 MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
+MAIN_SERVICECLASS_CONF_DIR=`get_config_value main serviceclass_conf_dir $RAHUNAS_CONFIG`
 MAIN_SERVICECLASS=`get_config_value main serviceclass $RAHUNAS_CONFIG`
 MAIN_BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
 MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
@@ -757,6 +758,37 @@ serviceclass_set () {
   fi
 }
 
+##
+# Service class - fake-arpd setup
+##
+serviceclass_fakearpd () {
+  opt=$1
+  first=1
+  if [ "$opt" = "start" ]; then
+    for conf in $MAIN_SERVICECLASS_CONF_DIR/*.conf
+    do
+      enable=`get_config_value service_class fake_arpd $conf`
+
+      if [ "$enable" = "yes" ]; then
+        fakearpd_iface=`get_config_value service_class fake_arpd_iface $conf`
+        network=`get_config_value service_class network $conf`
+
+        if [ -n "$fakearpd_iface" ] && [ -n "$network" ]; then
+          if [ $first -eq 1 ]; then
+            echo
+            first=0
+          fi
+
+          echo -n "RahuNAS Fake ARP starting: "
+          $FARPD -i $fakearpd_iface $network
+        fi
+      fi
+    done
+  elif [ "$opt" = "stop" ]; then
+    killall -9 $FARPD &> /dev/null 2>&1
+  fi
+}
+
 do_get_config () {
   file=$1
   opt=$2
@@ -793,6 +825,7 @@ start () {
   if [ "$MAIN_SERVICECLASS" = "yes" ]; then
     touch $SERVICECLASS_STATE
     serviceclass_set start
+    serviceclass_fakearpd start
   fi
 
   touch $RUN
@@ -803,6 +836,7 @@ stop () {
 
   if [ -f $SERVICECLASS_STATE ]; then
     serviceclass_set cleanup
+    serviceclass_fakearpd stop
     rm -f $SERVICECLASS_STATE
   fi
    

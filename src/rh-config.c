@@ -70,6 +70,8 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_main.dhcp != NULL)
           free(config->rh_main.dhcp);
         config->rh_main.dhcp = strdup(value);
+      } else if (strncmp(sub_key, "serviceclass_attribute", strlen ("serviceclass_attribute")) == 0) {
+        // Do nothing, no needs to collect this value
       } else if (strncmp(sub_key, "serviceclass", 12) == 0) {
         config->rh_main.serviceclass = strncmp(value, "yes", 3) == 0 ? 1 : 0;
       } else if (strncmp(sub_key, "bandwidth_shape", 15) == 0) {

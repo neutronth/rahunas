@@ -4,19 +4,25 @@
 // The "service_class = { ... }" main key is required for each service class
 // config declarations.
 //
-// The config could separate to several files or just a single file.
-// If none of any service class config files are present, RahuNAS will disable
-// the class of service feature automatically.
+// The config should separated in several files, single config per file.
+// If serviceclass is enabled but none of any service class config files
+// are present, RahuNAS will disable the class of service feature automatically.
 //
 // service_class = {
-//  name = "Text"
+//  serviceclass_id = "Number"
+//  serviceclass_name = "Text"
 //  description = "Text"
 //  network = "CIDR"
 //  fake_arpd = "yes|no"
 //  fake_arpd_iface = "Interface Name"
 // }
 //
-// Key: name
+// Key: serviceclass_id
+// Syntax: serviceclass_id = "Number"
+// Description: Class-Of-Service ID
+//   A unique number which identify each class of service configs
+//
+// Key: serviceclass_name
 // Syntax: name = "Text"
 // Description: Class-Of-Service name
 //   A unique name which identify each class of service configs
@@ -51,17 +57,10 @@
 //   The fake arp daemon should binding to this interface
 
 service_class = {
-  name = "class_silver"
-  description = "Silver service class"
+  serviceclass_id = "1"
+  serviceclass_name = "vip"
+  description = "VIP Service"
   network = "10.10.10.0/24"
   fake_arpd = "no"
   fake_arpd_iface = ""
-}
-
-service_class = {
-  name = "class_gold"
-  description = "Gold service class"
-  network = "10.10.11.0/24"
-  fake_arpd = "yes"
-  fake_arpd_iface = "eth0"
 }

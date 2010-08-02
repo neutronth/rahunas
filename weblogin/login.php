@@ -101,6 +101,10 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
     $racct->calling_station_id = returnMacAddress();
     $racct->gen_session_id();
 
+    $serviceclass_attrib = defined('SERVICECLASS_ATTRIBUTE') ?
+                           SERVICECLASS_ATTRIBUTE :
+                           "WISPr-Billing-Class-Of-Service";
+
     try {
       $prepareData = array (
         "IP" => $ip,
@@ -110,7 +114,7 @@ if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
         "Session-Timeout" => $rauth->attributes['session_timeout'],
         "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
         "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up'],
-        "Class-Of-Service" => $rauth->attributes['WISPr-Billing-Class-Of-Service'],
+        "Class-Of-Service" => $rauth->attributes[$serviceclass_attrib],
       );
       $result = $xmlrpc->do_startsession($vserver_id, $prepareData);
       if (strstr($result,"Client already login")) {
