@@ -59,6 +59,7 @@ struct rahunas_member {
   long bandwidth_max_up;
   unsigned short bandwidth_slot_id;
   char *serviceclass_name;
+  const char *serviceclass_description;
   uint32_t serviceclass_slot_id;
   char *mapping_ip;
   char *username;

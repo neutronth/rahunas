@@ -1,6 +1,6 @@
 <?php
 /*
-  Copyright (c) 2008-2009, Neutron Soutmun <neo.neutron@gmail.com>
+  Copyright (c) 2008-2010, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -41,6 +41,37 @@ require_once 'header.php';
 require_once 'locale.php';
 require_once 'messages.php';
 require_once 'networkchk.php';
+
+function secs_to_human($secs) {
+  $units = array (
+    "day"     => array ("unit" => _("day"),
+                        "plural_unit" => _("days"),
+                        "div" => 24*3600),
+    "hour"    => array ("unit" => _("hour"),
+                        "plural_unit" => _("hours"),
+                        "div" =>    3600),
+    "minute"  => array ("unit" => _("minute"),
+                        "plural_unit" => _("minutes"),
+                        "div" =>      60),
+    "second"  => array ("unit" => _("second"),
+                        "plural_unit" => _("seconds"),
+                        "div" =>       1),
+  );
+
+  if ($secs == 0)
+    return "$secs " . $units["second"]["plural_unit"];
+
+  $s = "";
+
+  foreach ($units as $unit) {
+    if ($n = intval($secs / $unit["div"])) {
+      $s .= "$n " . (abs($n) > 1 ? $unit["plural_unit"] : $unit["unit"]) . ", ";
+      $secs -= $n * $unit["div"];
+    }
+  }
+
+  return substr ($s, 0, -2);
+}
 
 $current_url = $_SERVER['REQUEST_URI'];
 $interval = 60;
@@ -144,14 +175,20 @@ $valid_text = !$valid ? "" : "" .
   "   <td>". strftime('%e %B %Y %H:%M:%S', $info['session_start']) . "</td>" .
   " </tr>" .
   "  <tr>" .
-  "   <td align='right'><b>" . _("Session Time") . ":</b></td>" .
-  "   <td>" . (time() - $info['session_start']) . " ". _("seconds") . "</td>" .
+  "   <td align='right'><b>" . _("Session End") . ":</b></td>" .
+  "   <td>". ($info['session_timeout'] == 0 ? _("Never") : strftime('%e %B %Y %H:%M:%S', $info['session_timeout']) . "</td>") .
   " </tr>" .
   "" .
   "  <tr>" .
-  "   <td align='right'><b>" . _("Expired") . ":</b></td>" .
-  "   <td>". ($info['session_timeout'] == 0 ? _("Never") : strftime('%e %B %Y %H:%M:%S', $info['session_timeout']) . "</td>") .
+  "   <td align='right'><b>" . _("Session Time") . ":</b></td>" .
+  "   <td>" . secs_to_human(time() - $info['session_start']) . "</td>" .
   " </tr>" .
+  "" .
+  (strcmp ($info['serviceclass_description'], "(null)") == 0 ? "" :
+  "  <tr>" .
+  "   <td align='right'><b>" . _("Class of service") . ":</b></td>" .
+  "   <td>" . $info['serviceclass_description'] . "</td>" .
+  " </tr>") .
   "" .
   "  <tr>" .
   "   <td align='right'><b>" . _("Request URL") . ":</b></td>" .

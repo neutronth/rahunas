@@ -157,6 +157,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
 
     member->serviceclass_name = strdup (req->serviceclass_name);
+    member->serviceclass_description = sc_config->description;
     member->serviceclass_slot_id = req->serviceclass_slot_id;
 
     member->mapping_ip = strdup (ip_tostring(ip1));

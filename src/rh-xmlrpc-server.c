@@ -288,13 +288,14 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
       goto cleanup;
     }
     
-    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d", 
+    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d|%s",
                                     ip, 
                                     member->username,
                                     member->session_id,
                                     member->session_start,
                                     mac_tostring(member->mac_address),
-                                    member->session_timeout);
+                                    member->session_timeout,
+                                    member->serviceclass_description);
     goto cleanup;
   }
 

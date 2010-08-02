@@ -163,6 +163,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
     member->session_id = termstring;
 
   member->serviceclass_name    = NULL;
+  member->serviceclass_description = termstring;
   member->serviceclass_slot_id = 0;
   member->mapping_ip = termstring;
 
