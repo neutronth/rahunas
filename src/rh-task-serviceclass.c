@@ -175,6 +175,9 @@ static int startsess (struct vserver *vs, struct task_req *req)
   return 0;
 
 failed:
+  if ((req->serviceclass_name != NULL) && (strlen(req->serviceclass_name) == 0))
+    goto out;
+
   logmsg (RH_LOG_NORMAL, "[%s] Service class for User: %s, IP: %s "
                          "- Service Class: %s, Failed!",
                          vs->vserver_config->vserver_name,
@@ -182,6 +185,7 @@ failed:
                          idtoip(vs->v_map, req->id),
                          req->serviceclass_name);
 
+out:
   if (member->serviceclass_name != NULL &&
         member->serviceclass_name != termstring) {
     free (member->serviceclass_name);
