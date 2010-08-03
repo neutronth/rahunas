@@ -19,6 +19,7 @@ RUNDIR=@localstatedir@/run/rahunas-set
 VSERVER_LIST=@localstatedir@/run/rahunas-vserver
 MAIN_EXT_IFACE_LIST=@localstatedir@/run/rahunas_ext_iface_list
 SERVICECLASS_STATE=@localstatedir@/run/rahunas-serviceclass
+FARPD_STATE=@localstatedir@/run/rahunas-farpd
 
 RUN_DAEMON=no
 
@@ -781,11 +782,13 @@ serviceclass_fakearpd () {
 
           echo -n "RahuNAS Fake ARP starting: "
           $FARPD -i $fakearpd_iface $network
+          touch $FARPD_STATE
         fi
       fi
     done
-  elif [ "$opt" = "stop" ]; then
+  elif [ "$opt" = "stop" ] && [ -f $FARPD_STATE ]; then
     killall -9 $FARPD &> /dev/null 2>&1
+    rm -f $FARPD_STATE
   fi
 }
 
