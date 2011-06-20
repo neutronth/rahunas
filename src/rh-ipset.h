@@ -28,7 +28,7 @@ struct set {
 };
 
 struct processing_set {
-  struct vserver *vs;
+  RHVServer *vs;
   void *list;
 };
 
@@ -76,7 +76,7 @@ int wrapped_setsockopt(void *data, socklen_t size);
 void kernel_getfrom(void *data, socklen_t * size);
 int kernel_sendto_handleerrno(unsigned op, void *data, socklen_t size);
 void kernel_sendto(void *data, size_t size);
-int kernel_getfrom_handleerrno(void *data, size_t * size);
+int kernel_getfrom_handleerrno(void *data, socklen_t * size);
 struct set *set_adt_get(const char *name);
 int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac, 
               unsigned op);
@@ -86,13 +86,13 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
 
 void set_flush(const char *name);
 
-size_t load_set_list(struct vserver *vs, const char name[IP_SET_MAXNAMELEN],
+size_t load_set_list(RHVServer *vs, const char name[IP_SET_MAXNAMELEN],
           ip_set_id_t *idx,
           unsigned op, unsigned cmd);
 
-int get_header_from_set (struct vserver *vs);
+int get_header_from_set (RHVServer *vs);
 
-int walk_through_set (int (*callback)(void *), struct vserver *vs);
+int walk_through_set (int (*callback)(void *), RHVServer *vs);
 
 void parse_ip(const char *str, ip_set_ip_t *ip);
 void parse_mac(const char *mac, unsigned char *ethernet);

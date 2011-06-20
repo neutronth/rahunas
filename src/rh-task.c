@@ -12,7 +12,7 @@
 #include "rh-task-dbset.h"
 #include "rh-task-bandwidth.h"
 
-void task_register(struct main_server *ms, struct task *task)
+void task_register(RHMainServer *ms, struct task *task)
 {
   GList *chk  = NULL;
   GList *node = NULL;
@@ -45,7 +45,7 @@ void task_register(struct main_server *ms, struct task *task)
   ms->task_list = g_list_insert_before(ms->task_list, node, task);
 }
 
-void rh_task_register(struct main_server *ms)
+void rh_task_register(RHMainServer *ms)
 {
   static int task_registered = 0;
 
@@ -63,11 +63,11 @@ void rh_task_register(struct main_server *ms)
   }
 }
 
-void rh_task_unregister(struct main_server *ms) {
+void rh_task_unregister(RHMainServer *ms) {
   g_list_free(ms->task_list);
 }
 
-int  rh_task_startservice(struct main_server *ms)
+int  rh_task_startservice(RHMainServer *ms)
 {
   GList *runner = g_list_first(ms->task_list);
   struct task *ltask = NULL;
@@ -84,7 +84,7 @@ int  rh_task_startservice(struct main_server *ms)
   return 0;
 }
 
-int rh_task_stopservice(struct main_server *ms)
+int rh_task_stopservice(RHMainServer *ms)
 {  
   GList *runner = g_list_last(ms->task_list);
   struct task *ltask = NULL;
@@ -101,7 +101,7 @@ int rh_task_stopservice(struct main_server *ms)
   return 0;
 }
 
-void rh_task_init (struct main_server *ms, struct vserver *vs)
+void rh_task_init (RHMainServer *ms, RHVServer *vs)
 {
   GList *runner = g_list_first(ms->task_list);
   struct task *ltask = NULL;
@@ -115,7 +115,7 @@ void rh_task_init (struct main_server *ms, struct vserver *vs)
   }
 }
 
-void rh_task_cleanup(struct main_server *ms, struct vserver *vs)
+void rh_task_cleanup(RHMainServer *ms, RHVServer *vs)
 {
   GList *runner = g_list_last(ms->task_list);
   struct task *ltask = NULL;
@@ -129,9 +129,9 @@ void rh_task_cleanup(struct main_server *ms, struct vserver *vs)
   }  
 }
 
-int  rh_task_startsess(struct vserver *vs, struct task_req *req)
+int  rh_task_startsess(RHVServer *vs, struct task_req *req)
 {
-  struct main_server *ms = &rh_main_server_instance;
+  RHMainServer *ms = &rh_main_server_instance;
   GList *runner = g_list_first(ms->task_list);
   struct task *ltask = NULL;
 
@@ -146,9 +146,9 @@ int  rh_task_startsess(struct vserver *vs, struct task_req *req)
   return 0;
 }
 
-int  rh_task_stopsess(struct vserver *vs, struct task_req *req)
+int  rh_task_stopsess(RHVServer *vs, struct task_req *req)
 {
-  struct main_server *ms = &rh_main_server_instance;
+  RHMainServer *ms = &rh_main_server_instance;
   GList *runner = g_list_last(ms->task_list);
   struct task *ltask = NULL;
 
@@ -163,18 +163,18 @@ int  rh_task_stopsess(struct vserver *vs, struct task_req *req)
   return 0;
 }
 
-int  rh_task_commitstartsess(struct vserver *vs, struct task_req *req)
+int  rh_task_commitstartsess(RHVServer *vs, struct task_req *req)
 {
 }
 
-int  rh_task_commitstopsess(struct vserver *vs, struct task_req *req)
+int  rh_task_commitstopsess(RHVServer *vs, struct task_req *req)
 {
 }
 
-int  rh_task_rollbackstartsess(struct vserver *vs, struct task_req *req)
+int  rh_task_rollbackstartsess(RHVServer *vs, struct task_req *req)
 {
 }
 
-int  rh_task_rollbackstopsess(struct vserver *vs, struct task_req *req)
+int  rh_task_rollbackstopsess(RHVServer *vs, struct task_req *req)
 {
 }

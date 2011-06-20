@@ -3,9 +3,10 @@
  * Author: Suriya Soutmun <darksolar@gmail.com>
  * Date:   2008-11-26
  */
-#include <ctype.h>
-#include <stdlib.h>
+
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <syslog.h>
 #include <dirent.h>
 #include <errno.h>
@@ -219,7 +220,7 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
   }
 
   
-  rh_free(&clone_key);
+  rh_free((void **) &clone_key);
 
   return lcfg_status_ok;
 }
@@ -270,7 +271,7 @@ int get_value(const char *cfg_file, const char *key, void **data, size_t *len)
   return 0;
 }
 
-int get_vservers_config(const char *conf_dir, struct main_server *server)
+int get_vservers_config(const char *conf_dir, RHMainServer *server)
 {
   DIR *dp;
   struct dirent *dirp;
@@ -303,48 +304,48 @@ int get_vservers_config(const char *conf_dir, struct main_server *server)
 
 int cleanup_vserver_config(struct rahunas_vserver_config *config)
 {
-  rh_free(&(config->vserver_name));  
-  rh_free(&(config->dev_external));
-  rh_free(&(config->dev_internal));
-  rh_free(&(config->vlan));
-  rh_free(&(config->vlan_raw_dev_external));
-  rh_free(&(config->vlan_raw_dev_internal));
-  rh_free(&(config->bridge));
-  rh_free(&(config->masquerade));
-  rh_free(&(config->ignore_mac));
-  rh_free(&(config->vserver_ip));
-  rh_free(&(config->vserver_fqdn));
-  rh_free(&(config->vserver_ports_allow));
-  rh_free(&(config->vserver_ports_intercept));
-  rh_free(&(config->clients));
-  rh_free(&(config->excluded));
-  rh_free(&(config->dns));
-  rh_free(&(config->ssh));
-  rh_free(&(config->proxy));
-  rh_free(&(config->proxy_host));
-  rh_free(&(config->proxy_port));
-  rh_free(&(config->bittorrent));
-  rh_free(&(config->bittorrent_allow));
-  rh_free(&(config->radius_host));
-  rh_free(&(config->radius_secret));
-  rh_free(&(config->radius_encrypt));
-  rh_free(&(config->radius_auth_port));
-  rh_free(&(config->radius_account_port));
-  rh_free(&(config->nas_identifier));
-  rh_free(&(config->nas_port));
-  rh_free(&(config->nas_login_title));
-  rh_free(&(config->nas_default_redirect));
-  rh_free(&(config->nas_default_language));
-  rh_free(&(config->nas_weblogin_template));
+  rh_free((void **) &config->vserver_name);
+  rh_free((void **) &config->dev_external);
+  rh_free((void **) &config->dev_internal);
+  rh_free((void **) &config->vlan);
+  rh_free((void **) &config->vlan_raw_dev_external);
+  rh_free((void **) &config->vlan_raw_dev_internal);
+  rh_free((void **) &config->bridge);
+  rh_free((void **) &config->masquerade);
+  rh_free((void **) &config->ignore_mac);
+  rh_free((void **) &config->vserver_ip);
+  rh_free((void **) &config->vserver_fqdn);
+  rh_free((void **) &config->vserver_ports_allow);
+  rh_free((void **) &config->vserver_ports_intercept);
+  rh_free((void **) &config->clients);
+  rh_free((void **) &config->excluded);
+  rh_free((void **) &config->dns);
+  rh_free((void **) &config->ssh);
+  rh_free((void **) &config->proxy);
+  rh_free((void **) &config->proxy_host);
+  rh_free((void **) &config->proxy_port);
+  rh_free((void **) &config->bittorrent);
+  rh_free((void **) &config->bittorrent_allow);
+  rh_free((void **) &config->radius_host);
+  rh_free((void **) &config->radius_secret);
+  rh_free((void **) &config->radius_encrypt);
+  rh_free((void **) &config->radius_auth_port);
+  rh_free((void **) &config->radius_account_port);
+  rh_free((void **) &config->nas_identifier);
+  rh_free((void **) &config->nas_port);
+  rh_free((void **) &config->nas_login_title);
+  rh_free((void **) &config->nas_default_redirect);
+  rh_free((void **) &config->nas_default_language);
+  rh_free((void **) &config->nas_weblogin_template);
 
   return 0;
 }
 
 int cleanup_mainserver_config(struct rahunas_main_config *config)
 {
-  rh_free(&(config->conf_dir));  
-  rh_free(&(config->log_file));
-  rh_free(&(config->dhcp));
+  rh_free((void **) &config->conf_dir);
+  rh_free((void **) &config->log_file);
+  rh_free((void **) &config->dhcp);
 
   return 0;
 }

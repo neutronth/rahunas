@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -66,7 +67,7 @@ void mark_reserved_slot_id(unsigned int slot_id)
   slot_flags[page] |= 1 << id_on_page;
 }
 
-int bandwidth_exec(struct vserver *vs, char *const args[])
+int bandwidth_exec(RHVServer *vs, char *const args[])
 {
   pid_t ws;
   pid_t pid;
@@ -134,7 +135,7 @@ int bandwidth_exec(struct vserver *vs, char *const args[])
   return ret;
 }
 
-int bandwidth_start(struct vserver *vs)
+int bandwidth_start(RHVServer *vs)
 {
   char *args[5];
   struct interfaces *iface = vs->vserver_config->iface;
@@ -152,7 +153,7 @@ int bandwidth_start(struct vserver *vs)
   return ret; 
 }
 
-int bandwidth_stop(struct vserver *vs)
+int bandwidth_stop(RHVServer *vs)
 {
   char *args[5];
   struct interfaces *iface = vs->vserver_config->iface;
@@ -170,7 +171,7 @@ int bandwidth_stop(struct vserver *vs)
   return ret; 
 }
 
-int bandwidth_add(struct vserver *vs, struct bandwidth_req *bw_req)
+int bandwidth_add(RHVServer *vs, struct bandwidth_req *bw_req)
 {
   char *args[9];
   struct interfaces *iface = vs->vserver_config->iface;
@@ -191,7 +192,7 @@ int bandwidth_add(struct vserver *vs, struct bandwidth_req *bw_req)
   return bandwidth_exec(vs, args);
 }
 
-int bandwidth_del(struct vserver *vs, struct bandwidth_req *bw_req)
+int bandwidth_del(RHVServer *vs, struct bandwidth_req *bw_req)
 {
   char *args[6];
   struct interfaces *iface = vs->vserver_config->iface;
@@ -221,7 +222,7 @@ static int stopservice (void)
 }
 
 /* Initialize */
-static void init (struct vserver *vs)
+static void init (RHVServer *vs)
 {
   struct interfaces *iface = NULL;
   if (!vs)
@@ -243,7 +244,7 @@ initial:
 }
 
 /* Cleanup */
-static int cleanup (struct vserver *vs)
+static void cleanup (RHVServer *vs)
 {
   struct interfaces *iface = NULL;
   if (!vs)
@@ -263,7 +264,7 @@ static int cleanup (struct vserver *vs)
 }
 
 /* Start session task */
-static int startsess (struct vserver *vs, struct task_req *req)
+static int startsess (RHVServer *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
   unsigned short slot_id;
@@ -282,6 +283,10 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
   if (member->bandwidth_slot_id > 0)
     return 0;
+
+  memset (bw_req.ip, 0, sizeof (bw_req.ip));
+  memset (bw_req.bandwidth_max_down, 0, sizeof (bw_req.bandwidth_max_down));
+  memset (bw_req.bandwidth_max_up, 0, sizeof (bw_req.bandwidth_max_up));
   
   // Formating the bandwidth request
   snprintf(bw_req.ip, sizeof (bw_req.ip), "%s", idtoip(vs->v_map, req->id));
@@ -315,7 +320,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 }
 
 /* Stop session task */
-static int stopsess  (struct vserver *vs, struct task_req *req)
+static int stopsess  (RHVServer *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
   unsigned short slot_id = 0;
@@ -347,25 +352,25 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
 }
 
 /* Commit start session task */
-static int commitstartsess (struct vserver *vs, struct task_req *req)
+static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct vserver *vs, struct task_req *req)
+static int commitstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct vserver *vs, struct task_req *req)
+static int rollbackstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
+static int rollbackstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -385,6 +390,6 @@ static struct task taskbandwidth = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_bandwidth_reg(struct main_server *ms) {
+void rh_task_bandwidth_reg(RHMainServer *ms) {
   task_register(ms, &taskbandwidth);
 }

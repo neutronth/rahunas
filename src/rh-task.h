@@ -37,43 +37,43 @@ struct task {
   int (*stopservice) (void);
 
   /* Initialize */
-  void (*init) (struct vserver *vs);
+  void (*init) (RHVServer  *vs);
 
   /* Cleanup */
-  void (*cleanup) (struct vserver *vs);
+  void (*cleanup) (RHVServer  *vs);
 
   /* Start session task */
-  int (*startsess) (struct vserver *vs, struct task_req *req);
+  int (*startsess) (RHVServer  *vs, struct task_req *req);
 
   /* Stop session task */
-  int (*stopsess) (struct vserver *vs, struct task_req *req);
+  int (*stopsess) (RHVServer  *vs, struct task_req *req);
 
   /* Commit start session task */
-  int (*commitstartsess) (struct vserver *vs, struct task_req *req);
+  int (*commitstartsess) (RHVServer  *vs, struct task_req *req);
 
   /* Commit stop session task */
-  int (*commitstopsess) (struct vserver *vs, struct task_req *req);
+  int (*commitstopsess) (RHVServer  *vs, struct task_req *req);
 
   /* Rollback start session task */
-  int (*rollbackstartsess) (struct vserver *vs, struct task_req *req);
+  int (*rollbackstartsess) (RHVServer  *vs, struct task_req *req);
 
   /* Rollback stop session task */
-  int (*rollbackstopsess) (struct vserver *vs, struct task_req *req);
+  int (*rollbackstopsess) (RHVServer  *vs, struct task_req *req);
 };
 
-extern void task_register(struct main_server *ms, struct task *task);
+extern void task_register(RHMainServer *ms, struct task *task);
 
-void rh_task_register(struct main_server *ms);
-void rh_task_unregister(struct main_server *ms);
-int  rh_task_startservice(struct main_server *ms);
-int  rh_task_stopservice(struct main_server *ms);
-void rh_task_init(struct main_server *ms, struct vserver *vs);
-void rh_task_cleanup(struct main_server *ms, struct vserver *vs);
-int  rh_task_startsess(struct vserver *vs, struct task_req *req);
-int  rh_task_stopsess(struct vserver *vs, struct task_req *req);
-int  rh_task_commitstartsess(struct vserver *vs, struct task_req *req);
-int  rh_task_commitstopsess(struct vserver *vs, struct task_req *req);
-int  rh_task_rollbackstartsess(struct vserver *vs, struct task_req *req);
-int  rh_task_rollbackstopsess(struct vserver *vs, struct task_req *req);
+void rh_task_register          (RHMainServer *ms);
+void rh_task_unregister        (RHMainServer *ms);
+int  rh_task_startservice      (RHMainServer *ms);
+int  rh_task_stopservice       (RHMainServer *ms);
+void rh_task_init              (RHMainServer *ms, RHVServer  *vs);
+void rh_task_cleanup           (RHMainServer *ms, RHVServer  *vs);
+int  rh_task_startsess         (RHVServer  *vs, struct task_req *req);
+int  rh_task_stopsess          (RHVServer  *vs, struct task_req *req);
+int  rh_task_commitstartsess   (RHVServer  *vs, struct task_req *req);
+int  rh_task_commitstopsess    (RHVServer  *vs, struct task_req *req);
+int  rh_task_rollbackstartsess (RHVServer  *vs, struct task_req *req);
+int  rh_task_rollbackstopsess  (RHVServer  *vs, struct task_req *req);
 
 #endif // __RH_TASK_H

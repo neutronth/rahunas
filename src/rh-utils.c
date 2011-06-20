@@ -4,6 +4,7 @@
  * Date:   2008-08-31
  */
 
+#include <string.h>
 #include <syslog.h>
 #include <glib.h>
 #include <time.h>
@@ -40,13 +41,13 @@ void rh_free(void **data)
   *data = NULL;
 }
 
-const char *rh_string_get_sep(const char *haystack, const char *sep, 
-                              unsigned short idx)
+gchar *rh_string_get_sep(const char *haystack, const char *sep,
+                         unsigned short idx)
 {
-  char  *result = NULL;
-  gchar *pStart = NULL;
-  gchar *pEnd   = NULL;
-  gchar *pLast  = NULL;
+  gchar *result = NULL;
+  const gchar *pStart = NULL;
+  const gchar *pEnd   = NULL;
+  const gchar *pLast  = NULL;
   unsigned short current_idx = 0;
   unsigned short isFound = 0;
 
@@ -135,8 +136,8 @@ int logmsg(int priority, const char *msg, ...)
 
   fprintf(stderr, "%s : %s\n", timemsg(), p);
 
-  rh_free(&p);
-  rh_free(&np);
+  rh_free((void **) &p);
+  rh_free((void **) &np);
 }
 
 
@@ -180,7 +181,7 @@ uint32_t iptoid(struct rahunas_map *map, const char *ip) {
   return ret; 
 }
 
-char *idtoip(struct rahunas_map *map, uint32_t id) {
+const char *idtoip(struct rahunas_map *map, uint32_t id) {
   struct in_addr sess_addr;
 
   if (!map)

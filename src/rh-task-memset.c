@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <time.h>
 #include "rahunasd.h"
@@ -12,7 +13,7 @@
 #include "rh-task.h"
 #include "rh-ipset.h"
 
-GList *member_get_node_by_id(struct vserver *vs, uint32_t id) 
+GList *member_get_node_by_id(RHVServer *vs, uint32_t id)
 {
   GList *runner = g_list_first(vs->v_map->members);
   struct rahunas_member *member = NULL;
@@ -29,10 +30,14 @@ GList *member_get_node_by_id(struct vserver *vs, uint32_t id)
   return NULL;
 }
 
-gint idcmp(struct rahunas_member *a, struct rahunas_member *b)
+static gint
+idcmp(gconstpointer a, gconstpointer b)
 {
-  if (a != NULL && b != NULL)
-    return (a->id - b->id);
+  struct rahunas_member *rh_a = (struct rahunas_member *) a;
+  struct rahunas_member *rh_b = (struct rahunas_member *) b;
+
+  if (rh_a != NULL && rh_b != NULL)
+    return (rh_a->id - rh_b->id);
 
   return -1;
 }
@@ -52,7 +57,7 @@ static int stopservice  ()
 }
 
 /* Initialize */
-static void init (struct vserver *vs)
+static void init (RHVServer *vs)
 {
   int size;
 
@@ -78,7 +83,7 @@ static void init (struct vserver *vs)
 }
 
 /* Cleanup */
-static void cleanup (struct vserver *vs)
+static void cleanup (RHVServer *vs)
 {
   GList *runner = NULL;
   GList *deleting = NULL;
@@ -108,15 +113,13 @@ static void cleanup (struct vserver *vs)
 
     g_list_free(vs->v_map->members);
 
-    rh_free(&(vs->v_map->members));
-    rh_free(&(vs->v_map));
+    rh_free((void **) &vs->v_map->members);
+    rh_free((void **) &vs->v_map);
   }
-
-  return 0;
 }
 
 /* Start session task */
-static int startsess (struct vserver *vs, struct task_req *req)
+static int startsess (RHVServer *vs, struct task_req *req)
 {
   uint32_t id = req->id;
   GList *member_node = NULL;
@@ -150,11 +153,11 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
   member->username   = strdup(req->username);
   if (!member->username)
-    member->username = termstring;
+    member->username = strdup(termstring);
 
   member->session_id = strdup(req->session_id);
   if (!member->session_id)
-    member->session_id = termstring;
+    member->session_id = strdup(termstring);
 
   if (req->session_start == 0) {
     time(&(req->session_start));
@@ -184,7 +187,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 }
 
 /* Stop session task */
-static int stopsess  (struct vserver *vs, struct task_req *req)
+static int stopsess  (RHVServer *vs, struct task_req *req)
 {
   uint32_t id = req->id;
   GList *member_node = NULL;
@@ -215,10 +218,10 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
       break;
   }
   if (!member->username)
-    member->username = termstring;
+    member->username = strdup(termstring);
 
   if (!member->session_id)
-    member->session_id = termstring;
+    member->session_id = strdup(termstring);
 
   logmsg(RH_LOG_NORMAL, "[%s] Session Stop (%s), User: %s, IP: %s, "
                         "Session ID: %s, MAC: %s",
@@ -237,25 +240,25 @@ static int stopsess  (struct vserver *vs, struct task_req *req)
 }
 
 /* Commit start session task */
-static int commitstartsess (struct vserver *vs, struct task_req *req)
+static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct vserver *vs, struct task_req *req)
+static int commitstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct vserver *vs, struct task_req *req)
+static int rollbackstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
+static int rollbackstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -275,6 +278,6 @@ static struct task task_memset = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_memset_reg(struct main_server *ms) {
+void rh_task_memset_reg(RHMainServer *ms) {
   task_register(ms, &task_memset);
 }

@@ -26,13 +26,26 @@
 const char *termstring = '\0';
 pid_t pid, sid;
 
-int getline(int fd, char *buf, size_t size);
+pthread_mutex_t RHMtxLock        = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RHPollingMtxLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  RHPollingCond    = PTHREAD_COND_INITIALIZER;
 
-struct main_server rh_main_server_instance = {
+static void rh_exit               (void);
+static void rh_reload             (void);
+static int  expired_check         (void *data);
+static int  polling_expired_check (RHMainServer *ms, RHVServer *vs);
+static int  do_task_init          (RHMainServer *ms, RHVServer *vs);
+static int  do_task_cleanup       (RHMainServer *ms, RHVServer *vs);
+static int  do_task_stopservice   (RHMainServer *ms, RHVServer *vs);
+static int  do_vserver_reload     (RHMainServer *ms, RHVServer *vs);
+static int  do_vserver_init_done  (RHMainServer *ms, RHVServer *vs);
+static void *polling_service      (void *data);
+
+RHMainServer rh_main_server_instance = {
   .vserver_list = NULL,
   .task_list = NULL,
 };
-struct main_server *rh_main_server = &rh_main_server_instance;
+RHMainServer *rh_main_server = &rh_main_server_instance;
 
 void rh_sighandler(int sig)
 {
@@ -63,30 +76,8 @@ void rh_sighandler(int sig)
   return;
 }
 
-int getline(int fd, char *buf, size_t size)
-{
-  char cbuf;
-  char *current;
-
-  if (!buf || fd < 0)
-    return 0;
-
-  current = buf;
-
-  while (read(fd, &cbuf, 1) > 0) {
-    *current = cbuf;
-    if (cbuf == '\n') {
-      *current = '\0';
-      break;
-    } else if ((current - buf) < (size - 1)) {
-      current++;
-    }
-  }
-
-  return (current - buf);
-}
-
-size_t expired_check(void *data)
+static int
+expired_check(void *data)
 {
   struct processing_set *process = (struct processing_set *) data;
   struct ip_set_list *setlist = (struct ip_set_list *) process->list;
@@ -109,6 +100,8 @@ size_t expired_check(void *data)
   table = (struct ip_set_rahunas *)(process->list + offset);
 
   while (runner != NULL) {
+    time_t time_now = time (NULL);
+
     member = (struct rahunas_member *)runner->data;
     runner = g_list_next(runner);
 
@@ -116,62 +109,69 @@ size_t expired_check(void *data)
 
     DP("Processing id = %d", id);
 
-    DP("Time diff = %d, idle_timeout=%d", (time(NULL) - table[id].timestamp),
+    DP("Time diff = %d, idle_timeout=%d", (time_now - table[id].timestamp),
          process->vs->vserver_config->idle_timeout);
 
-    if ((time(NULL) - table[id].timestamp) > 
+    if (time_now - table[id].timestamp >
          process->vs->vserver_config->idle_timeout) {
       // Idle Timeout
       DP("Found IP: %s idle timeout", idtoip(process->vs->v_map, id));
       req.id = id;
       memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
+
       send_xmlrpc_stopacct(process->vs, id, 
                            RH_RADIUS_TERM_IDLE_TIMEOUT);
+
+      pthread_mutex_lock (&RHMtxLock);
       res = rh_task_stopsess(process->vs, &req);
+      pthread_mutex_unlock (&RHMtxLock);
     } else if (member->session_timeout != 0 && 
-               time(NULL) > member->session_timeout) {
+               time_now > member->session_timeout) {
       // Session Timeout (Expired)
       DP("Found IP: %s session timeout", idtoip(process->vs->v_map, id));
       req.id = id;
       memcpy(req.mac_address, &table[id].ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
+
       send_xmlrpc_stopacct(process->vs, id, 
                            RH_RADIUS_TERM_SESSION_TIMEOUT);
+
+      pthread_mutex_lock (&RHMtxLock);
       res = rh_task_stopsess(process->vs, &req);
+      pthread_mutex_unlock (&RHMtxLock);
     }
   }
 }
 
-int polling_expired_check(struct main_server *ms, struct vserver *vs) {
-  walk_through_set(&expired_check, vs);
+static int
+polling_expired_check (RHMainServer *ms, RHVServer *vs) {
+  walk_through_set(expired_check, vs);
   return 0;
 }
 
 gboolean polling(gpointer data) {
-  struct main_server *ms = (struct main_server *)data;
-  struct vserver *vs = NULL;
-  
-  if (ms->polling_blocked) {
-    DP("%s", "Skip polling!");
-    return TRUE;
-  }
-  
-  DP("%s", "Start polling!");
-  walk_through_vserver(&polling_expired_check, ms);
+  if (pthread_mutex_trylock (&RHPollingMtxLock) == 0)
+    {
+      DP("%s", "Start polling!");
+      pthread_cond_signal (&RHPollingCond);
+      pthread_mutex_unlock (&RHPollingMtxLock);
+    }
   return TRUE;
 }
 
-void rh_exit()
+static void
+rh_exit (void)
 {
-  walk_through_vserver(&rh_task_cleanup, rh_main_server);
+  walk_through_vserver(do_task_cleanup, rh_main_server);
   rh_task_stopservice(rh_main_server);
   rh_task_unregister(rh_main_server);
   unregister_vserver_all(rh_main_server);
-  rh_closelog(rh_main_server->main_config->log_file);
+  rh_closelog(rh_main_server->log_fd);
 }
 
-void rh_reload()
+static void
+rh_reload (void)
 {
   logmsg(RH_LOG_NORMAL, "Reloading config files");
   /* Block polling */
@@ -199,7 +199,7 @@ void rh_reload()
     exit(EXIT_FAILURE);
   }
 
-  walk_through_vserver(&vserver_reload, rh_main_server);
+  walk_through_vserver(do_vserver_reload, rh_main_server);
   vserver_unused_cleanup(rh_main_server);
   
   /* Unblock polling */
@@ -309,7 +309,7 @@ void rh_free_member (struct rahunas_member *member)
 }
 
 
-int main(int argc, char **argv) 
+int main(int argc, char *argv[])
 {
   gchar* addr = "localhost";
   int port    = 8123;
@@ -329,6 +329,7 @@ int main(int argc, char **argv)
 
   GNetXmlRpcServer *server = NULL;
   GMainLoop* main_loop     = NULL;
+  pthread_t  polling_tid;
 
   signal(SIGTERM, &rh_sighandler);
   signal(SIGHUP, &rh_sighandler);
@@ -372,7 +373,7 @@ int main(int argc, char **argv)
   rh_task_register(rh_main_server);
   rh_task_startservice(rh_main_server);
 
-  walk_through_vserver(&rh_task_init, rh_main_server);
+  walk_through_vserver(do_task_init, rh_main_server);
 
   gnet_init();
   main_loop = g_main_loop_new (NULL, FALSE);
@@ -382,7 +383,7 @@ int main(int argc, char **argv)
 
   if (!server) {
     syslog(LOG_ERR, "Could not start XML-RPC server!");
-    walk_through_vserver(&rh_task_stopservice, rh_main_server);
+    walk_through_vserver(do_task_stopservice, rh_main_server);
     exit (EXIT_FAILURE);
   }
 
@@ -404,12 +405,73 @@ int main(int argc, char **argv)
   DP("Polling interval = %d", rh_main_server->main_config->polling_interval);
 
   g_timeout_add_seconds (rh_main_server->main_config->polling_interval, 
-                         polling, rh_main_server);
-
+                         polling, NULL);
  
-  walk_through_vserver(&vserver_init_done, rh_main_server);
+  walk_through_vserver(do_vserver_init_done, rh_main_server);
+
+  if (pthread_create (&polling_tid, NULL, polling_service,
+                      (void *) rh_main_server) != 0)
+    {
+      perror ("Create polling service");
+    }
+  else
+    {
+      pthread_detach (polling_tid);
+    }
+
   logmsg(RH_LOG_NORMAL, "Ready to serve...");
   g_main_loop_run(main_loop);
 
   exit(EXIT_SUCCESS);
+}
+
+static int
+do_task_init (RHMainServer *ms, RHVServer *vs)
+{
+  rh_task_init (ms, vs);
+  return 0;
+}
+
+static int
+do_task_cleanup (RHMainServer *ms, RHVServer *vs)
+{
+  rh_task_cleanup (ms, vs);
+  return 0;
+}
+
+static int
+do_task_stopservice (RHMainServer *ms, RHVServer *vs)
+{
+  rh_task_stopservice (ms);
+  return 0;
+}
+
+static int
+do_vserver_reload (RHMainServer *ms, RHVServer *vs)
+{
+  vserver_reload (ms, vs);
+  return 0;
+}
+
+static int
+do_vserver_init_done (RHMainServer *ms, RHVServer *vs)
+{
+  vserver_init_done (ms, vs);
+  return 0;
+}
+
+static void *
+polling_service (void *data)
+{
+  RHMainServer *ms = (RHMainServer *)data;
+
+  for (;;)
+    {
+      pthread_mutex_lock (&RHPollingMtxLock);
+      pthread_cond_wait (&RHPollingCond, &RHPollingMtxLock);
+
+      walk_through_vserver(polling_expired_check, ms);
+
+      pthread_mutex_unlock (&RHPollingMtxLock);
+    }
 }

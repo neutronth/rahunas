@@ -4,18 +4,19 @@
  * Date:   2009-03-24
  */
 #include <stdio.h>
+#include <string.h>
 #include "rahunasd.h"
 #include "rh-server.h"
 #include "rh-utils.h"
 
-struct vserver *vserver_exists(GList *vserver_list, int vserver_id, 
-                   const char *vserver_name)
+RHVServer *
+vserver_exists (GList *vserver_list, int vserver_id, const char *vserver_name)
 {
   GList *runner = g_list_first(vserver_list);
-  struct vserver *lvserver = NULL;
+  RHVServer *lvserver = NULL;
 
   while (runner != NULL) {
-    lvserver = (struct vserver *)runner->data;
+    lvserver = (RHVServer *)runner->data;
    
     if (lvserver->vserver_config->vserver_id == vserver_id)
       return lvserver; 
@@ -28,13 +29,13 @@ struct vserver *vserver_exists(GList *vserver_list, int vserver_id,
   return NULL;
 }
 
-struct vserver *vserver_get_by_id(struct main_server *ms, int search_id)
+RHVServer *vserver_get_by_id(RHMainServer *ms, int search_id)
 {
   GList *runner = g_list_first(ms->vserver_list);
-  struct vserver *lvserver = NULL;
+  RHVServer *lvserver = NULL;
 
   while (runner != NULL) {
-    lvserver = (struct vserver *)runner->data;
+    lvserver = (RHVServer *)runner->data;
    
     if (lvserver->vserver_config->vserver_id == search_id) {
       return lvserver;
@@ -45,7 +46,7 @@ struct vserver *vserver_get_by_id(struct main_server *ms, int search_id)
   return NULL;
 }
 
-int vserver_cleanup(struct vserver *vs)
+int vserver_cleanup(RHVServer *vs)
 {
   if (vs == NULL)
     return 0;
@@ -56,7 +57,7 @@ int vserver_cleanup(struct vserver *vs)
   return 0;
 }
 
-int mainserver_cleanup(struct main_server *ms)
+int mainserver_cleanup(RHMainServer *ms)
 {
   if (ms == NULL)
     return 0;
@@ -67,7 +68,7 @@ int mainserver_cleanup(struct main_server *ms)
   return 0;
 }
 
-int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
+int register_vserver(RHMainServer *ms, const char *vserver_cfg_file)
 {
   GList *vserver_list = ms->vserver_list;
   GList *chk = NULL;
@@ -76,8 +77,8 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
   
   union rahunas_config *cfg_get = NULL;
   struct rahunas_vserver_config *vserver_config = NULL;
-  struct vserver *new_vserver = NULL;
-  struct vserver *old_vserver = NULL;
+  RHVServer *new_vserver = NULL;
+  RHVServer *old_vserver = NULL;
 
   union rahunas_config config = {
     .rh_vserver.vserver_name = NULL,
@@ -129,7 +130,7 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
     if (old_vserver != NULL) {
       if (old_vserver->dummy_config != NULL) {
         DP("Cleanup old dummy config");
-        rh_free(&old_vserver->dummy_config);
+        rh_free((void **) &old_vserver->dummy_config);
       }
 
       old_vserver->dummy_config = 
@@ -166,12 +167,12 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
 
   memcpy(vserver_config, &config, sizeof(struct rahunas_vserver_config));
 
-  new_vserver = (struct vserver *) rh_malloc(sizeof(struct vserver));
+  new_vserver = (RHVServer *) rh_malloc(sizeof(RHVServer));
 
   if (new_vserver == NULL)
     return -1;
 
-  memset(new_vserver, 0, sizeof(struct vserver));
+  memset(new_vserver, 0, sizeof(RHVServer));
 
   new_vserver->vserver_config = vserver_config;
 
@@ -180,14 +181,14 @@ int register_vserver(struct main_server *ms, const char *vserver_cfg_file)
   return 0; 
 }
 
-int unregister_vserver(struct main_server *ms, int vserver_id)
+int unregister_vserver(RHMainServer *ms, int vserver_id)
 {
   GList *vserver_list = ms->vserver_list;
   GList *runner = g_list_first(vserver_list);
-  struct vserver *lvserver = NULL;
+  RHVServer *lvserver = NULL;
 
   while (runner != NULL) {
-    lvserver = (struct vserver *)runner->data;
+    lvserver = (RHVServer *)runner->data;
     if (lvserver->vserver_config->vserver_id == vserver_id) {
       vserver_cleanup(lvserver);
 
@@ -200,15 +201,15 @@ int unregister_vserver(struct main_server *ms, int vserver_id)
   return 0;
 }
 
-int unregister_vserver_all(struct main_server *ms)
+int unregister_vserver_all(RHMainServer *ms)
 {
   GList *vserver_list = ms->vserver_list;
   GList *runner = g_list_first(vserver_list);
   GList *deleting = NULL;
-  struct vserver *lvserver = NULL;
+  RHVServer *lvserver = NULL;
 
   while (runner != NULL) {
-    lvserver = (struct vserver *)runner->data;
+    lvserver = (RHVServer *)runner->data;
     vserver_cleanup(lvserver);
     deleting = runner;
     runner = g_list_next(runner);
@@ -220,14 +221,15 @@ int unregister_vserver_all(struct main_server *ms)
   return 0;
 }
 
-int walk_through_vserver(int (*callback)(void *, void *), struct main_server *ms)
+int walk_through_vserver(int (*callback)(RHMainServer *, RHVServer*),
+                         RHMainServer *ms)
 {
   GList *vserver_list = ms->vserver_list;
   GList *runner = g_list_first(vserver_list);
-  struct vserver *vs = NULL;
+  RHVServer *vs = NULL;
 
   while (runner != NULL) {
-    vs = (struct vserver *)runner->data;
+    vs = (RHVServer *)runner->data;
 
     (*callback)(ms, vs);
 
@@ -237,7 +239,7 @@ int walk_through_vserver(int (*callback)(void *, void *), struct main_server *ms
   return 0;
 }
 
-void vserver_init_done(struct main_server *ms, struct vserver *vs)
+void vserver_init_done(RHMainServer *ms, RHVServer *vs)
 {
   if (vs != NULL) {
     vs->vserver_config->init_flag = VS_DONE;
@@ -245,7 +247,7 @@ void vserver_init_done(struct main_server *ms, struct vserver *vs)
   }
 }
 
-void vserver_reload(struct main_server *ms, struct vserver *vs)
+void vserver_reload(RHMainServer *ms, RHVServer *vs)
 {
   if (vs->vserver_config->init_flag == VS_DONE) {
     // Indicate the unused virtual server
@@ -285,7 +287,7 @@ void vserver_reload(struct main_server *ms, struct vserver *vs)
         cleanup_vserver_config(vs->vserver_config);
         memcpy(vs->vserver_config, vs->dummy_config, 
           sizeof(struct rahunas_vserver_config));
-        rh_free(&vs->dummy_config);
+        rh_free((void **) &vs->dummy_config);
       }
 
       vs->vserver_config->init_flag = VS_INIT;
@@ -297,14 +299,14 @@ void vserver_reload(struct main_server *ms, struct vserver *vs)
 }
 
 
-void vserver_unused_cleanup(struct main_server *ms)
+void vserver_unused_cleanup(RHMainServer *ms)
 {
   GList *vserver_list = ms->vserver_list;
   GList *runner = g_list_first(vserver_list);
-  struct vserver *lvserver = NULL;
+  RHVServer *lvserver = NULL;
 
   while (runner != NULL) {
-    lvserver = (struct vserver *)runner->data;
+    lvserver = (RHVServer *)runner->data;
     if (lvserver->vserver_config->init_flag == VS_NONE) {
       logmsg(RH_LOG_NORMAL, "[%s] - Config removed",
              lvserver->vserver_config->vserver_name);
@@ -317,6 +319,4 @@ void vserver_unused_cleanup(struct main_server *ms)
       runner = g_list_next(runner);
     }
   }
-  
-  return 0;
 }

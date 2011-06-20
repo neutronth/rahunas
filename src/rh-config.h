@@ -104,7 +104,7 @@ extern GList *interfaces_list;
 
 int get_config(const char *cfg_file, union rahunas_config *config);
 int get_value(const char *cfg_file, const char *key, void **data, size_t *len);
-int get_vservers_config(const char *conf_dir, struct main_server *server);
+int get_vservers_config(const char *conf_dir, RHMainServer *server);
 int cleanup_vserver_config(struct rahunas_vserver_config *config);
 int cleanup_mainserver_config(struct rahunas_main_config *config);
 enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size, 
