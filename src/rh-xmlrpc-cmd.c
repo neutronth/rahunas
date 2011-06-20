@@ -9,7 +9,7 @@
 #include "rh-xmlrpc-cmd.h"
 #include "rh-task-memset.h"
 
-int send_xmlrpc_stopacct(struct vserver *vs, uint32_t id, int cause) {
+int send_xmlrpc_stopacct(RHVServer *vs, uint32_t id, int cause) {
   GNetXmlRpcClient *client = NULL;
   gchar *reply  = NULL;
   gchar *params = NULL;

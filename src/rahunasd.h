@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #include <time.h>
 #include <linux/if_ether.h>
 #include <errno.h>
@@ -23,7 +24,8 @@
 #define DEFAULT_MAC "00:00:00:00:00:00"
 
 extern const char *termstring; 
-extern struct main_server rh_main_server_instance;
+extern RHMainServer rh_main_server_instance;
+extern pthread_mutex_t RHMtxLock;
 
 enum RH_LOG {
   RH_LOG_DEBUG,

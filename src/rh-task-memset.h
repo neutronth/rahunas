@@ -6,9 +6,11 @@
 #ifndef __RH_TASK_MEMSET_H
 #define __RH_TASK_MEMSET_H
 
-extern void rh_task_memset_reg(struct main_server *ms);
+#include <glib.h>
+#include "rh-server.h"
 
-GList *member_get_node_by_id(struct vserver *vs, uint32_t id);
-gint idcmp(struct rahunas_member *a, struct rahunas_member *b);
+extern void rh_task_memset_reg(RHMainServer *ms);
+
+GList *member_get_node_by_id(RHVServer *vs, uint32_t id);
 #endif // __RH_TASK_MEMSET_H
 

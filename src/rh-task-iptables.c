@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -16,7 +17,7 @@
 #include "rh-task.h"
 #include "rh-utils.h"
 
-int iptables_exec(struct vserver *vs, char *const args[])
+int iptables_exec(RHVServer *vs, char *const args[])
 {
   pid_t ws;
   pid_t pid;
@@ -105,7 +106,7 @@ int iptables_exec(struct vserver *vs, char *const args[])
   return ret;
 }
 
-int iptables_start(struct vserver *vs)
+int iptables_start(RHVServer *vs)
 {
   char *args[3];
 
@@ -118,7 +119,7 @@ int iptables_start(struct vserver *vs)
   return iptables_exec(vs, args);
 }
 
-int iptables_stop(struct vserver *vs)
+int iptables_stop(RHVServer *vs)
 {
   char *args[3];
 
@@ -144,7 +145,7 @@ static int stopservice  ()
 }
 
 /* Initialize */
-static void init (struct vserver *vs)
+static void init (RHVServer *vs)
 {
   logmsg(RH_LOG_NORMAL, "[%s] Task IPTABLES initialize..", 
          vs->vserver_config->vserver_name);  
@@ -153,7 +154,7 @@ static void init (struct vserver *vs)
 }
 
 /* Cleanup */
-static int cleanup (struct vserver *vs)
+static void cleanup (RHVServer *vs)
 {
   logmsg(RH_LOG_NORMAL, "[%s] Task IPTABLES cleanup..",
          vs->vserver_config->vserver_name);  
@@ -162,39 +163,39 @@ static int cleanup (struct vserver *vs)
 }
 
 /* Start session task */
-static int startsess (struct vserver *vs, struct task_req *req)
+static int startsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing */
   return 0;
 }
 
 /* Stop session task */
-static int stopsess  (struct vserver *vs, struct task_req *req)
+static int stopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing */
   return 0; 
 }
 
 /* Commit start session task */
-static int commitstartsess (struct vserver *vs, struct task_req *req)
+static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct vserver *vs, struct task_req *req)
+static int commitstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct vserver *vs, struct task_req *req)
+static int rollbackstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
+static int rollbackstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -214,6 +215,6 @@ static struct task taskiptables = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_iptables_reg(struct main_server *ms) {
+void rh_task_iptables_reg(RHMainServer *ms) {
   task_register(ms, &taskiptables);
 }

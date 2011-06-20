@@ -7,7 +7,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
 #include "rahunasd.h"
+#include "rh-server.h"
 #include "rh-xmlrpc-server.h"
 #include "rh-radius.h"
 #include "rh-ipset.h"
@@ -23,8 +26,8 @@ int do_startsession(GNetXmlRpcServer *server,
                     gpointer user_data,
                     gchar **reply_string) 
 {
-  struct main_server *ms = (struct main_server *)user_data; 
-  struct vserver *vs = NULL;
+  RHMainServer *ms = (RHMainServer *)user_data;
+  RHVServer    *vs = NULL;
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
   struct task_req req;
   gchar *ip = NULL;
@@ -39,6 +42,8 @@ int do_startsession(GNetXmlRpcServer *server,
   uint32_t id;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
+
+  pthread_mutex_lock (&RHMtxLock);
 
   if (param == NULL)
     goto out;
@@ -76,6 +81,7 @@ int do_startsession(GNetXmlRpcServer *server,
 
   /* Check if client already registered */
   member_node = member_get_node_by_id(vs, id);
+
   if (member_node != NULL)
     goto greeting;
 
@@ -83,8 +89,8 @@ int do_startsession(GNetXmlRpcServer *server,
   req.vserver_id = atoi(vserver_id);
   req.username = username;
   req.session_id = session_id;
-  parse_mac(mac_address, &ethernet);
-  memcpy(req.mac_address, &ethernet, ETH_ALEN);
+  parse_mac(mac_address, ethernet);
+  memcpy(req.mac_address, ethernet, ETH_ALEN);
   req.session_start = 0;
   req.session_timeout = 0;
 
@@ -123,9 +129,10 @@ greeting:
 
 out:
   *reply_string = g_strdup("Invalid input parameters");
-  goto cleanup;
 
 cleanup:
+  pthread_mutex_unlock (&RHMtxLock);
+
   DP("RPC Reply: %s", *reply_string);
   g_free(ip);
   g_free(username);
@@ -145,8 +152,8 @@ int do_stopsession(GNetXmlRpcServer *server,
                    gpointer user_data,
                    gchar **reply_string)
 {
-  struct main_server *ms = (struct main_server *)user_data;
-  struct vserver *vs = NULL;
+  RHMainServer *ms = (RHMainServer *)user_data;
+  RHVServer    *vs = NULL;
   struct task_req req;
   gchar *ip = NULL;
   gchar *mac_address = NULL;
@@ -158,6 +165,8 @@ int do_stopsession(GNetXmlRpcServer *server,
   unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
+
+  pthread_mutex_lock (&RHMtxLock);
 
   if (param == NULL)
     goto out;
@@ -186,8 +195,8 @@ int do_stopsession(GNetXmlRpcServer *server,
     goto cleanup;
   }
 
-  parse_mac(mac_address, &ethernet);
-  memcpy(req.mac_address, &ethernet, ETH_ALEN);
+  parse_mac(mac_address, ethernet);
+  memcpy(req.mac_address, ethernet, ETH_ALEN);
 
   member_node = member_get_node_by_id(vs, id);
 
@@ -226,9 +235,10 @@ int do_stopsession(GNetXmlRpcServer *server,
 
 out:
   *reply_string = g_strdup("Invalid input parameters");
-  goto cleanup;
 
 cleanup:
+  pthread_mutex_unlock (&RHMtxLock);
+
   DP("RPC Reply: %s", *reply_string);
   g_free(ip);
   g_free(mac_address);
@@ -243,13 +253,15 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
                       gpointer user_data,
                       gchar **reply_string)
 {
-  struct main_server *ms = (struct main_server *)user_data;
-  struct vserver *vs = NULL;
+  RHMainServer *ms = (RHMainServer *)user_data;
+  RHVServer    *vs = NULL;
   gchar *ip = NULL;
   gchar *vserver_id = NULL;
   uint32_t   id;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
+
+  pthread_mutex_lock (&RHMtxLock);
 
   if (param == NULL)
     goto out;
@@ -304,9 +316,10 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
 
 out:
   *reply_string = g_strdup("Invalid input parameters");
-   goto cleanup;
 
 cleanup:
+  pthread_mutex_unlock (&RHMtxLock);
+
   DP("RPC Reply: %s", *reply_string);
   g_free(ip);
   g_free(vserver_id);

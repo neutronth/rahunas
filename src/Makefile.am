@@ -16,7 +16,8 @@ AM_CFLAGS = \
   -DRAHUNAS_LOG_DIR=\"$(localstatedir)/log/rahunas/\" \
   -DRAHUNAS_RUN_DIR=\"$(localstatedir)/run/\" \
   -DRAHUNAS_FIREWALL_WRAPPER=\"$(sbindir)/rahunas-firewall\" \
-  -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\"
+  -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\" \
+  -D_GNU_SOURCE
 
 rahunasd_SOURCES = \
   rahunasd.c \

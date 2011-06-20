@@ -11,6 +11,8 @@
 
 #define SERVICECLASS_SET_NAME   "rahunas_serviceclass"
 
+typedef struct serviceclass RHSvClass;
+
 struct serviceclass {
   struct rahunas_serviceclass_config *serviceclass_config;
   struct rahunas_serviceclass_config *dummy_config;

@@ -14,7 +14,8 @@ squid_auth_helper_SOURCES = \
 squid_auth_helper_CPPFLAGS = \
 	-I$(top_srcdir)/lcfg \
 	-I$(top_srcdir)/xmlrpc \
-	$(LIBGNET_CFLAGS)
+	$(LIBGNET_CFLAGS) \
+        -D_GNU_SOURCE
 squid_auth_helper_LDADD = \
 	$(top_builddir)/lcfg/liblcfg.a \
 	$(top_builddir)/xmlrpc/libgnetxmlrpc.a	\

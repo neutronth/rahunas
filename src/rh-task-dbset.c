@@ -13,6 +13,7 @@
 #include "rh-task.h"
 #include "rh-ipset.h"
 #include "rh-utils.h"
+#include "rh-task-memset.h"
 
 struct dbset_row {
   gchar *session_id;
@@ -50,12 +51,13 @@ gboolean get_errors (GdaConnection * connection)
   }
 }
 
-gboolean *parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
+gboolean
+parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
   gint  row_id;
   gint  column_id;
-  GValue *value;
+  const GValue *value;
   gchar  *str;
-  gchar  *title;
+  const gchar  *title;
   GdaNumeric *num;
   struct dbset_row *row;
   struct tm tm;
@@ -200,7 +202,7 @@ void free_data_list(GList *data_list)
   g_list_free (data_list);  
 }
 
-gboolean restore_set(GList **data_list, struct vserver *vs)
+gboolean restore_set(GList **data_list, RHVServer *vs)
 {
   GList *node = NULL;
   struct dbset_row *row = NULL;
@@ -233,8 +235,8 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
     req.vserver_id = atoi(row->vserver_id);
     req.username = row->username;
     req.session_id = row->session_id;
-    parse_mac(row->mac, &ethernet);
-    memcpy(req.mac_address, &ethernet, ETH_ALEN);
+    parse_mac(row->mac, ethernet);
+    memcpy(req.mac_address, ethernet, ETH_ALEN);
 
     req.session_start = row->session_start;
     req.session_timeout = row->session_timeout;
@@ -251,8 +253,8 @@ gboolean restore_set(GList **data_list, struct vserver *vs)
   return TRUE;
 }
 
-
-GdaConnection *openconn (GdaConnectionOptions options)
+GdaConnection *
+openconn (GdaConnectionOptions options)
 {
   GdaConnection *connection = NULL;
   GdaSqlParser  *parser = NULL;
@@ -301,7 +303,7 @@ static int stopservice  ()
 }
 
 /* Initialize */
-static void init (struct vserver *vs)
+static void init (RHVServer *vs)
 {
   GdaConnection *connection;
   GList *data_list;
@@ -334,13 +336,13 @@ static void init (struct vserver *vs)
 }
 
 /* Cleanup */
-static void cleanup (struct vserver *vs)
+static void cleanup (RHVServer *vs)
 {
   /* Do nothing */
 }
 
 /* Start session task */
-static int startsess (struct vserver *vs, struct task_req *req)
+static int startsess (RHVServer *vs, struct task_req *req)
 {
   GdaConnection *connection;
   gint res;
@@ -352,8 +354,8 @@ static int startsess (struct vserver *vs, struct task_req *req)
 
   connection = openconn (GDA_CONNECTION_OPTIONS_NONE);
 
-  strftime(&time_str, sizeof time_str, "%s", localtime(&req->session_start));
-  strftime(&time_str2, sizeof time_str2, "%s", 
+  strftime(time_str, sizeof time_str, "%s", localtime(&req->session_start));
+  strftime(time_str2, sizeof time_str2, "%s",
     localtime(&req->session_timeout));
 
   member_node = member_get_node_by_id(vs, req->id);
@@ -391,7 +393,7 @@ static int startsess (struct vserver *vs, struct task_req *req)
 }
 
 /* Stop session task */
-static int stopsess (struct vserver *vs, struct task_req *req)
+static int stopsess (RHVServer *vs, struct task_req *req)
 {
   GdaConnection *connection;
   gint res;
@@ -427,25 +429,25 @@ static int stopsess (struct vserver *vs, struct task_req *req)
 }
 
 /* Commit start session task */
-static int commitstartsess (struct vserver *vs, struct task_req *req)
+static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct vserver *vs, struct task_req *req)
+static int commitstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct vserver *vs, struct task_req *req)
+static int rollbackstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
+static int rollbackstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -465,6 +467,6 @@ static struct task task_dbset = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_dbset_reg(struct main_server *ms) {
+void rh_task_dbset_reg(RHMainServer *ms) {
   task_register(ms, &task_dbset);
 }

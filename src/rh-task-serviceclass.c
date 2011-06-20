@@ -1,5 +1,5 @@
 /**
- * RahuNAS task serviceclass implementation 
+ * RahuNAS task serviceclass implementation
  * Author: Neutron Soutmun <neo.neutron@gmail.com>
  * Date:   2010-07-29
  */
@@ -17,7 +17,7 @@ static struct set *rh_serviceclass_set = NULL;
 static uint32_t _sc_get_slot_id(struct rahunas_serviceclass_config *sc_config)
 {
   uint32_t slot_id = 0;
-  time_t random_time; 
+  time_t random_time;
   int  retry = 30;
   char select_cmd[256];
   GdaConnection *connection = NULL;
@@ -55,7 +55,7 @@ static uint32_t _sc_get_slot_id(struct rahunas_serviceclass_config *sc_config)
         // Available
         free_data_list(data_list);
         break;
-      } else { 
+      } else {
         // Not available, retry
         free_data_list(data_list);
         slot_id = 0;
@@ -85,24 +85,24 @@ static int stopservice  ()
   if (rh_serviceclass_set != NULL) {
     logmsg(RH_LOG_NORMAL, "Service Class: Flushing set ...");
     set_flush (SERVICECLASS_SET_NAME);
-    rh_free(&rh_serviceclass_set); 
+    rh_free(&rh_serviceclass_set);
   }
 
   return 0;
 }
 
 /* Initialize */
-static void init (struct vserver *vs)
+static void init (RHVServer *vs)
 {
 }
 
 /* Cleanup */
-static void cleanup (struct vserver *vs)
+static void cleanup (RHVServer *vs)
 {
 }
 
 /* Start session task */
-static int startsess (struct vserver *vs, struct task_req *req)
+static int startsess (RHVServer *vs, struct task_req *req)
 {
   struct serviceclass *sc = NULL;
   struct rahunas_serviceclass_config *sc_config = NULL;
@@ -198,7 +198,7 @@ out:
 }
 
 /* Stop session task */
-static int stopsess  (struct vserver *vs, struct task_req *req)
+static int stopsess  (RHVServer *vs, struct task_req *req)
 {
   struct serviceclass *sc = NULL;
   struct rahunas_serviceclass_config *sc_config = NULL;
@@ -269,25 +269,25 @@ failed:
 }
 
 /* Commit start session task */
-static int commitstartsess (struct vserver *vs, struct task_req *req)
+static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Commit stop session task */
-static int commitstopsess  (struct vserver *vs, struct task_req *req)
+static int commitstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback start session task */
-static int rollbackstartsess (struct vserver *vs, struct task_req *req)
+static int rollbackstartsess (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
 
 /* Rollback stop session task */
-static int rollbackstopsess  (struct vserver *vs, struct task_req *req)
+static int rollbackstopsess  (RHVServer *vs, struct task_req *req)
 {
   /* Do nothing or need to implement */
 }
@@ -307,6 +307,6 @@ static struct task task_serviceclass = {
   .rollbackstopsess = &rollbackstopsess,
 };
 
-void rh_task_serviceclass_reg(struct main_server *ms) {
+void rh_task_serviceclass_reg(RHMainServer *ms) {
   task_register(ms, &task_serviceclass);
 }

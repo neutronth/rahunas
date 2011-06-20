@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <syslog.h>
@@ -106,7 +107,7 @@ void kernel_sendto(void *data, size_t size)
     DP("res=%d errno=%d", res, errno);
 }
 
-int kernel_getfrom_handleerrno(void *data, size_t * size)
+int kernel_getfrom_handleerrno(void *data, socklen_t * size)
 {
   int res = wrapped_getsockopt(data, size);
 
@@ -233,7 +234,7 @@ int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac,
   ip_set_ip_t ip;
   unsigned char mac[ETH_ALEN] = {0,0,0,0,0,0};
   parse_ip(adtip, &ip);  
-  parse_mac(adtmac, &mac);
+  parse_mac(adtmac, mac);
 
   return set_adtip_nb(rahunas_set, &ip, mac, op);
 }
@@ -380,7 +381,7 @@ void set_flush(const char *name)
   kernel_sendto(&req, sizeof(struct ip_set_req_std));
 }
 
-size_t load_set_list(struct vserver *vs, const char name[IP_SET_MAXNAMELEN],
+size_t load_set_list(RHVServer *vs, const char name[IP_SET_MAXNAMELEN],
           ip_set_id_t *idx,
           unsigned op, unsigned cmd)
 {
@@ -447,7 +448,7 @@ tryagain:
   return size;
 }
 
-int get_header_from_set (struct vserver *vs)
+int get_header_from_set (RHVServer *vs)
 {
   struct ip_set_req_rahunas_create *header = NULL;
   void *data = NULL;
@@ -509,15 +510,17 @@ int get_header_from_set (struct vserver *vs)
   return res;
 }
 
-int walk_through_set (int (*callback)(void *), struct vserver *vs)
+int walk_through_set (int (*callback)(void *), RHVServer *vs)
 {
   struct processing_set process;
   void *data = NULL;
   ip_set_id_t idx;
   socklen_t size, req_size;
   int res = 0;
-   
+
   check_protocolversion ();
+
+  pthread_mutex_lock (&RHMtxLock);
 
   size = req_size = load_set_list(vs, vs->vserver_config->vserver_name, &idx, 
                                   IP_SET_OP_LIST_SIZE, CMD_LIST); 
@@ -533,6 +536,7 @@ int walk_through_set (int (*callback)(void *), struct vserver *vs)
 
     if (res != 0 || size != req_size) {
       rh_free(&data);
+      pthread_mutex_unlock (&RHMtxLock);
       return -EAGAIN;
     }
     size = 0;
@@ -541,11 +545,15 @@ int walk_through_set (int (*callback)(void *), struct vserver *vs)
   if (data != NULL) {
     process.vs = vs;
     process.list = data;
+
+    pthread_mutex_unlock (&RHMtxLock);
     (*callback)(&process);
+    rh_free (&data);
+    return 0;
   }
 
-  rh_free(&data);
-  return res;
+  pthread_mutex_unlock (&RHMtxLock);
+  return 0;
 }
 
 struct ip_set_req_rahunas *get_data_from_set (void *data, unsigned int id,
