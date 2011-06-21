@@ -1,5 +1,13 @@
 RahuNAS
 
+0.2.0 (2011-06-21)
+=====
+- New minor version (support Debian GNU/Linux Squeeze+).
+- Support libgda-4.
+- Support ipset >= 4.2
+- No backward compatible with Lenny, if lenny is required use the 0.1.x branch
+  instead.
+
 0.1.7 (2009-09-19)
 =====
 - Critical bug fix, the firewall script does not actually add or 
