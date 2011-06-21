@@ -1,3 +1,10 @@
+rahunas (0.2.0-1squeeze2) stable; urgency=low
+
+  * debian/control:
+    - Replace ipset with xtables-addons-common.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 21 Jun 2011 18:53:45 +0700
+
 rahunas (0.2.0-1squeeze1) stable; urgency=low
 
   * Imported Upstream version 0.2.0
