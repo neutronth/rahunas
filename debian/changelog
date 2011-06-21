@@ -1,3 +1,11 @@
+rahunas (0.2.0-1squeeze3) stable; urgency=low
+
+  * debian/rahunas-weblogin.postinst:
+    - Add Net_URL2-0.3.1 and HTTP_Request2-2.0.0RC1 which they are in the beta
+      repository which not installed by default.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 21 Jun 2011 19:59:30 +0700
+
 rahunas (0.2.0-1squeeze2) stable; urgency=low
 
   * debian/control:
