@@ -9,9 +9,9 @@ Homepage: http://www.rahunas.org
 
 Package: rahunas
 Architecture: any
-Depends: libgnet2.0-0 (>= 2.0.8), libgda-4.0-4 (>= 4.0.12), iptables, ipset,
- iproute, bridge-utils, ucf (>= 0.28), sqlite3 (>= 3.7.3),
- ${shlibs:Depends}, ${misc:Depends}
+Depends: libgnet2.0-0 (>= 2.0.8), libgda-4.0-4 (>= 4.0.12), iptables,
+ xtables-addons-common, iproute, bridge-utils, ucf (>= 0.28),
+ sqlite3 (>= 3.7.3), ${shlibs:Depends}, ${misc:Depends}
 Suggests: rahunas-config
 Description: Network Access Server based on IP Sets
  RahuNAS is an open source Network Access Server (NAS) based on
