@@ -1,3 +1,12 @@
+rahunas (0.1.8-1lenny1) oldstable; urgency=low
+
+  * Imported Upstream version 0.1.8
+  * Upload to lenny.
+  * debian/rules:
+    - Replace autogen.sh with autoreconf -fi.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 21 Jun 2011 14:34:40 +0700
+
 rahunas (0.1.7-1) unstable; urgency=medium
 
   * New upstream bug fix release.
