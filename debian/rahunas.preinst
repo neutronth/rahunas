@@ -1,0 +1,45 @@
+#!/bin/sh
+
+set -e
+
+# Remove no-longer used config file
+rm_conffile () {
+  PKGNAME="$1"
+  CONFFILE="$2"
+
+  if [ -e $CONFFILE ]; then
+    md5sum="`md5sum \"$CONFFILE\" | sed -e \"s/ .*//\"`"
+    old_md5sum="`dpkg-query -W -f='${Conffiles}' $PKGNAME \
+                | sed -n -e \"\\\\' $CONFFILE'{s/ obsolete$//;s/.* //p}\"`"
+    if [ "$md5sum" != "$old_md5sum" ]; then
+      echo "Obsolete conffile $CONFFILE has been modified by you."
+      echo "Saving as $CONFFILE.dpkg-bak ..."
+      mv -f "$CONFFILE" "$CONFFILE".dpkg-bak
+    else
+      echo "Removing obsolete conffile $CONFFILE ..."
+      rm -f "$CONFFILE"
+    fi
+  fi
+}
+
+case "$1" in
+  install|upgrade)
+    if dpkg --compare-versions "$2" le "0.1.5~b1+a8b045f"; then
+      rm_conffile rahunas "/etc/rahunas/bandwidth.sh"
+      rm_conffile rahunas "/etc/rahunas/firewall.sh"
+      rm_conffile rahunas "/etc/rahunas/rahunas.db"
+      rm_conffile rahunas "/etc/rahunas/weblogin-config-update.sh"
+    fi
+    ;;
+
+    abort-upgrade)
+    ;;
+
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+        exit 0
+    ;;
+esac
+
+#DEBHELPER#
+exit 0

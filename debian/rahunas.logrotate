@@ -1,0 +1,13 @@
+/var/log/rahunas/*.log {
+  weekly
+  missingok
+  rotate 13
+  compress
+  delaycompress
+  notifempty
+  create 640 root adm
+  sharedscripts
+  postrotate
+    /etc/init.d/rahunas reload > /dev/null
+  endscript
+}

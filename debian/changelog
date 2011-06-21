@@ -1,0 +1,179 @@
+rahunas (0.1.8-1lenny1) oldstable; urgency=low
+
+  * Imported Upstream version 0.1.8
+  * Upload to lenny.
+  * debian/rules:
+    - Replace autogen.sh with autoreconf -fi.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 21 Jun 2011 14:34:40 +0700
+
+rahunas (0.1.7-1) unstable; urgency=medium
+
+  * New upstream bug fix release.
+  * urgency set to medium
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 19 Sep 2009 18:47:34 +0700
+
+rahunas (0.1.6-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/control:
+    - Bump Standards-Version to 3.8.3, no changes needed.
+    - Remove quilt, no needed.
+  * debian/patches: All patches included in upstream.
+  * debian/rahunas.postinst: Do not install the example vserver script.
+    User have to copy from /usr/share/doc/rahunas/example manually.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 19 Sep 2009 16:28:50 +0700
+
+rahunas (0.1.5-2) unstable; urgency=low
+
+  * debian/{control,rules}: Add the quilt patch-sys.
+  * debian/patches/100-prevent-bandwidth-script-from-non-existing-iface.patch:
+    Cherry-pick the patch from upstream git.
+    + Prevent the bandwidth script from non-existing interface name.
+    + State the return message "NOT COMPLETED" from bandwidth script is error,
+      which need to do something such as in the add and remove bandwidth slot to
+      retry for 3 times when this error occured before give up.
+  * debian/rahunas.postinst:
+    + Prevent the config file installation for user removed config file.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 20 Jul 2009 15:19:41 +0700
+
+rahunas (0.1.5-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix the ifb related problem.
+  * Adjust the rahunas-firewall
+    + to handle the multiple external device (The load balance system issue).
+    + to check the proxy host which it is the local interface and open the
+      port on the firewall for authenticated users.
+  * debian/control: Standards-Version 3.8.2, no changes.
+  * +debian/rahunas.preinst: Remove the deprecated scripts and data files from
+    /etc/rahunas/.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 04 Jul 2009 16:17:32 +0700
+
+rahunas (0.1.5~b1+a8b045f) unstable; urgency=low
+
+  * Fix the ifb initial on config reloading.
+  * debian/rahunas.logrotate:
+    + Do the reload after rotate log rather than restart.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sun, 21 Jun 2009 10:16:54 +0700
+
+rahunas (0.1.5~b1) unstable; urgency=high
+
+  * New upstream release.
+  * Critical fix the malfunction in ifb_reserved.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Thu, 18 Jun 2009 20:58:04 +0700
+
+rahunas (0.1.4-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/rahunas.init: Update to follow the new changes in new release.
+  * debian/control:
+    - Add sqlite3 as depends, it needed by the rahunas-weblogin-config-update.
+    - Now freeradius only suggests not depends for rahunas-weblogin.
+    - Remove quilt.
+  * debian/rules:
+    - Remove unnecessary quilt patch system.
+    - Remove tool scripts install, upstream added.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 09 Jun 2009 10:34:20 +0700
+
+rahunas (0.1.3.b3-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sat, 30 May 2009 14:37:23 +0700
+
+rahunas (0.1.3.b2-2) unstable; urgency=low
+
+  * debian/rahunas.init:
+    - Fix the rahunas could not regererate/reload the weblogin PHP config file.
+      (file bug to upstream).
+    - Add force-reload to make lintian happy.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 29 Apr 2009 08:34:44 +0700
+
+rahunas (0.1.3.b2-1) unstable; urgency=low
+
+  * New upstream beta release, new feature and bug fix.
+    - Add config reloading.
+    - Prevent double login.
+    - Handle start-stop process, fix firewall script.
+  * debian/rahunas.init: Update to follow the new init example changes.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 27 Apr 2009 23:36:57 +0700
+
+rahunas (0.1.3.b1-1) unstable; urgency=low
+
+  * New upstream beta relese.
+  * debian/rules:
+    + Install weblogin-config-update.sh to satisfy the new init script need.
+    + Remove the installation of rahunas-vserver.conf for the freedom of the
+      user to manage config files.
+  * debian/rahunas.{postinst,postrm}: Remove rahunas-vserver.conf related.
+  * debian/rahunas.init: Update to follow the new init example changes.
+  * debian/patches/series, debian/patches/01_example_config.patch,
+    debian/patches/02_firewall_bittorrent.patch,
+    debian/patches/03_fix_users_stuck.patch,
+    debian/patches/04-fix-the-member-deleted-during-polling-process.patch:
+    Removed, included in upstream.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 20 Apr 2009 17:23:40 +0700
+
+rahunas (0.1.2-5) unstable; urgency=low
+
+  * +debian/patches/04-fix-the-member-deleted-during-polling-process.patch:
+    Backported from upstream git to fix the member was deleted during polling
+    process cause of the program will stop unexpectly and often the login
+    users get stuck in the DB after service restarted.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 06 Apr 2009 00:30:22 +0700
+
+rahunas (0.1.2-4) unstable; urgency=low
+
+  * +debian/patches/03_fix_users_stuck.patch: Backported from upstream git to
+    fix the users stuck in the Radius Accouting DB due to the unable to
+    connect to the XMLRPC service.
+
+  * debian/rahunas-weblogin.apache2.conf: Add Alias /rahunas_service to
+    support the new change for fix the users stuck and prevent the failure of
+    the cleanup process on restart.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Fri, 03 Apr 2009 03:11:31 +0700
+
+rahunas (0.1.2-3) unstable; urgency=low
+
+  * +debian/patches/02_firewall_bittorrent.patch: Firewall script do not add
+    the bittorrent block rules as requested.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Thu, 02 Apr 2009 23:12:00 +0700
+
+rahunas (0.1.2-2) unstable; urgency=low
+
+  * debian/rahunas.postinst: Fix fail to install if /etc/rahunas/rahunas.d does
+    not exists.
+  * debian/patches/01_example_config.patch: Add missing vserver_ports_allow and
+    vserver_ports_intercept.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 01 Apr 2009 14:58:18 +0700
+
+rahunas (0.1.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * debian/gbp.conf: Introduce git-buildpackage config file.
+  * debian/control, debian/rules, +debian/patches/*:
+    Add quilt to maintain the patches.
+  * debian/control: Update Standards-Version: 3.8.1, no change.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 31 Mar 2009 23:53:12 +0700
+
+rahunas (0.1.1-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 03 Dec 2008 22:55:47 +0700
