@@ -1,3 +1,13 @@
+rahunas (0.2.0-1squeeze1) stable; urgency=low
+
+  * Imported Upstream version 0.2.0
+  * Upload to squeeze.
+  * debian/control:
+    - Update build-deps, update libgda-4.0-dev (>= 4.0.12).
+    - Update rahunas deps accordingly.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 21 Jun 2011 16:59:02 +0700
+
 rahunas (0.1.8-1lenny1) oldstable; urgency=low
 
   * Imported Upstream version 0.1.8
