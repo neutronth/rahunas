@@ -3,14 +3,14 @@ Section: net
 Priority: optional
 Maintainer: Neutron Soutmun <neo.neutron@gmail.com>
 Build-Depends: debhelper (>= 7), autotools-dev, autoconf, automake,
- libgnet-dev (>= 2.0.8), libgda3-dev (>= 3.0.2)
+ libgnet-dev (>= 2.0.8), libgda-4.0-dev (>= 4.0.12)
 Standards-Version: 3.9.2
 Homepage: http://www.rahunas.org
 
 Package: rahunas
 Architecture: any
-Depends: libgnet2.0-0 (>= 2.0.8), libgda3-sqlite (>= 3.0.2), iptables, ipset,
- iproute, bridge-utils, ucf (>= 0.28), sqlite3 (>= 3.5.9),
+Depends: libgnet2.0-0 (>= 2.0.8), libgda-4.0-4 (>= 4.0.12), iptables, ipset,
+ iproute, bridge-utils, ucf (>= 0.28), sqlite3 (>= 3.7.3),
  ${shlibs:Depends}, ${misc:Depends}
 Suggests: rahunas-config
 Description: Network Access Server based on IP Sets
