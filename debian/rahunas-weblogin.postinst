@@ -44,6 +44,10 @@ if which pear > /dev/null 2>&1; then
   pear install XML_RPC2 > /dev/null 2>&1 || true
   echo "Installing Net_IPv4 package"
   pear install Net_IPv4 > /dev/null 2>&1 || true
+  echo "Installing Net_URL2 package"
+  pear install Net_URL2-0.3.1 > /dev/null 2>&1 || true
+  echo "Installing HTTP_Request2 package"
+  pear install HTTP_Request2-2.0.0RC1 > /dev/null 2>&1 || true
   echo "Done.."
 fi
 
