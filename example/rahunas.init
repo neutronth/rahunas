@@ -1,0 +1,145 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          rahunas
+# Required-Start:    $syslog
+# Required-Stop:     $syslog
+# Should-Start:      $local_fs $network
+# Should-Stop:       $local_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Handles the rahunas daemon
+# Description:       Starts, stops the rahunas daemon. 
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+prefix=/usr/local
+exec_prefix=${prefix}
+
+DAEMON=${exec_prefix}/sbin/rahunasd
+INIT=${prefix}/etc/default/rahunas
+FIREWALL=${exec_prefix}/sbin/rahunas-firewall
+WEBLOGIN_CONFIG=${exec_prefix}/sbin/rahunas-weblogin-config-update
+NAME=rahunasd
+DESC="Rahu Network Access Server"
+
+
+# This value is overriden in /etc/default/rahunas if it exists
+RUN_DAEMON=no
+
+test -f $DAEMON || exit 0
+test -f $FIREWALL || exit 0
+
+set -e
+
+test -f $INIT || exit 0 
+. $INIT 
+
+. /lib/lsb/init-functions
+
+PID=${prefix}/var/run/$NAME.pid
+
+start () {
+  $FIREWALL start
+  $WEBLOGIN_CONFIG
+
+  start-stop-daemon --start --quiet \
+    --pidfile $PID --exec $DAEMON < /dev/null
+  return $?
+}
+
+stop () {
+  start-stop-daemon --stop --quiet \
+    --pidfile $PID --name $NAME < /dev/null
+
+  # Wait until the rahunasd has really stopped.
+  sleep 2
+  if test -n "$PID" && kill -0 $PID 2>/dev/null
+  then
+    log_action_begin_msg " ... Waiting"
+    cnt=0
+    while kill -0 $PID 2>/dev/null
+    do
+      cnt=`expr $cnt + 1`
+      if [ $cnt -gt 24 ]
+      then
+        log_action_end_msg 1
+        return 1
+      fi
+      sleep 5
+      log_action_cont_msg ""
+    done
+
+    log_action_end_msg 0
+  fi
+
+  $FIREWALL stop
+  return 0
+}
+
+reload () {
+
+  $WEBLOGIN_CONFIG
+
+  start-stop-daemon --stop --quiet --signal HUP \
+    --pidfile $PID --name $NAME < /dev/null
+  sleep 2
+
+  return 0
+}
+
+case "$1" in
+  start)
+    if [ "$RUN_DAEMON" = "yes" ]; then
+      log_daemon_msg "Starting $DESC" "$NAME"
+      if start ; then
+        log_end_msg $?
+      else
+        log_end_msg $?
+      fi
+    else
+      log_action_msg "Not starting $DESC, as specified in $INIT"
+    fi
+    ;;
+  stop)
+    log_daemon_msg "Stopping $DESC" "$NAME"
+  
+    if stop ; then
+      log_end_msg $?
+    else
+      log_end_msg $?
+    fi
+    ;;
+  restart)
+    if [ "$RUN_DAEMON" = "yes" ]; then
+      log_daemon_msg "Restarting $DESC" "$NAME"
+      stop || true
+      if start ; then
+        log_end_msg $?
+      else
+        log_end_msg $?
+      fi
+    else
+      log_action_msg "Not restarting $DESC, as specified in $INIT"
+    fi
+    ;;
+  reload|force-reload)
+    log_daemon_msg "Reloading $DESC" "$NAME"
+    
+    if reload ; then
+      log_end_msg $?
+    else
+      log_end_msg $?
+    fi
+    ;;
+  status)
+    status_of_proc -p "$PID" "$DAEMON" "$NAME" && exit 0 || exit $?
+    ;;
+  *)
+    N=${prefix}/etc/init.d/$NAME
+    echo "Usage: $N {start|stop|restart|status}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
