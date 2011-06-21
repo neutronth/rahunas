@@ -1,0 +1,2 @@
+version=3
+opts=pasv ftp://neutron.debianclub.com/rahunas/release/rahunas-(.*)\.tar\.gz debian uupdate

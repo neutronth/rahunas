@@ -1,0 +1,44 @@
+Source: rahunas
+Section: net
+Priority: optional
+Maintainer: Neutron Soutmun <neo.neutron@gmail.com>
+Build-Depends: debhelper (>= 7), autotools-dev, autoconf, automake,
+ libgnet-dev (>= 2.0.8), libgda3-dev (>= 3.0.2)
+Standards-Version: 3.8.3
+Homepage: http://www.rahunas.org
+
+Package: rahunas
+Architecture: any
+Depends: libgnet2.0-0 (>= 2.0.8), libgda3-sqlite (>= 3.0.2), iptables, ipset,
+ iproute, bridge-utils, ucf (>= 0.28), sqlite3 (>= 3.5.9),
+ ${shlibs:Depends}, ${misc:Depends}
+Suggests: rahunas-config
+Description: Network Access Server based on IP Sets
+ RahuNAS is an open source Network Access Server (NAS) based on
+ IP Sets (http://ipset.netfilter.org).
+ .
+ It suitable for the small to medium networks which the significant factor is
+ the performance. The RahuNAS provides the advantages of the ipset that the
+ IP packets flow through the netfilter and do the clients filtering at
+ high speed and capable to match the clients' IP and MAC address or IP only.
+ .
+ It supports web based login at the most secure with SSL.
+ .
+ Authentication, Authorization and Accounting (AAA) is handled by your
+ favorite radius server.
+ .
+ Only support IPv4. (IPv6 is in the planning of ipset)
+ .
+ Note: the RahuNAS requires the IP sets with rahunas support module
+ (netfilter extension module) patches applied to the kernel.
+
+Package: rahunas-weblogin
+Architecture: all
+Depends: rahunas, php5, php5-radius, php5-xmlrpc, php5-curl, php-pear,
+ ucf (>= 0.28), ${misc:Depends}
+Suggests: freeradius (>= 2.0.4)
+Description: Web base login for RahuNAS
+ The web base login writen in PHP with the multilingual (English and Thai)
+ support. It provides the login, logout and post login information page.
+ The web base login do request the authorization from the FreeRADIUS and
+ interact with RahuNAS.

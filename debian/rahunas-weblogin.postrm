@@ -1,0 +1,64 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" != "remove" ] && [ "$1" != "purge" ]; then
+  exit 0
+fi
+
+## Source debconf library
+. /usr/share/debconf/confmodule
+db_version 2.0
+
+#
+# Remove or Purge the whole package
+#
+
+common_remove() {
+  if [ -d "/etc/apache2/conf.d" ]; then
+    if [ -L "/etc/apache2/conf.d/rahunas.conf" ]; then
+      rm /etc/apache2/conf.d/rahunas.conf
+    fi
+    invoke-rc.d apache2 reload || true
+  fi
+
+  if [ -L "/usr/share/rahunas/config.php" ]; then
+    rm /usr/share/rahunas/config.php
+  fi
+
+  if which pear > /dev/null 2>&1; then
+    echo "Uninstalling required PEAR packages.."
+    echo "Uninstalling Net_IPv4 package"
+    pear uninstall Net_IPv4 > /dev/null 2>&1 || true
+    echo "Uninstalling XML_RPC2 package"
+    pear uninstall XML_RPC2 > /dev/null 2>&1 || true
+    echo "Uninstalling Cache_Lite package"
+    pear uninstall Cache_Lite > /dev/null 2>&1 || true
+    echo "Uninstalling Crypt_CHAP package"
+    pear uninstall Crypt_CHAP > /dev/null 2>&1 || true
+    echo "Uninstalling Auth_RADIUS package"
+    pear uninstall Auth_RADIUS > /dev/null 2>&1 || true
+    echo "Done .."
+  fi
+}
+
+case "$1" in
+purge)
+  if which ucf >/dev/null 2>&1; then
+    ucf --purge /etc/rahunas/apache2.conf
+    ucf --purge /etc/rahunas/config.php
+  fi
+
+  rm -f /etc/rahunas/apache2.conf
+  rm -f /etc/rahunas/config.php
+
+  common_remove
+  ;;
+
+remove)
+  common_remove
+  ;;
+esac
+
+#DEBHELPER#
+exit 0

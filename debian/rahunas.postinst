@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+#
+# Skip, if we are not in "configure" state
+#
+if [ "$1" != "configure" ]; then
+  exit 0
+fi
+
+test -d /var/log/rahunas || mkdir /var/log/rahunas
+test -d /etc/rahunas/rahunas.d || mkdir -p /etc/rahunas/rahunas.d
+
+ucf /usr/share/doc/rahunas/rahunas.conf /etc/rahunas/rahunas.conf
+
+case "$1" in
+  install)
+    ;;
+  *)
+    ;;
+esac
+
+#DEBHELPER#
+exit 0

@@ -1,0 +1,51 @@
+#!/bin/sh
+
+set -e
+
+#
+# Skip, if we are not in "configure" state
+#
+if [ "$1" != "configure" ]; then
+  exit 0
+fi
+
+ucf /usr/share/doc/rahunas-weblogin/rahunas-weblogin.apache2.conf \
+  /etc/rahunas/apache2.conf
+ucf /usr/share/doc/rahunas-weblogin/examples/config.php \
+  /etc/rahunas/config.php
+
+if which a2enmod > /dev/null 2>&1; then
+  a2enmod ssl > /dev/null 2>&1
+  a2enmod rewrite > /dev/null 2>&1
+fi
+
+if [ -d "/etc/apache2/conf.d" ]; then
+  if [ ! -e "/etc/apache2/conf.d/rahunas.conf" ]; then
+    ln -s /etc/rahunas/apache2.conf /etc/apache2/conf.d/rahunas.conf
+  fi
+  invoke-rc.d apache2 reload || true;
+fi
+
+if [ ! -f /usr/share/rahunas/config.php ]; then
+  if [ -f "/etc/rahunas/config.php" ]; then
+    ln -s /etc/rahunas/config.php /usr/share/rahunas/config.php
+  fi
+fi
+
+if which pear > /dev/null 2>&1; then
+  echo "Installing required PEAR packages.."
+  echo "Installing Auth_RADIUS package"
+  pear install Auth_RADIUS > /dev/null 2>&1 || true
+  echo "Installing Crypt_CHAP package"
+  pear install Crypt_CHAP > /dev/null 2>&1 || true
+  echo "Installing Cache_Lite package"
+  pear install Cache_Lite > /dev/null 2>&1 || true
+  echo "Installing XML_RPC2 package"
+  pear install XML_RPC2 > /dev/null 2>&1 || true
+  echo "Installing Net_IPv4 package"
+  pear install Net_IPv4 > /dev/null 2>&1 || true
+  echo "Done.."
+fi
+
+#DEBHELPER#
+exit 0
