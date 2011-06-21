@@ -23,7 +23,7 @@
 #include "rh-utils.h"
 #include "rh-task.h"
 
-const char *termstring = '\0';
+const char *termstring = "";
 pid_t pid, sid;
 
 pthread_mutex_t RHMtxLock        = PTHREAD_MUTEX_INITIALIZER;

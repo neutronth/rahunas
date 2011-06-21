@@ -31,7 +31,7 @@ set_cleanup(void *data)
     return (-1);
 
   offset = sizeof(struct ip_set_list) + setlist->header_size;
-  table = (struct ip_set_rahunas *)(process->list + offset);
+  table = (struct ip_set_rahu *)(process->list + offset);
 
   while (runner != NULL) {
     member = (struct rahunas_member *) runner->data;

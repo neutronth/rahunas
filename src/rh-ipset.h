@@ -23,7 +23,7 @@ struct set {
   char name[IP_SET_MAXNAMELEN];   /* Name of the set */
   ip_set_id_t id;       /* Unique set id */
   ip_set_id_t index;      /* Array index */
-  unsigned ref;       /* References in kernel */
+  unsigned int ref;       /* References in kernel */
   struct settype *settype;    /* Pointer to set type functions */
 };
 
@@ -74,26 +74,26 @@ int kernel_getsocket(void);
 int wrapped_getsockopt(void *data, socklen_t *size);
 int wrapped_setsockopt(void *data, socklen_t size);
 void kernel_getfrom(void *data, socklen_t * size);
-int kernel_sendto_handleerrno(unsigned op, void *data, socklen_t size);
+int kernel_sendto_handleerrno(unsigned int op, void *data, socklen_t size);
 void kernel_sendto(void *data, size_t size);
 int kernel_getfrom_handleerrno(void *data, socklen_t * size);
 struct set *set_adt_get(const char *name);
 int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac, 
-              unsigned op);
+              unsigned int op);
 
 int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip, 
-                 unsigned char adtmac[ETH_ALEN], unsigned op);
+                 unsigned char adtmac[ETH_ALEN], unsigned int op);
 
 int set_ipiphash_adtip(struct set *rahunas_set, const char *ip,
-                       const char *ip1, unsigned op);
+                       const char *ip1, unsigned int op);
 int set_ipiphash_adtip_nb(struct set *rahunas_set, ip_set_ip_t *ip,
-                          ip_set_ip_t *ip1, unsigned op);
+                          ip_set_ip_t *ip1, unsigned int op);
 
 void set_flush(const char *name);
 
 size_t load_set_list(RHVServer *vs, const char name[IP_SET_MAXNAMELEN],
           ip_set_id_t *idx,
-          unsigned op, unsigned cmd);
+          unsigned int op, unsigned int cmd);
 
 int get_header_from_set (RHVServer *vs);
 

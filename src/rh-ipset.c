@@ -85,7 +85,7 @@ void kernel_getfrom(void *data, socklen_t * size)
     DP("res=%d errno=%d", res, errno);
 }
 
-int kernel_sendto_handleerrno(unsigned op, void *data, socklen_t size)
+int kernel_sendto_handleerrno(unsigned int op, void *data, socklen_t size)
 {
   int res = wrapped_setsockopt(data, size);
 
@@ -229,7 +229,7 @@ char *mac_tostring(unsigned char macaddress[ETH_ALEN])
 }
 
 int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac, 
-              unsigned op)
+              unsigned int op)
 {
   ip_set_ip_t ip;
   unsigned char mac[ETH_ALEN] = {0,0,0,0,0,0};
@@ -240,7 +240,7 @@ int set_adtip(struct set *rahunas_set, const char *adtip, const char *adtmac,
 }
 
 int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip, 
-                 unsigned char adtmac[ETH_ALEN], unsigned op)
+                 unsigned char adtmac[ETH_ALEN], unsigned int op)
 {
   struct ip_set_req_adt *req_adt = NULL;
   struct ip_set_req_rahunas req;
@@ -299,18 +299,18 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
 }
 
 int set_ipiphash_adtip(struct set *rahunas_set, const char *ip,
-                       const char *ip1, unsigned op)
+                       const char *ip1, unsigned int op)
 {
   ip_set_ip_t _ip;
   ip_set_ip_t _ip1;
   parse_ip(ip, &_ip);
   parse_ip(ip1, &_ip1);
 
-  return set_adtip_nb(rahunas_set, &_ip, &_ip1, op);
+  return set_ipiphash_adtip_nb(rahunas_set, &_ip, &_ip1, op);
 }
 
 int set_ipiphash_adtip_nb(struct set *rahunas_set, ip_set_ip_t *ip,
-                          ip_set_ip_t *ip1, unsigned op)
+                          ip_set_ip_t *ip1, unsigned int op)
 {
   struct ip_set_req_adt *req_adt = NULL;
   struct ip_set_req_rahunas_ipiphash req;
@@ -383,7 +383,7 @@ void set_flush(const char *name)
 
 size_t load_set_list(RHVServer *vs, const char name[IP_SET_MAXNAMELEN],
           ip_set_id_t *idx,
-          unsigned op, unsigned cmd)
+          unsigned int op, unsigned int cmd)
 {
   void *data = NULL;
   struct ip_set_req_max_sets req_max_sets;

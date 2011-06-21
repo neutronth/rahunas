@@ -154,8 +154,11 @@ static int startsess (RHVServer *vs, struct task_req *req)
   if (member->serviceclass_name && member->serviceclass_name != termstring)
     free(member->serviceclass_name);
 
-  if (member->mapping_ip && member->mapping_ip != termstring)
-    free(member->mapping_ip);
+  if (member->mapping_ip)
+    {
+      free(member->mapping_ip);
+      member->mapping_ip = NULL;
+    }
 
   member->username   = strdup(req->username);
   if (!member->username)
@@ -168,7 +171,7 @@ static int startsess (RHVServer *vs, struct task_req *req)
   member->serviceclass_name    = NULL;
   member->serviceclass_description = termstring;
   member->serviceclass_slot_id = 0;
-  member->mapping_ip = termstring;
+  member->mapping_ip = strdup(termstring);
 
   if (req->session_start == 0) {
     time(&(req->session_start));

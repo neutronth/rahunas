@@ -28,6 +28,11 @@ rahunasd_SOURCES = \
   rh-xmlrpc-server.h \
   rh-xmlrpc-cmd.c \
   rh-xmlrpc-cmd.h \
+  ipset/ip_set_bitmaps.h \
+  ipset/ip_set_hashes.h \
+  ipset/ip_set_rahunas_ipiphash.h \
+  ipset/ip_set.h \
+  ipset/ip_set_rahunas.h \
   rh-ipset.c \
   rh-ipset.h \
   rh-utils.c \

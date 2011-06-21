@@ -4,6 +4,7 @@
  * Date:   2010-07-29
  */
 
+#include <string.h>
 #include <syslog.h>
 #include <libgda/libgda.h>
 
@@ -85,7 +86,7 @@ static int stopservice  ()
   if (rh_serviceclass_set != NULL) {
     logmsg(RH_LOG_NORMAL, "Service Class: Flushing set ...");
     set_flush (SERVICECLASS_SET_NAME);
-    rh_free(&rh_serviceclass_set);
+    rh_free((void **) &rh_serviceclass_set);
   }
 
   return 0;
@@ -159,6 +160,12 @@ static int startsess (RHVServer *vs, struct task_req *req)
     member->serviceclass_name = strdup (req->serviceclass_name);
     member->serviceclass_description = sc_config->description;
     member->serviceclass_slot_id = req->serviceclass_slot_id;
+
+    if (member->mapping_ip)
+      {
+        free (member->mapping_ip);
+        member->mapping_ip = NULL;
+      }
 
     member->mapping_ip = strdup (ip_tostring(ip1));
 

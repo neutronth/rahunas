@@ -4,23 +4,24 @@
  * Date:   2009-03-24
  */
 #include <stdio.h>
+#include <string.h>
 #include <arpa/inet.h>
 #include "rahunasd.h"
 #include "rh-serviceclass.h"
 #include "rh-utils.h"
 #include "rh-ipset.h"
 
-int serviceclass_do_init (struct main_server *ms, struct serviceclass *sc);
+int serviceclass_do_init (RHMainServer *ms, RHSvClass *sc);
 
-struct serviceclass *serviceclass_exists(GList *serviceclass_list,
+RHSvClass *serviceclass_exists(GList *serviceclass_list,
                                          int serviceclass_id,
                                          const char *serviceclass_name)
 {
   GList *runner = g_list_first(serviceclass_list);
-  struct serviceclass *lserviceclass = NULL;
+  RHSvClass *lserviceclass = NULL;
 
   while (runner != NULL) {
-    lserviceclass = (struct serviceclass *)runner->data;
+    lserviceclass = (RHSvClass *)runner->data;
 
     if (lserviceclass->serviceclass_config->serviceclass_id == serviceclass_id)
       return lserviceclass;
@@ -34,14 +35,13 @@ struct serviceclass *serviceclass_exists(GList *serviceclass_list,
   return NULL;
 }
 
-struct servicclass *serviceclass_get_by_id(struct main_server *ms,
-                                           int search_id)
+RHSvClass *serviceclass_get_by_id(RHMainServer *ms, int search_id)
 {
   GList *runner = g_list_first(ms->serviceclass_list);
-  struct serviceclass *lserviceclass = NULL;
+  RHSvClass *lserviceclass = NULL;
 
   while (runner != NULL) {
-    lserviceclass = (struct serviceclass *)runner->data;
+    lserviceclass = (RHSvClass *)runner->data;
 
     if (lserviceclass->serviceclass_config->serviceclass_id == search_id) {
       return lserviceclass;
@@ -52,7 +52,7 @@ struct servicclass *serviceclass_get_by_id(struct main_server *ms,
   return NULL;
 }
 
-int serviceclass_cleanup(struct serviceclass *sc)
+int serviceclass_cleanup(RHSvClass *sc)
 {
   if (sc == NULL)
     return 0;
@@ -63,7 +63,7 @@ int serviceclass_cleanup(struct serviceclass *sc)
   return 0;
 }
 
-int register_serviceclass(struct main_server *ms,
+int register_serviceclass(RHMainServer *ms,
                           const char *serviceclass_cfg_file)
 {
   GList *serviceclass_list = ms->serviceclass_list;
@@ -72,8 +72,8 @@ int register_serviceclass(struct main_server *ms,
   FILE  *cfg_file = NULL;
   union rahunas_config *cfg_get = NULL;
   struct rahunas_serviceclass_config *serviceclass_config = NULL;
-  struct serviceclass *new_serviceclass = NULL;
-  struct serviceclass *old_serviceclass = NULL;
+  RHSvClass *new_serviceclass = NULL;
+  RHSvClass *old_serviceclass = NULL;
 
   union rahunas_config config = {
     .rh_serviceclass.serviceclass_name = NULL,
@@ -98,7 +98,7 @@ int register_serviceclass(struct main_server *ms,
     if (old_serviceclass != NULL) {
       if (old_serviceclass->dummy_config != NULL) {
         DP("Cleanup old dummy config");
-        rh_free(&old_serviceclass->dummy_config);
+        rh_free((void **) &old_serviceclass->dummy_config);
       }
 
       old_serviceclass->dummy_config =
@@ -133,12 +133,12 @@ int register_serviceclass(struct main_server *ms,
 
   memcpy(serviceclass_config, &config, sizeof(struct rahunas_serviceclass_config));
 
-  new_serviceclass = (struct serviceclass *) rh_malloc(sizeof(struct serviceclass));
+  new_serviceclass = (RHSvClass *) rh_malloc(sizeof(RHSvClass));
 
   if (new_serviceclass == NULL)
     return -1;
 
-  memset(new_serviceclass, 0, sizeof(struct serviceclass));
+  memset(new_serviceclass, 0, sizeof(RHSvClass));
 
   new_serviceclass->serviceclass_config = serviceclass_config;
 
@@ -147,14 +147,14 @@ int register_serviceclass(struct main_server *ms,
   return 0;
 }
 
-int unregister_serviceclass(struct main_server *ms, int serviceclass_id)
+int unregister_serviceclass(RHMainServer *ms, int serviceclass_id)
 {
   GList *serviceclass_list = ms->serviceclass_list;
   GList *runner = g_list_first(serviceclass_list);
-  struct serviceclass *lserviceclass = NULL;
+  RHSvClass *lserviceclass = NULL;
 
   while (runner != NULL) {
-    lserviceclass = (struct serviceclass *)runner->data;
+    lserviceclass = (RHSvClass *)runner->data;
     if (lserviceclass->serviceclass_config->serviceclass_id == serviceclass_id) {
       serviceclass_cleanup(lserviceclass);
 
@@ -167,15 +167,15 @@ int unregister_serviceclass(struct main_server *ms, int serviceclass_id)
   return 0;
 }
 
-int unregister_serviceclass_all(struct main_server *ms)
+int unregister_serviceclass_all(RHMainServer *ms)
 {
   GList *serviceclass_list = ms->serviceclass_list;
   GList *runner = g_list_first(serviceclass_list);
   GList *deleting = NULL;
-  struct serviceclass *lserviceclass = NULL;
+  RHSvClass *lserviceclass = NULL;
 
   while (runner != NULL) {
-    lserviceclass = (struct serviceclass *)runner->data;
+    lserviceclass = (RHSvClass *)runner->data;
     serviceclass_cleanup(lserviceclass);
     deleting = runner;
     runner = g_list_next(runner);
@@ -187,14 +187,14 @@ int unregister_serviceclass_all(struct main_server *ms)
   return 0;
 }
 
-int walk_through_serviceclass(int (*callback)(void *, void *), struct main_server *ms)
+int walk_through_serviceclass(int (*callback)(void *, void *), RHMainServer *ms)
 {
   GList *serviceclass_list = ms->serviceclass_list;
   GList *runner = g_list_first(serviceclass_list);
-  struct serviceclass *sc = NULL;
+  RHSvClass *sc = NULL;
 
   while (runner != NULL) {
-    sc = (struct serviceclass *)runner->data;
+    sc = (RHSvClass *)runner->data;
 
     (*callback)(ms, sc);
 
@@ -204,7 +204,7 @@ int walk_through_serviceclass(int (*callback)(void *, void *), struct main_serve
   return 0;
 }
 
-void serviceclass_init(struct main_server *ms, struct serviceclass *sc)
+void serviceclass_init(RHMainServer *ms, RHSvClass *sc)
 {
   struct rahunas_serviceclass_config *sc_config = NULL;
 
@@ -220,7 +220,7 @@ void serviceclass_init(struct main_server *ms, struct serviceclass *sc)
   DP("Service Class (%s) - Configured", sc->serviceclass_config->serviceclass_name);
 }
 
-void serviceclass_reload(struct main_server *ms, struct serviceclass *sc)
+void serviceclass_reload(RHMainServer *ms, RHSvClass *sc)
 {
   if (sc->serviceclass_config->init_flag == SC_DONE) {
     sc->serviceclass_config->init_flag = SC_NONE;
@@ -256,7 +256,7 @@ void serviceclass_reload(struct main_server *ms, struct serviceclass *sc)
         cleanup_serviceclass_config(sc->serviceclass_config);
         memcpy(sc->serviceclass_config, sc->dummy_config,
           sizeof(struct rahunas_serviceclass_config));
-        rh_free(&sc->dummy_config);
+        rh_free((void **) &sc->dummy_config);
       }
 
       sc->serviceclass_config->init_flag = SC_INIT;
@@ -268,14 +268,14 @@ void serviceclass_reload(struct main_server *ms, struct serviceclass *sc)
 }
 
 
-void serviceclass_unused_cleanup(struct main_server *ms)
+void serviceclass_unused_cleanup(RHMainServer *ms)
 {
   GList *serviceclass_list = ms->serviceclass_list;
   GList *runner = g_list_first(serviceclass_list);
-  struct serviceclass *lserviceclass = NULL;
+  RHSvClass *lserviceclass = NULL;
 
   while (runner != NULL) {
-    lserviceclass = (struct serviceclass *)runner->data;
+    lserviceclass = (RHSvClass *)runner->data;
     if (lserviceclass->serviceclass_config->init_flag == SC_NONE) {
       logmsg(RH_LOG_NORMAL, "[%s] - Service class config removed",
              lserviceclass->serviceclass_config->serviceclass_name);
@@ -289,7 +289,7 @@ void serviceclass_unused_cleanup(struct main_server *ms)
   }
 }
 
-int serviceclass_do_init (struct main_server *ms, struct serviceclass *sc)
+int serviceclass_do_init (RHMainServer *ms, RHSvClass *sc)
 {
   struct rahunas_serviceclass_config *sc_config = sc->serviceclass_config;
 
