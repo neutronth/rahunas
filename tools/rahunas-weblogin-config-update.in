@@ -1,0 +1,116 @@
+#!/bin/sh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+INIT=@sysconfdir@/default/rahunas
+. $INIT
+
+get_section_name () {
+  file=$1
+  
+  grep "^.*\= {$" $file | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
+}
+
+get_config_value () {
+  section=$1
+  key=$2
+  file=$3
+
+  cat $file | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+}
+
+# Main
+MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
+
+# DB
+RAHUNAS_DB=@localstatedir@/lib/rahunas/rahunas.db
+SQLITE3=/usr/bin/sqlite3
+
+generate_config() {
+  file=$1
+  SETNAME=`get_section_name $file`
+
+  CLIENTS=`get_config_value $SETNAME clients $file`
+  VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+  RADIUS_HOST=`get_config_value $SETNAME radius_host $file`
+  RADIUS_SECRET=`get_config_value $SETNAME radius_secret $file`
+  RADIUS_ENCRYPT=`get_config_value $SETNAME radius_encrypt $file`
+  RADIUS_AUTH_PORT=`get_config_value $SETNAME radius_auth_port $file`
+  RADIUS_ACCT_PORT=`get_config_value $SETNAME radius_account_port $file`
+  RAHUNAS_HOST="localhost"
+  RAHUNAS_PORT="8123"
+  NAS_IDENTIFIER=`get_config_value $SETNAME nas_identifier $file`
+  NAS_IP_ADDRESS=`get_config_value $SETNAME vserver_ip $file`
+  NAS_LOGIN_HOST=`get_config_value $SETNAME vserver_fqdn $file`
+  NAS_LOGIN_PROTO=`get_config_value $SETNAME nas_login_proto $file`
+  test -z "$NAS_LOGIN_PROTO" && NAS_LOGIN_PROTO="https"
+
+  NAS_LOGIN_PORT=`get_config_value $SETNAME nas_login_port $file`
+  if [ -z "$NAS_LOGIN_PORT" ]; then
+    if [ "$NAS_LOGIN_PROTO" = "https" ]; then
+      NAS_LOGIN_PORT="443"
+    else
+      NAS_LOGIN_PORT="80"
+    fi
+  fi
+  NAS_PORT=`get_config_value $SETNAME nas_port $file`
+  NAS_LOGIN_TITLE=`get_config_value $SETNAME nas_login_title $file`
+  DEFAULT_REDIRECT_URL=`get_config_value $SETNAME nas_default_redirect $file`
+  DEFAULT_LANGUAGE=`get_config_value $SETNAME nas_default_language $file`
+  UAM_TEMPLATE=`get_config_value $SETNAME nas_weblogin_template $file`
+
+  printf "\$config_list['%s'] = array(\n"            "$CLIENTS"
+  printf "\t\"VSERVER_ID\" => \"%s\",\n"             "$VSERVER_ID"
+  printf "\t\"RADIUS_HOST\" => \"%s\",\n"            "$RADIUS_HOST"
+  printf "\t\"RADIUS_SECRET\" => \"%s\",\n"          "$RADIUS_SECRET"
+  printf "\t\"RADIUS_ENCRYPT\" => \"%s\",\n"         "$RADIUS_ENCRYPT"
+  printf "\t\"RADIUS_AUTH_PORT\" => %s,\n"           "$RADIUS_AUTH_PORT"
+  printf "\t\"RADIUS_ACCT_PORT\" => %s,\n"           "$RADIUS_ACCT_PORT"
+  printf "\t\"RAHUNAS_HOST\" => \"%s\",\n"           "$RAHUNAS_HOST"
+  printf "\t\"RAHUNAS_PORT\" => \"%s\",\n"           "$RAHUNAS_PORT"
+  printf "\t\"NAS_IDENTIFIER\" => \"%s\",\n"         "$NAS_IDENTIFIER"
+  printf "\t\"NAS_IP_ADDRESS\" => \"%s\",\n"         "$NAS_IP_ADDRESS"
+  printf "\t\"NAS_LOGIN_HOST\" => \"%s\",\n"         "$NAS_LOGIN_HOST"
+  printf "\t\"NAS_LOGIN_PORT\" => \"%s\",\n"         "$NAS_LOGIN_PORT"
+  printf "\t\"NAS_LOGIN_PROTO\" => \"%s\",\n"        "$NAS_LOGIN_PROTO"
+  printf "\t\"NAS_PORT\" => %s,\n"                   "$NAS_PORT"
+  printf "\t\"NAS_LOGIN_TITLE\" => \"%s\",\n"        "$NAS_LOGIN_TITLE"
+  printf "\t\"DEFAULT_REDIRECT_URL\" => \"%s\",\n"   "$DEFAULT_REDIRECT_URL"
+  printf "\t\"DEFAULT_LANGUAGE\" => \"%s\",\n"       "$DEFAULT_LANGUAGE"
+  printf "\t\"UAM_TEMPLATE\" => \"%s\",\n"           "$UAM_TEMPLATE"
+  printf ");\n\n"
+}
+
+update_db () {
+  file=$1
+
+  SETNAME=`get_section_name $file`
+  VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+  NAS_IDENTIFIER=`get_config_value $SETNAME nas_identifier $file`
+
+  SQL="REPLACE INTO nas VALUES ('$VSERVER_ID','$NAS_IDENTIFIER')"
+  $SQLITE3 $RAHUNAS_DB "$SQL"
+}
+
+clear_nas_db () {
+  SQL="DELETE FROM nas"
+  $SQLITE3 $RAHUNAS_DB "$SQL"
+}
+
+destfile="@sysconfdir@/rahunas/config.php"
+if [ "$1" != "" ]; then
+  destfile="$1"
+fi
+
+# Clear old config
+echo "<?php" > $destfile
+
+for file in `find $MAIN_CONF_DIR -name '*.conf'`;
+do
+  generate_config $file 
+done >> $destfile
+
+clear_nas_db
+for file in `find $MAIN_CONF_DIR -name '*.conf'`;
+do
+  update_db $file
+done
