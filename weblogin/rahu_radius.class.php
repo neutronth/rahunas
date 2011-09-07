@@ -186,6 +186,11 @@ class rahu_radius_acct {
   }
 
   function gen_session_id() {
+    if (!empty($_SESSION["login_session_id"]) &&
+          $this->username == $_SESSION["login_username"]) {
+      return $_SESSION["login_session_id"];
+    }
+
     $randno1 = rand(0,65535);
     $randno2 = rand(0,65535);
     $randno3 = rand(0,65535);
@@ -196,6 +201,8 @@ class rahu_radius_acct {
                 str_pad(dechex($randno3), 4, "0", STR_PAD_LEFT), 
                 str_pad(dechex($randno4), 4, "0", STR_PAD_LEFT));
     $this->session_id = $randno;
+    $_SESSION["login_session_id"] = $randno;
+    $_SESSION["login_username"] = $this->username;
                                                      
     return $this->session_id;
   }
@@ -205,13 +212,36 @@ class rahu_radius_acct {
   }
 
   function acct($accttype, $param=NULL) {
+    if ($this->username == $_SESSION["login_username"] &&
+          $accttype == "Start" && $_SESSION["login_lastacct"] == "Start" &&
+          (time() - $_SESSION["login_lasttime"]) < 10) {
+      return -1;
+    }
+
     $classname = "Auth_RADIUS_Acct_" .$accttype;
     $racct = new $classname;
     $racct->addServer($this->host, $this->port, $this->secret);
     $racct->username = $this->username;
     $racct->authentic = RADIUS_AUTH_LOCAL;
-    $racct->session_id = empty($this->session_id) ? $this->gen_session_id() :
-                                                    $this->session_id;
+
+    if (empty($this->session_id)) {
+      switch($accttype) {
+        case "Start":
+          $this->session_id = $this->gen_session_id();
+          break;
+        case "Stop":
+          /* Fall-through */
+        case "Update":
+          /* Do not permit the requests that have no session ID */
+          return -1;
+          break;
+      }
+    }
+
+    $_SESSION["login_lastacct"] = $accttype;
+    $_SESSION["login_lasttime"] = time();
+
+    $racct->session_id = $this->session_id;
     $racct->session_time = $this->get_session_time();
     $racct->useStandardAttributes = 0;
   
