@@ -334,6 +334,7 @@ int main(int argc, char *argv[])
   signal(SIGTERM, &rh_sighandler);
   signal(SIGHUP, &rh_sighandler);
   signal(SIGINT, SIG_IGN);
+  signal(SIGPIPE, SIG_IGN);
 
   watch_child(argv);
 
