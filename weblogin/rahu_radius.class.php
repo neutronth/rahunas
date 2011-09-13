@@ -188,21 +188,21 @@ class rahu_radius_acct {
   function gen_session_id() {
     if (!empty($_SESSION["login_session_id"]) &&
           $this->username == $_SESSION["login_username"]) {
-      return $_SESSION["login_session_id"];
+      $this->session_id = $_SESSION["login_session_id"];
+    } else {
+      $randno1 = rand(0,65535);
+      $randno2 = rand(0,65535);
+      $randno3 = rand(0,65535);
+      $randno4 = rand(0,65535);
+      $randno = sprintf("%s%s%s%s",
+                  str_pad(dechex($randno1), 4, "0", STR_PAD_LEFT),
+                  str_pad(dechex($randno2), 4, "0", STR_PAD_LEFT),
+                  str_pad(dechex($randno3), 4, "0", STR_PAD_LEFT),
+                  str_pad(dechex($randno4), 4, "0", STR_PAD_LEFT));
+      $this->session_id = $randno;
+      $_SESSION["login_session_id"] = $randno;
+      $_SESSION["login_username"] = $this->username;
     }
-
-    $randno1 = rand(0,65535);
-    $randno2 = rand(0,65535);
-    $randno3 = rand(0,65535);
-    $randno4 = rand(0,65535);
-    $randno = sprintf("%s%s%s%s", 
-                str_pad(dechex($randno1), 4, "0", STR_PAD_LEFT), 
-                str_pad(dechex($randno2), 4, "0", STR_PAD_LEFT), 
-                str_pad(dechex($randno3), 4, "0", STR_PAD_LEFT), 
-                str_pad(dechex($randno4), 4, "0", STR_PAD_LEFT));
-    $this->session_id = $randno;
-    $_SESSION["login_session_id"] = $randno;
-    $_SESSION["login_username"] = $this->username;
                                                      
     return $this->session_id;
   }
