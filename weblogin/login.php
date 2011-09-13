@@ -77,6 +77,7 @@ try {
 }
 
 if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
+  $_POST['user'] = trim($_POST['user']);
 
   $message = "";
   $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'], $config['RADIUS_ENCRYPT']);
