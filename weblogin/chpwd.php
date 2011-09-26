@@ -79,6 +79,7 @@ if (!empty($_POST['user']) && !empty($_POST['passwd']) &&
     $message = $user->get_message();
   }
   $user->stop();
+  unset ($user);
 } else {
   $message = _("Please insert all information");
 }
