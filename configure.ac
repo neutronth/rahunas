@@ -1,12 +1,12 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-m4_define(major, 0)
-m4_define(minor, 2)
-m4_define(micro, 0)
+m4_define(rh_major, 0)
+m4_define(rh_minor, 2)
+m4_define(rh_micro, 0)
 
 AC_PREREQ(2.61)
-AC_INIT([RahuNAS], major.minor.micro,[neo.neutron@gmail.com] )
+AC_INIT([RahuNAS], rh_major.rh_minor.rh_micro,[neo.neutron@gmail.com] )
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/rahunasd.h])
