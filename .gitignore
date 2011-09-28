@@ -6,3 +6,7 @@ depcomp
 install-sh
 missing
 build/
+config.guess
+config.h.in~
+config.sub
+ltmain.sh
