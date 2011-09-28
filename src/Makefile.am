@@ -6,13 +6,13 @@ IPSET_VERSION:=4.2
 
 AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
-  $(LIBGDA_CFLAGS) \
+  $(LIBSQLITE3_CFLAGS) \
   -I$(top_srcdir)/src/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
   -DIPSET_VERSION=\"$(IPSET_VERSION)\" \
   -DRAHUNAS_CONF_DIR=\"$(sysconfdir)/rahunas/\" \
-  -DRAHUNAS_DB_DIR=\"$(localstatedir)/lib/rahunas/\" \
+  -DRAHUNAS_DB=\"$(localstatedir)/lib/rahunas/rahunas.db\" \
   -DRAHUNAS_LOG_DIR=\"$(localstatedir)/log/rahunas/\" \
   -DRAHUNAS_RUN_DIR=\"$(localstatedir)/run/\" \
   -DRAHUNAS_FIREWALL_WRAPPER=\"$(sbindir)/rahunas-firewall\" \
@@ -61,4 +61,4 @@ rahunasd_LDADD =  \
   $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
   $(top_builddir)/lcfg/liblcfg.a \
   $(LIBGNET_LIBS) \
-  $(LIBGDA_LIBS)
+  $(LIBSQLITE3_LIBS)
