@@ -4,6 +4,10 @@
  * Copyright (C) 2011 Neutron Soutmun <neutron@rahunas.org>
  */
 
+#include <sys/inotify.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <time.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
@@ -42,9 +46,9 @@ static int                   rh_netsnmp_register_table_data_set (
 
 
 /* RahuNAS Data Update*/
-void * rh_update_data (void *ptr);
-void   rh_remove_old_data_set (netsnmp_table_data_set *table_set);
-void   rh_add_new_data_set (netsnmp_table_data_set *table_set);
+static void * rh_update_data (void *ptr);
+static void   rh_remove_old_data_set (netsnmp_table_data_set *table_set);
+static void   rh_add_new_data_set (netsnmp_table_data_set *table_set);
 
 /* Override table_data implementation */
 static int
@@ -185,25 +189,87 @@ deinit_rahunas (void)
 }
 
 /* Update data thread worker */
-void *
+static void *
 rh_update_data (void *ptr)
 {
   netsnmp_table_data_set *table_set = (netsnmp_table_data_set *) ptr;
+  int  inotify_fd     = -1;
+  int  inotify_wfd    = -1;
+  char inotify_buffer[32 * (sizeof (struct inotify_event) + 16)];
+  int  inotify_enable = 0;
+  fd_set rfds;
+
+  inotify_fd = inotify_init ();
+  if (inotify_fd >= 0)
+    {
+      if (fcntl (inotify_fd, F_SETFL, O_NONBLOCK) == 0)
+        {
+          inotify_wfd = inotify_add_watch (inotify_fd, RAHUNAS_DB,
+                                           IN_CLOSE_WRITE);
+          if (inotify_wfd >= 0)
+            {
+              inotify_enable = 1;
+              FD_ZERO (&rfds);
+              FD_SET  (inotify_fd, &rfds);
+            }
+        }
+    }
 
   while (!stop_module)
     {
+      struct timeval timeout;
+      int  retval;
+      ssize_t r;
+
       pthread_mutex_lock (&rh_mtx);
       rh_remove_old_data_set (table_set);
       rh_add_new_data_set (table_set);
       pthread_mutex_unlock (&rh_mtx);
 
-      sleep (30);
+      if (inotify_enable)
+        {
+          timeout.tv_sec  = 30;
+          timeout.tv_usec = 0;
+
+          retval = select (1, &rfds, NULL, NULL, &timeout);
+
+          if (retval == -1)
+            {
+              /* Fallback to sleep */
+              sleep (30);
+            }
+          else if (retval)
+            {
+              while ((r = read (inotify_fd, inotify_buffer,
+                     sizeof (inotify_buffer))))
+                {
+                  /* Read until no data, r == -1 expected: errno == EAGAIN */
+                  if (r == -1)
+                    break;
+                }
+            }
+          else
+            {
+              /* Timeout, fall-through */
+            }
+
+        }
+      else
+        {
+          sleep (30);
+        }
+    }
+
+  if (inotify_enable)
+    {
+      inotify_rm_watch (inotify_fd, inotify_wfd);
+      close (inotify_fd);
     }
 
   pthread_exit (NULL);
 }
 
-void
+static void
 rh_remove_old_data_set (netsnmp_table_data_set *table_set)
 {
   netsnmp_table_row *row = NULL;
@@ -215,7 +281,7 @@ rh_remove_old_data_set (netsnmp_table_data_set *table_set)
 }
 
 
-void
+static void
 rh_add_new_data_set (netsnmp_table_data_set *table_set)
 {
   sqlite3 *db     = NULL;
@@ -229,7 +295,7 @@ rh_add_new_data_set (netsnmp_table_data_set *table_set)
   int rc;
   char sql[] = "SELECT * FROM dbset";
 
-  rc = sqlite3_open ("/var/lib/rahunas/rahunas.db", &db);
+  rc = sqlite3_open (RAHUNAS_DB, &db);
   if (rc)
     {
       sqlite3_close (db);

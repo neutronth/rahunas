@@ -23,6 +23,7 @@ libnetsnmp_rahunas_la_SOURCES = \
 
 libnetsnmp_rahunas_la_CFLAGS = \
   -I$(top_srcdir)/snmp-module \
+  -DRAHUNAS_DB=\"$(localstatedir)/lib/rahunas/rahunas.db\" \
 	$(LIBNETSNMP_CFLAGS)
 
 libnetsnmp_rahunas_la_LDFLAGS = \
