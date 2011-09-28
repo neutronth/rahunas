@@ -11,14 +11,18 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/rahunasd.h])
 AC_CONFIG_HEADER([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_SUBST(RAHUNAS_VERSION, major.minor.micro)
 AC_SUBST(PROGRAM, "RahuNAS")
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+
+# Libtool init
+LT_INIT
 
 # Checks for libraries.
 dnl Check for GNet 2.x
@@ -34,6 +38,21 @@ PKG_CHECK_MODULES(LIBSQLITE3, [ sqlite3 >= $LIBSQLITE3_REQ ], , [ AC_MSG_ERROR([
 
 AC_SUBST(LIBSQLITE3_CFLAGS)
 AC_SUBST(LIBSQLITE3_LIBS)
+
+dnl Disable snmp-module build
+AC_ARG_ENABLE(netsnmp-module,
+              [AC_HELP_STRING([--enable-netsnmp-module],
+                              [enable netsnmp-module build])],
+              enable_netsnmp_module="yes")
+
+if test "x$enable_netsnmp_module" = "xyes"; then
+  AC_CHECK_PROG(NETSNMP_CONFIG, net-snmp-config, net-snmp-config, no)
+  if test "x$NETSNMP_CONFIG" = "xno"; then
+    enable_netsnmp_module="no"
+  fi
+fi
+
+AM_CONDITIONAL(ENABLE_NETSNMP_MODULE,test "x$enable_netsnmp_module" = "xyes")
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -62,6 +81,7 @@ AC_CONFIG_FILES([
   tools/rahunas-firewall
   tools/rahunas-bandwidth
   tools/rahunas-weblogin-config-update
+  netsnmp-module/Makefile
   example/Makefile
   example/rahunas.default
   example/rahunas.init

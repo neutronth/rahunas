@@ -1,0 +1,90 @@
+RAHUNAS-MIB DEFINITIONS ::= BEGIN
+
+--
+-- Top-level infrastructure of the RahuNAS project enterprise MIB tree
+--
+
+IMPORTS
+    MODULE-IDENTITY, enterprises FROM SNMPv2-SMI;
+
+rahunas MODULE-IDENTITY
+    LAST-UPDATED "201109240000Z"
+    ORGANIZATION "www.rahunas.org"
+    CONTACT-INFO
+	"postal:   91/14 M.14 B.Wangnamyen T.Kerng
+                    A.Mueang Maha Sarakham
+                    Thailand 44000
+
+          email:    neutron@rahunas.org"
+    DESCRIPTION
+	"Top-level infrastructure of the RahuNAS project enterprise MIB tree"
+    REVISION     "201109240000Z"
+    DESCRIPTION
+	"First draft"
+    ::= { enterprises 38668}
+
+
+--
+--  RahuNAS enterprise-specific management objects
+--
+
+rahunasAuthen              OBJECT IDENTIFIER ::= {rahunas 1}
+
+rahunasAuthenLoginTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF rahunasAuthenLoginEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"This table contains a set of RahuNAS login users"
+    ::= { rahunasAuthen 1 }
+
+rahunasAuthenLoginEntry OBJECT-TYPE
+    SYNTAX      rahunasAuthenLoginEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"A row describing a login user"
+    INDEX   { rahunasAuthenLoginSessionId }
+    ::= { rahunasAuthenLoginTable 1 }
+
+rahunasAuthenLoginEntry ::= SEQUENCE {
+	rahunasAuthenLoginSessionId	OCTET STRING,
+        rahunasAuthenLoginUsername	OCTET STRING,
+        rahunasAuthenLoginIpAddress	OCTET STRING,
+        rahunasAuthenLoginSessionStart	INTEGER
+}
+
+rahunasAuthenLoginSessionId OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The session ID of login user."
+    ::= { rahunasAuthenLoginEntry 1 }
+
+
+rahunasAuthenLoginUsername OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+	"The login username."
+    ::= { rahunasAuthenLoginEntry 2 }
+
+rahunasAuthenLoginIpAddress OBJECT-TYPE
+    SYNTAX     	OCTET STRING
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+	"The login IP address."
+    ::= { rahunasAuthenLoginEntry 3 }
+
+rahunasAuthenLoginSessionStart OBJECT-TYPE
+    SYNTAX     	INTEGER	-- seconds from epoch
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+	"The login start time."
+    ::= { rahunasAuthenLoginEntry 4 }
+
+END
