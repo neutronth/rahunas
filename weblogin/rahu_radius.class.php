@@ -257,7 +257,6 @@ class rahu_radius_acct {
                              ip2long($this->framed_ip_address));
     $racct->putAttribute(RADIUS_CALLING_STATION_ID, $this->calling_station_id);
     $racct->putAttribute(RADIUS_NAS_IDENTIFIER, $this->nas_identifier);
-    $racct->putAttribute(RADIUS_NAS_IP_ADDRESS, ip2long($this->nas_ip_address));
     $racct->putAttribute(RADIUS_NAS_PORT, $this->nas_port);
     $racct->putAttribute(RADIUS_CALLED_STATION_ID, $this->called_station_id);
 
