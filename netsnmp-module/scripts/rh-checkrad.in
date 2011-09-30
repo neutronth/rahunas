@@ -12,10 +12,14 @@
 # Author: Neutron Soutmun <neutron@rahunas.org>
 # Date:   2011-09-29
 
-LOGDIR="/var/log/freeradius";
-LOGFILE="${LOGDIR}/rh-checkrad.log";
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 
-SNMPGET=/usr/bin/snmpget
+LOGDIR=@localstatedir@/log/freeradius
+LOGFILE=${LOGDIR}/rh-checkrad.log
+
+SNMPGET=`which snmpget`
 SNMP_VERSION="2c"
 SNMP_COMMUNITY="public"
 SNMP_TIMEOUT=3
@@ -30,6 +34,11 @@ NASIP=$2
 NASPORT=$3
 LOGIN=$4
 SESSIONID=$5
+
+if [ ! -x ${SNMPGET} ]; then
+  echo "No snmp-get installed, please install"
+  exit 2
+fi
 
 if [ $# -lt 5 -o "x$1" = "x--help" ]; then
   echo "Usage: $0 nas_type nas_ip nas_port login session_id"

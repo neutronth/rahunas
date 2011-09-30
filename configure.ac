@@ -82,6 +82,7 @@ AC_CONFIG_FILES([
   tools/rahunas-bandwidth
   tools/rahunas-weblogin-config-update
   netsnmp-module/Makefile
+  netsnmp-module/scripts/rh-checkrad
   example/Makefile
   example/rahunas.default
   example/rahunas.init

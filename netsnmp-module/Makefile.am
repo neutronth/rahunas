@@ -2,7 +2,9 @@ MAINTAINERCLEANFILES = Makefile.in
 
 if ENABLE_NETSNMP_MODULE
 
-EXTRA_DIST = mibs/RAHUNAS-MIB scripts/rh-checkrad
+EXTRA_DIST = mibs/RAHUNAS-MIB
+
+dist_sbin_SCRIPTS = scripts/rh-checkrad
 
 # Library versioning
 # # Library code modified:                    REVISION++
