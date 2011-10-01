@@ -16,6 +16,10 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_SUBST(RAHUNAS_VERSION, major.minor.micro)
 AC_SUBST(PROGRAM, "RahuNAS")
 
+# gettext
+AM_GNU_GETTEXT_VERSION([0.18.1])
+AM_GNU_GETTEXT([external])
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -89,6 +93,7 @@ AC_CONFIG_FILES([
   example/rahunas.conf
   example/rahunas-vserver.conf
   example/rahunas-serviceclass.conf
+  weblogin-po/Makefile.in
 ])
 
 AC_OUTPUT
