@@ -47,9 +47,9 @@ class RahuI18N {
     if (!empty ($_GET['language'])) {
       $_SESSION['language'] = $_GET['language'];
     } else if (empty ($_SESSION['language'])) {
-      $_SESSION['language'] = "English";
+      $accept_lang = $this->getAcceptLanguage ();
+      $_SESSION['language'] = empty ($accept_lang) ? "English" : $accept_lang;
     }
-
 
     $selected_lang =& $this->langlist[$_SESSION['language']];
 
@@ -75,6 +75,39 @@ class RahuI18N {
     }
 
     return $languages;
+  }
+
+  private function getAcceptLanguage () {
+    if (!isset ($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+      return "";
+    }
+
+    preg_match_all ('/([a-z]{1,8}(-[a-z]{1,8})?)\s*(;\s*q\s*=\s*(1|0\.[0-9]+))?/i', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $lang_parse);
+
+    if (count ($lang_parse[1])) {
+      $langs = array_combine ($lang_parse[1], $lang_parse[4]);
+
+      foreach ($langs as $lang => $val) {
+        if ($val === '')
+          $langs[$lang] = 1;
+      }
+
+      arsort ($langs, SORT_NUMERIC);
+
+      foreach ($langs as $lang => $val) {
+        foreach ($this->langlist as $supportlang_k => $supportlang) {
+          $code = strtolower ($supportlang['code']);
+          $code = str_replace ("_", "-", $code);
+
+          if (strstr ($code, $lang) !== FALSE) {
+            return $supportlang_k;
+          }
+          
+        }
+      }
+    }
+
+    return "";
   }
 
   private function explodeQueryString ($q) {
