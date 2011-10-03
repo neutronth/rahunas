@@ -35,12 +35,18 @@ session_start();
 ob_start();
 require_once 'rahu_radius.class.php';
 require_once 'rahu_xmlrpc.class.php';
+require_once 'rahu_i18n.class.php';
+require_once 'rahu_langsupport.php';
+require_once 'rahu_render.class.php';
 require_once 'getmacaddr.php';
 require_once 'config.php';
 require_once 'header.php';
-require_once 'locale.php';
 require_once 'messages.php';
 require_once 'networkchk.php';
+
+// Setup I18N
+$i18n = new RahuI18N ($rahu_langsupport);
+$i18n->localeSetup ();
 
 $ip = $_SERVER['REMOTE_ADDR'];
 $config = get_config_by_network($ip, $config_list);
@@ -228,30 +234,15 @@ $loginbox .= $loginmsg;
 ?>
 
 <?php
-// Template loading
-$tpl_path = "templates/" . $config['UAM_TEMPLATE'] . "/";
-$tpl_file = $tpl_path . $config['UAM_TEMPLATE'] . ".html";
-$handle = @fopen($tpl_file, "r");
-$html_buffer = "";
-if ($handle) {  
-  $css = "<link rel='stylesheet' type='text/css' href='" . $tpl_path . "rahunas.css'>";
-  $loginbox = $css . $loginbox;
-
-  while (!feof($handle)) {
-    $html_buffer .= fgets($handle, 4096);
-  }
-  fclose($handle);
-
-  $html_buffer = str_replace("images/", $tpl_path."images/", $html_buffer);
-  $html_buffer = str_replace("<!-- Title -->", $config["NAS_LOGIN_TITLE"], 
-                             $html_buffer);
-  $html_buffer = str_replace("<!-- Login -->", $loginbox, $html_buffer);
-  $html_buffer = str_replace("<!-- JavaScript -->", $loginscript, $html_buffer);
-  $html_buffer = str_replace("<body", 
-                             "<body onload='document.login.user.focus();'",
-                             $html_buffer);
-  print $html_buffer;
-}
+$tpl = new RahuRender ($config['UAM_TEMPLATE']);
+$tpl->setString ("<!-- Title -->", $config["NAS_LOGIN_TITLE"]);
+$tpl->setString ("<!-- Login -->", $loginbox);
+$tpl->setString ("<!-- JavaScript -->", $loginscript);
+$tpl->setString ("<!-- LanguageList -->", $i18n->getLangList("<li>", "</li>"));
+$tpl->setString ("<!-- ChangePassword -->", "<li><a href='/chpwd.php'>" .
+                    _("Change Password") . "</a></li>");
+$tpl->setString ("<body", "<body onload='document.login.user.focus();'");
+$tpl->render ();
 
 ob_end_flush();
 ?>
