@@ -7,48 +7,50 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2011-10-01 12:32+0700\n"
-"PO-Revision-Date: 2011-10-01 11:23+0700\n"
+"POT-Creation-Date: 2011-10-04 17:19+0700\n"
+"PO-Revision-Date: 2011-10-04 17:24+0700\n"
 "Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
-"Language: th_TH\n"
+"Language: th\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
-#: weblogin/chpwd.php:65
-msgid "Can not connect database"
-msgstr ""
+#: weblogin/chpwd.php:71
+msgid "Could not connect to database"
+msgstr "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"
 
-#: weblogin/chpwd.php:69
-msgid "Confirm password missmatch"
-msgstr ""
+#: weblogin/chpwd.php:75
+msgid "Password mismatch"
+msgstr "รหัสผ่านไม่ตรงกัน"
 
-#: weblogin/chpwd.php:72
+#: weblogin/chpwd.php:78
 msgid "Password has been changed"
-msgstr ""
+msgstr "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว"
 
-#: weblogin/chpwd.php:84
-msgid "Please insert all information"
-msgstr ""
+#: weblogin/chpwd.php:90
+msgid "Please apply all information"
+msgstr "กรุณากรอกข้อมูลให้ครบถ้วน"
 
-#: weblogin/chpwd.php:91 weblogin/login.php:164 weblogin/logout.php:170
+#: weblogin/chpwd.php:97 weblogin/login.php:170 weblogin/logout.php:176
 msgid "Username"
 msgstr "ชื่อผู้ใช้"
 
-#: weblogin/chpwd.php:94 weblogin/login.php:166
+#: weblogin/chpwd.php:100 weblogin/login.php:172
 msgid "Password"
 msgstr "รหัสผ่าน"
 
-#: weblogin/chpwd.php:97
+#: weblogin/chpwd.php:103
 msgid "New Password"
 msgstr "รหัสผ่านใหม่"
 
-#: weblogin/chpwd.php:99
+#: weblogin/chpwd.php:105
 msgid "Confirm Password"
 msgstr "ยืนยันรหัสผ่าน"
 
-#: weblogin/chpwd.php:102
+#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:243
+#: weblogin/logout.php:276
 msgid "Change Password"
 msgstr "เปลี่ยนรหัสผ่าน"
 
@@ -64,71 +66,71 @@ msgstr ""
 msgid "Login Page"
 msgstr ""
 
-#: weblogin/login.php:169
+#: weblogin/login.php:175
 msgid "Login"
 msgstr "เข้าสู่ระบบ"
 
-#: weblogin/logout.php:47
+#: weblogin/logout.php:53
 msgid "day"
 msgstr "วัน"
 
-#: weblogin/logout.php:48
+#: weblogin/logout.php:54
 msgid "days"
 msgstr "วัน"
 
-#: weblogin/logout.php:50
+#: weblogin/logout.php:56
 msgid "hour"
 msgstr "ชั่วโมง"
 
-#: weblogin/logout.php:51
+#: weblogin/logout.php:57
 msgid "hours"
 msgstr "ชั่วโมง"
 
-#: weblogin/logout.php:53
+#: weblogin/logout.php:59
 msgid "minute"
 msgstr "นาที"
 
-#: weblogin/logout.php:54
+#: weblogin/logout.php:60
 msgid "minutes"
 msgstr "นาที"
 
-#: weblogin/logout.php:56
+#: weblogin/logout.php:62
 msgid "second"
 msgstr "วินาที"
 
-#: weblogin/logout.php:57
+#: weblogin/logout.php:63
 msgid "seconds"
 msgstr "วินาที"
 
-#: weblogin/logout.php:174
+#: weblogin/logout.php:180
 msgid "Session Start"
 msgstr "เริ่มวาระ"
 
-#: weblogin/logout.php:178
+#: weblogin/logout.php:184
 msgid "Session End"
 msgstr "สิ้นสุดวาระ"
 
-#: weblogin/logout.php:179
+#: weblogin/logout.php:185
 msgid "Never"
 msgstr "ไม่มีกำหนด"
 
-#: weblogin/logout.php:183
+#: weblogin/logout.php:189
 msgid "Session Time"
 msgstr "เวลาใช้งาน"
 
-#: weblogin/logout.php:189
+#: weblogin/logout.php:195
 msgid "Class of service"
 msgstr "บริการพิเศษ"
 
-#: weblogin/logout.php:194
+#: weblogin/logout.php:200
 msgid "Request URL"
 msgstr "URL ที่ร้องขอ"
 
-#: weblogin/logout.php:201
+#: weblogin/logout.php:207
 msgid "OK"
 msgstr "ตกลง"
 
-#: weblogin/logout.php:202
+#: weblogin/logout.php:208
 msgid "Logout"
 msgstr "เลิกใช้งาน"
 
@@ -177,13 +179,13 @@ msgid "Success! User has been logout"
 msgstr "สำเร็จ! ผู้ใช้นี้ ได้เลิกใช้งานแล้ว"
 
 #: weblogin/user.class.php:78
-msgid "Error to query database"
-msgstr ""
+msgid "Error: Could not get data from database"
+msgstr "ผิดพลาด: ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้"
 
 #: weblogin/user.class.php:83 weblogin/user.class.php:102
 msgid "Invalid username or password"
-msgstr ""
+msgstr "ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้อง"
 
 #: weblogin/user.class.php:120
-msgid "Error to change password"
-msgstr ""
+msgid "Error: Could not change password"
+msgstr "ผิดพลาด: ไม่สามารถเปลี่ยนรหัสผ่านได้"

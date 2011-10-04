@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2011-10-01 12:32+0700\n"
+"POT-Creation-Date: 2011-10-04 17:19+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,39 +17,40 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: weblogin/chpwd.php:65
-msgid "Can not connect database"
+#: weblogin/chpwd.php:71
+msgid "Could not connect to database"
 msgstr ""
 
-#: weblogin/chpwd.php:69
-msgid "Confirm password missmatch"
+#: weblogin/chpwd.php:75
+msgid "Password mismatch"
 msgstr ""
 
-#: weblogin/chpwd.php:72
+#: weblogin/chpwd.php:78
 msgid "Password has been changed"
 msgstr ""
 
-#: weblogin/chpwd.php:84
-msgid "Please insert all information"
+#: weblogin/chpwd.php:90
+msgid "Please apply all information"
 msgstr ""
 
-#: weblogin/chpwd.php:91 weblogin/login.php:164 weblogin/logout.php:170
+#: weblogin/chpwd.php:97 weblogin/login.php:170 weblogin/logout.php:176
 msgid "Username"
 msgstr ""
 
-#: weblogin/chpwd.php:94 weblogin/login.php:166
+#: weblogin/chpwd.php:100 weblogin/login.php:172
 msgid "Password"
 msgstr ""
 
-#: weblogin/chpwd.php:97
+#: weblogin/chpwd.php:103
 msgid "New Password"
 msgstr ""
 
-#: weblogin/chpwd.php:99
+#: weblogin/chpwd.php:105
 msgid "Confirm Password"
 msgstr ""
 
-#: weblogin/chpwd.php:102
+#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:243
+#: weblogin/logout.php:276
 msgid "Change Password"
 msgstr ""
 
@@ -65,71 +66,71 @@ msgstr ""
 msgid "Login Page"
 msgstr ""
 
-#: weblogin/login.php:169
+#: weblogin/login.php:175
 msgid "Login"
 msgstr ""
 
-#: weblogin/logout.php:47
+#: weblogin/logout.php:53
 msgid "day"
 msgstr ""
 
-#: weblogin/logout.php:48
+#: weblogin/logout.php:54
 msgid "days"
 msgstr ""
 
-#: weblogin/logout.php:50
+#: weblogin/logout.php:56
 msgid "hour"
 msgstr ""
 
-#: weblogin/logout.php:51
+#: weblogin/logout.php:57
 msgid "hours"
 msgstr ""
 
-#: weblogin/logout.php:53
+#: weblogin/logout.php:59
 msgid "minute"
 msgstr ""
 
-#: weblogin/logout.php:54
+#: weblogin/logout.php:60
 msgid "minutes"
 msgstr ""
 
-#: weblogin/logout.php:56
+#: weblogin/logout.php:62
 msgid "second"
 msgstr ""
 
-#: weblogin/logout.php:57
+#: weblogin/logout.php:63
 msgid "seconds"
 msgstr ""
 
-#: weblogin/logout.php:174
+#: weblogin/logout.php:180
 msgid "Session Start"
 msgstr ""
 
-#: weblogin/logout.php:178
+#: weblogin/logout.php:184
 msgid "Session End"
 msgstr ""
 
-#: weblogin/logout.php:179
+#: weblogin/logout.php:185
 msgid "Never"
 msgstr ""
 
-#: weblogin/logout.php:183
+#: weblogin/logout.php:189
 msgid "Session Time"
 msgstr ""
 
-#: weblogin/logout.php:189
+#: weblogin/logout.php:195
 msgid "Class of service"
 msgstr ""
 
-#: weblogin/logout.php:194
+#: weblogin/logout.php:200
 msgid "Request URL"
 msgstr ""
 
-#: weblogin/logout.php:201
+#: weblogin/logout.php:207
 msgid "OK"
 msgstr ""
 
-#: weblogin/logout.php:202
+#: weblogin/logout.php:208
 msgid "Logout"
 msgstr ""
 
@@ -178,7 +179,7 @@ msgid "Success! User has been logout"
 msgstr ""
 
 #: weblogin/user.class.php:78
-msgid "Error to query database"
+msgid "Error: Could not get data from database"
 msgstr ""
 
 #: weblogin/user.class.php:83 weblogin/user.class.php:102
@@ -186,5 +187,5 @@ msgid "Invalid username or password"
 msgstr ""
 
 #: weblogin/user.class.php:120
-msgid "Error to change password"
+msgid "Error: Could not change password"
 msgstr ""
