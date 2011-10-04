@@ -58,6 +58,7 @@ GNetXmlRpcClient *gnet_xmlrpc_client_new(const gchar *hostname,
   gnet_inetaddr_delete (addr);
   if (!client->socket)
     {
+      g_free (client);
       fprintf (stderr, "Error: Could not connect to %s:%d\n", hostname, port);
       return NULL;
     }
