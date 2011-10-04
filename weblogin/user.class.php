@@ -75,7 +75,7 @@ class UserDB {
     $result = pg_query($this->db_conn, $sql); 
 
     if (!$result) {
-      $this->message = _("Error to query database");
+      $this->message = _("Error: Could not get data from database");
       return FALSE;
     }
     $row = pg_fetch_row($result);
@@ -117,7 +117,7 @@ class UserDB {
     $result = pg_query($this->db_conn, $sql); 
 
     if (!$result) {
-      $this->message = _("Error to change password");
+      $this->message = _("Error: Could not change password");
       return FALSE;
     } 
     return TRUE;

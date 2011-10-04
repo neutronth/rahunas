@@ -68,11 +68,11 @@ if (!empty($_POST['user']) && !empty($_POST['passwd']) &&
                       $radius_password,
                       $radius_server);
   if(!$user->start()) {
-     $message =_("Can not connect database");
+     $message =_("Could not connect to database");
   }
   if($user->check_password($_POST['user'], $_POST['passwd'])) {
     if ($_POST['newpass'] != $_POST['cfmpass']) {
-      $message = _("Confirm password missmatch");
+      $message = _("Password mismatch");
     } else {
       if ($user->change_password($_POST['user'], $_POST['newpass'])) {
         $message = _("Password has been changed");
@@ -87,7 +87,7 @@ if (!empty($_POST['user']) && !empty($_POST['passwd']) &&
   $user->stop();
   unset ($user);
 } else {
-  $message = _("Please insert all information");
+  $message = _("Please apply all information");
 }
 
 $username = empty($_POST['user'])?"":$_POST['user'];
