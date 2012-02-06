@@ -24,6 +24,7 @@ extern struct ipset_type ipset_bitmap_ip0;
 extern struct ipset_type ipset_bitmap_ipmac0;
 extern struct ipset_type ipset_bitmap_port0;
 extern struct ipset_type ipset_hash_ip0;
+extern struct ipset_type ipset_hash_iplookup1;
 extern struct ipset_type ipset_hash_net0;
 extern struct ipset_type ipset_hash_net1;
 extern struct ipset_type ipset_hash_net2;
@@ -590,6 +591,7 @@ ipset_cache_fini(void)
 	ipset_type_add(&ipset_bitmap_ipmac0);
 	ipset_type_add(&ipset_bitmap_port0);
 	ipset_type_add(&ipset_hash_ip0);
+	ipset_type_add(&ipset_hash_iplookup1);
 	ipset_type_add(&ipset_hash_net0);
 	ipset_type_add(&ipset_hash_net1);
 	ipset_type_add(&ipset_hash_net2);

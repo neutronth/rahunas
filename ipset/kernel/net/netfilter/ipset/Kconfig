@@ -61,6 +61,17 @@ config IP_SET_HASH_IP
 
 	  To compile it as a module, choose M here.  If unsure, say N.
 
+config IP_SET_HASH_IPLOOKUP
+	tristate "hash:iplookup set support"
+	depends on IP_SET
+	help
+	  This option adds the hash:iplookup set type support, by which one
+	  can store arbitrary IPv4 or IPv6 addresses with "map-to" address pairs
+	  in a set. This set type is proposed to be used with SETRAWNAT target type
+    of iptables.
+
+	  To compile it as a module, choose M here.  If unsure, say N.
+
 config IP_SET_HASH_IPPORT
 	tristate "hash:ip,port set support"
 	depends on IP_SET

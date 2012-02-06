@@ -20,6 +20,7 @@ libipset_la_SOURCES = \
 	ipset_bitmap_ipmac.c \
 	ipset_bitmap_port.c \
 	ipset_hash_ip.c \
+	ipset_hash_iplookup.c \
 	ipset_hash_ipport.c \
 	ipset_hash_ipportip.c \
 	ipset_hash_ipportnet.c \
