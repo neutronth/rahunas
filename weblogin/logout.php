@@ -1,6 +1,6 @@
 <?php
 /*
-  Copyright (c) 2008-2010, Neutron Soutmun <neo.neutron@gmail.com>
+  Copyright (c) 2008-2012, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -150,6 +150,11 @@ if (!empty($_POST['do_logout'])) {
     $racct->session_id    = $session_id;
     $racct->session_start = $session_start;
     $racct->acctStop();
+
+    /* Destroy current session */
+    session_regenerate_id();
+    session_destroy();
+    unset($_SESSION);
   }
 } else {
   $show_info = true;

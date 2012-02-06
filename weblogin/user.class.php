@@ -1,6 +1,7 @@
 <?php
 /*
   Copyright (c) 2008-2011, Suriya Soutmun <darksolar@gmail.com>
+            (c) 2011-2012, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -44,6 +45,7 @@ class UserDB {
   var $port;
   var $db_conn;
   var $pass_type;
+  var $pass_attribute;
   var $message;
 
   function UserDB($dbname, $username, $password,
@@ -71,7 +73,7 @@ class UserDB {
   }
 
   function check_password ($username, $password) {
-    $sql = "SELECT attribute, value FROM radcheck WHERE username = '$username'";
+    $sql = "SELECT attribute, value FROM radcheck WHERE username = '$username' AND attribute LIKE '%Password'";
     $result = pg_query($this->db_conn, $sql); 
 
     if (!$result) {
@@ -97,6 +99,7 @@ class UserDB {
         $checkpass = $password;
     }
     if ($row[1] == $checkpass) {
+      $thsi->pass_attribute = $row[0];
       return TRUE;
     } else {
       $this->message = _("Invalid username or password");
@@ -113,7 +116,7 @@ class UserDB {
       default:
         $newpass = $password;
     }
-    $sql = "UPDATE radcheck SET value='$newpass' WHERE username='$username'";
+    $sql = "UPDATE radcheck SET value='$newpass' WHERE username='$username' AND attribute = '" . $this->pass_attribute . "'";
     $result = pg_query($this->db_conn, $sql); 
 
     if (!$result) {
