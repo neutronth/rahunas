@@ -1,0 +1,110 @@
+#!/bin/sh
+
+RADDB_DIR=/etc/raddb
+LOG=/var/log/radius/rh-nas-sync.log
+
+RADCLIENT=`which radclient`
+SNMPWALK=`which snmpwalk`
+SNMPGET=`which snmpget`
+
+RH_LOGINUSERNAME_MIB=".1.3.6.1.4.1.38668.1.1.1.2"
+SNMP_VERSION="2c"
+SNMP_COMMUNITY="public"
+
+if [ ! -x "${RADCLIENT}" ]; then
+  echo "Could not fine \"radclient\"" >> ${LOG}
+fi
+
+RADACCT_TABLE=`cat ${RADDB_DIR}/sql.conf | grep "acct_table1 =" | cut -d= -f2 | sed -e 's/"//g' -e 's/ //g'`
+
+if [ -z "${RADACCT_TABLE}" ]; then
+  echo "Could not get table name" >> ${LOG}
+  exit 1
+fi
+
+#
+# Set the database options
+#
+MYSQL_HOST=10.101.99.6
+MYSQL_USER=root
+MYSQL_PWD=microbus
+
+RADIUS_HOST=127.0.0.1
+RADIUS_SECRET=testing123
+
+#
+# Add your NAS ip address here (white-space saparated)
+#
+NAS_LIST="10.101.99.22"
+
+#
+# Process code, do not touch
+#
+
+radius_zap () {
+  line=$1
+  stale_sessid=`echo ${line} | cut -d\| -f1`
+  stale_username=`echo ${line} | cut -d\| -f2`
+  stale_userip=`echo ${line} | cut -d\| -f3`
+  stale_nasip=`echo ${line} | cut -d\| -f4`
+  stale_nasport=`echo ${line} | cut -d\| -f5`
+  stale_callingid=`echo ${line} | cut -d\| -f6`
+  stale_sesstime=`echo ${line} | cut -d\| -f7`
+
+  raddata_file=`mktemp`
+
+  cat >> ${raddata_file} << EOF
+User-Name = "${stale_username}"
+Acct-Session-Id = "${stale_sessid}"
+Acct-Status-Type = Stop
+Framed-IP-Address = ${stale_userip}
+Acct-Session-Time = ${stale_sesstime}
+Calling-Station-Id = "${stale_callingid}"
+NAS-IP-Address = ${stale_nasip}
+NAS-Port = ${stale_nasport}
+Acct-Terminate-Cause = Admin-Reset
+EOF
+
+  cat ${raddata_file} | ${RADCLIENT} -f - ${RADIUS_HOST} acct ${RADIUS_SECRET}
+
+  date >> ${LOG}
+  cat ${raddata_file} >> ${LOG}
+  echo "" >> ${LOG}
+
+  rm -f ${raddata_file}
+}
+
+for nas in ${NAS_LIST}
+do
+  stale_file=`mktemp`
+  walk_file=`mktemp`
+
+  SQL="SELECT AcctSessionId,UserName,FramedIPAddress,NASIPAddress,NASPortId,CallingStationId,TIMESTAMPDIFF(SECOND, AcctStartTime, now()) AS difftime FROM ${RADACCT_TABLE} WHERE AcctStartTime < (DATE_SUB(NOW(), INTERVAL 10 MINUTE)) AND AcctStopTime IS NULL AND NASIPAddress='${nas}';"
+
+  echo ${SQL} | /usr/bin/mysql -h${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL_PWD} -s radius > ${stale_file}
+  sed -i -e "s/\t/|/g" ${stale_file}
+
+  if [ -n "`cat ${stale_file}`" ]; then
+    MIBS="RAHUNAS-MIB" ${SNMPWALK} -v${SNMP_VERSION} -c${SNMP_COMMUNITY} ${nas} ${RH_LOGINUSERNAME_MIB} 2>&1 > ${walk_file}
+    sed -i -e 's/RAHUNAS-MIB::rahunasAuthenLoginUsername.//g' -e 's/STRING: //g' -e 's/"//g' ${walk_file}
+
+    while read line
+    do
+      is_stale=0;
+      stale_sessid=`echo ${line} | cut -d\| -f1`
+
+      check=`grep -w "${stale_sessid}" ${walk_file}`
+
+      if [ -z "${check}" ]; then
+        is_stale=1
+      fi
+
+      if [ ${is_stale} -gt 0 ]; then
+        radius_zap "$line"
+      fi
+    done < ${stale_file}
+  fi
+
+  rm -f ${stale_file}
+  rm -f ${walk_file}
+done
