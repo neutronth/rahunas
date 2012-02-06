@@ -1,0 +1,8 @@
+#! /usr/bin/awk -f
+
+BEGIN { V = "2"; P = "6"; S = "35" }
+{
+if ( sub(/^VERSION = /, "") ) { V = $0 }
+if ( sub(/^PATCHLEVEL = /, "") ) { P = $0 }
+if ( sub(/^SUBLEVEL = /, "") ) { S = sprintf("%02d", $0); print V P S }
+}
