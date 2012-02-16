@@ -1,0 +1,4 @@
+# -*- Makefile -*-
+
+obj-m      = compat_xtables.o
+obj-m      += xt_SETRAWNAT.o

@@ -1,0 +1,31 @@
+# -*- Makefile -*-
+# AUTOMAKE
+
+export AM_CPPFLAGS
+export AM_CFLAGS
+SETRAWNAT_SRCDIR = ${srcdir}
+SETRAWNAT_TOPSRCDIR = ${top_srcdir}
+SETRAWNAT_ABSTOPSRCDIR = ${abs_top_srcdir}
+export SETRAWNAT_SRCDIR
+export SETRAWNAT_TOPSRCDIR
+export SETRAWNAT_ABSTOPSRCDIR
+
+_mcall = -f ${top_builddir}/Makefile.iptrules
+
+all-local: user-all-local
+
+install-exec-local: user-install-local
+
+clean-local: user-clean-local
+
+user-all-local:
+	${MAKE} ${_mcall} all;
+
+# Have no user-install-data-local ATM
+user-install-local: user-install-exec-local
+
+user-install-exec-local:
+	${MAKE} ${_mcall} install;
+
+user-clean-local:
+	${MAKE} ${_mcall} clean;

@@ -1,0 +1,8 @@
+config NETFILTER_XT_TARGET_SETRAWNAT
+	tristate '"SETRAWNAT" raw address translation w/o conntrack'
+	depends on NETFILTER_XTABLES && NETFILTER_ADVANCED
+	depends on IP_NF_RAW || IP_NF6_RAW
+	---help---
+	This option adds the SETRAWSNAT and SETRAWDNAT targets which can do Network
+	Address Translation (no port translation) without requiring Netfilter
+	connection tracking.

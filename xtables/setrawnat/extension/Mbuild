@@ -1,0 +1,3 @@
+# -*- Makefile -*-
+
+obj-m      = libxt_SETRAWDNAT.so libxt_SETRAWSNAT.so

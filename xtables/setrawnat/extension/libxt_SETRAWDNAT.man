@@ -1,0 +1,10 @@
+The \fBSETRAWDNAT\fR target will rewrite the destination address in the IP header,
+much like the \fBNETMAP\fR target.
+.TP
+\fB\-\-to\-destination\fR \fIaddr\fR[\fB/\fR\fImask\fR]
+Network address to map to. The resulting address will be constructed the
+following way: All 'one' bits in the \fImask\fR are filled in from the new
+\fIaddress\fR. All bits that are zero in the mask are filled in from the
+original address.
+.PP
+See the \fBSETRAWSNAT\fR help entry for examples and constraints.

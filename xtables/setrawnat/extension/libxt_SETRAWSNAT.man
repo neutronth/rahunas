@@ -1,0 +1,38 @@
+The \fBSETRAWSNAT\fR and \fBSETRAWDNAT\fP targets provide stateless network address
+translation.
+.PP
+The \fBSETRAWSNAT\fR target will rewrite the source address in the IP header, much
+like the \fBNETMAP\fP target. \fBSETRAWSNAT\fP (and \fBSETRAWDNAT\fP) may only be
+used in the \fBraw\fP or \fBrawpost\fP tables, but can be used in all chains,
+which makes it possible to change the source address either when the packet
+enters the machine or when it leaves it. The reason for this table constraint
+is that SETRAWNAT must happen outside of connection tracking.
+.TP
+\fB\-\-to\-source\fR \fIaddr\fR[\fB/\fR\fImask\fR]
+Network address to map to. The resulting address will be constructed the
+following way: All 'one' bits in the \fImask\fR are filled in from the new
+\fIaddress\fR. All bits that are zero in the mask are filled in from the
+original address.
+.PP
+As an example, changing the destination for packets forwarded from an internal
+LAN to the internet:
+.IP
+\-t raw \-A PREROUTING \-i lan0 \-d 212.201.100.135 \-j SETRAWDNAT \-\-to\-destination 199.181.132.250;
+\-t rawpost \-A POSTROUTING \-o lan0 \-s 199.181.132.250 \-j SETRAWSNAT \-\-to\-source 212.201.100.135;
+.PP
+Note that changing addresses may influence the route selection! Specifically,
+it statically NATs packets, not connections, like the normal DNAT/SNAT targets
+would do. Also note that it can transform already-NATed connections \(em as
+said, it is completely external to Netfilter's connection tracking/NAT.
+.PP
+If the machine itself generates packets that are to be rawnat'ed, you need a
+rule in the OUTPUT chain instead, just like you would with the stateful NAT
+targets.
+.PP
+It may be necessary that in doing so, you also need an extra SETRAWSNAT rule, to
+override the automatic source address selection that the routing code does
+before passing packets to iptables. If the connecting socket has not been
+explicitly bound to an address, as is the common mode of operation, the address
+that will be chosen is the primary address of the device through which the
+packet would be routed with its initial destination address - the address as
+seen before any SETRAWNAT takes place.
