@@ -10,7 +10,10 @@
 #  include <time.h>
 #endif
 
+#ifdef  SETTYPE_NAME
+#undef  SETTYPE_NAME
 #define SETTYPE_NAME "rahunas"
+#endif
 
 /* general flags */
 #define IPSET_RAHUNAS_MATCHUNSET	1
