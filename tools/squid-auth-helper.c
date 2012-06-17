@@ -239,9 +239,9 @@ main(int argc, char *argv[])
       if (sep)
         {
           *sep = '\0';
-          strncpy (&rr_opts[rr_idx].ch_tag, line,
+          strncpy (rr_opts[rr_idx].ch_tag, line,
                      sizeof (rr_opts[rr_idx].ch_tag) - 2);
-          strcat (&rr_opts[rr_idx].ch_tag, " ");
+          strcat (rr_opts[rr_idx].ch_tag, " ");
 
           /* Strip white-space */
           sep++;
@@ -250,7 +250,7 @@ main(int argc, char *argv[])
 
           if ((sep - line) < sizeof (line))
             {
-              strncpy (&rr_opts[rr_idx].ip, sep,
+              strncpy (rr_opts[rr_idx].ip, sep,
                          sizeof (rr_opts[rr_idx].ip) - 1);
             }
           else
@@ -261,7 +261,7 @@ main(int argc, char *argv[])
       else
         {
           rr_opts[rr_idx].ch_tag[0] = '\0';
-          strncpy (&rr_opts[rr_idx].ip, line, sizeof (rr_opts[rr_idx].ip) - 1);
+          strncpy (rr_opts[rr_idx].ip, line, sizeof (rr_opts[rr_idx].ip) - 1);
         }
 
       sem_wait (&helper_sem);
