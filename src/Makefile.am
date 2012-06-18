@@ -17,6 +17,7 @@ AM_CFLAGS = \
   -DRAHUNAS_RUN_DIR=\"$(localstatedir)/run/\" \
   -DRAHUNAS_FIREWALL_WRAPPER=\"$(sbindir)/rahunas-firewall\" \
   -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\" \
+  -DRAHUNAS_CONNTRACK_WRAPPER=\"$(sbindir)/rahunas-conntrack\" \
   -D_GNU_SOURCE
 
 rahunasd_SOURCES = \
@@ -49,6 +50,8 @@ rahunasd_SOURCES = \
   rh-task-dbset.h \
   rh-task-bandwidth.c \
   rh-task-bandwidth.h \
+  rh-task-conntrack.c \
+  rh-task-conntrack.h \
   rh-task-serviceclass.c \
   rh-task-serviceclass.h \
   rh-radius.h \
