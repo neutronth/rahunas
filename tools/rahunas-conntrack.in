@@ -1,0 +1,34 @@
+#!/bin/sh
+# File: bandwidth.sh
+# Description: The bandwidth shaper wrapper script for RahuNAS
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+CONNTRACK=/usr/sbin/conntrack
+
+MESSAGE=""
+MSG_NOT_COMPLETED="NOT COMPLETED"
+
+usage() {
+  echo "Usage: $1 cut client_ip"
+}
+
+N=$prefix/sbin/rahunas-conntrack
+
+case "$1" in
+  cut)
+    $CONNTRACK -D -s $2 > /dev/null 2>&1
+    $CONNTRACK -D -d $2 > /dev/null 2>&1
+    MESSAGE="$2 flushed"
+
+    echo $MESSAGE
+    ;;
+  *)
+    usage $N
+    exit 3
+    ;;
+esac
+
+exit 0
