@@ -688,6 +688,10 @@ rules () {
     fi
 
     if [ "$PROXY" = "transparent" ]; then
+      # Do not redirect the excluded src/dst to proxy
+      $IPTABLES -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+        -m connmark --mark 6/6 -j ACCEPT
+
       if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]
       then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
@@ -727,9 +731,9 @@ rules () {
   for excluded in $EXCLUDED;
   do
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded \
-      -j CONNMARK --set-mark 2
+      -j CONNMARK --set-mark 6
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded \
-      -j CONNMARK --set-mark 2
+      -j CONNMARK --set-mark 6
   done 
 
   ##
