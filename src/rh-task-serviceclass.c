@@ -51,7 +51,7 @@ static uint32_t _sc_get_slot_id(struct rahunas_serviceclass_config *sc_config)
 
     if (slot_id != 0) {
       snprintf(select_cmd, sizeof (select_cmd) - 1,
-               "SELECT count(service_class_slot_id) FROM dbset WHERE "
+               "SELECT service_class_slot_id FROM dbset WHERE "
                "service_class = '%s' AND service_class_slot_id = %u",
                sc_config->serviceclass_name, slot_id);
       select_cmd[sizeof (select_cmd) - 1] = '\0';
