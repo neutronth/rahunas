@@ -143,7 +143,7 @@ if (!empty($_POST['do_logout'])) {
     $racct->secret = $config["RADIUS_SECRET"];
     $racct->nas_identifier = $config["NAS_IDENTIFIER"];
     $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-    $racct->nas_port = $config["NAS_PORT"];
+    $racct->nas_port = $config["VSERVER_ID"];
     $racct->framed_ip_address  = $ip;
     $racct->calling_station_id = $mac_address;
     $racct->terminate_cause = RADIUS_TERM_USER_REQUEST;

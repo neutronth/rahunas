@@ -104,7 +104,7 @@ if (!$forward) {
       $racct->secret = $config["RADIUS_SECRET"];
       $racct->nas_identifier = $config["NAS_IDENTIFIER"];
       $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-      $racct->nas_port = $config["NAS_PORT"];
+      $racct->nas_port = $config["VSERVER_ID"];
       $racct->framed_ip_address  = $_SERVER['REMOTE_ADDR'];
       $racct->calling_station_id = returnMacAddress();
       $racct->gen_session_id();
