@@ -7,6 +7,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 
 CONNTRACK=/usr/sbin/conntrack
+DELAY=5
 
 MESSAGE=""
 MSG_NOT_COMPLETED="NOT COMPLETED"
@@ -19,8 +20,8 @@ N=$prefix/sbin/rahunas-conntrack
 
 case "$1" in
   cut)
-    $CONNTRACK -D -s $2 > /dev/null 2>&1
-    $CONNTRACK -D -d $2 > /dev/null 2>&1
+    sleep ${DELAY} && $CONNTRACK -D -s $2 > /dev/null 2>&1 &
+    sleep ${DELAY} && $CONNTRACK -D -d $2 > /dev/null 2>&1 &
     MESSAGE="$2 flushed"
 
     echo $MESSAGE
