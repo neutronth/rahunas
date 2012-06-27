@@ -110,6 +110,9 @@ P2P_ALLOW_SET=
 DEV_IN_PARAM=
 DEV_OUT_PARAM=
 
+CHAIN_RH_RAW_PREROUTING=${NAME}_raw_pre
+CHAIN_RH_RAWPOST_POSTROUTING=${NAME}_raw_post
+
 get_config () {
   file=$1
   opt=$2
@@ -277,31 +280,18 @@ navigation_rules () {
 
         if [ "$MAIN_SERVICECLASS" = "yes" ]; then
           # RAW - Service class
-          $IPTABLES -t raw $action PREROUTING -i $dev \
+          $IPTABLES -t raw $action ${CHAIN_RH_RAW_PREROUTING} -i $dev \
             -m set --set rahunas_serviceclass dst \
             -j RAHURAWDNAT --bind-set rahunas_serviceclass
 
-          $IPTABLES -t rawpost $action POSTROUTING -o $dev\
+          $IPTABLES -t rawpost $action ${CHAIN_RH_RAWPOST_POSTROUTING} -o $dev\
             -m set --set rahunas_serviceclass src \
             -j RAHURAWSNAT --bind-set rahunas_serviceclass
         fi
       fi
     done
   else #stop
-    for dev in `cat $MAIN_EXT_IFACE_LIST`; do
-      $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
-
-      if [ -f $SERVICECLASS_STATE ]; then
-        # RAW - Service class
-        $IPTABLES -t raw $action PREROUTING -i $dev \
-          -m set --set rahunas_serviceclass dst \
-          -j RAHURAWDNAT --bind-set rahunas_serviceclass
-
-        $IPTABLES -t rawpost $action POSTROUTING -o $dev\
-          -m set --set rahunas_serviceclass src \
-          -j RAHURAWSNAT --bind-set rahunas_serviceclass
-      fi
-
+    for dev in $DEV_EXTERNAL_LIST; do
       sed -i "/$dev/d" $MAIN_EXT_IFACE_LIST
     done
   fi
@@ -512,6 +502,11 @@ policy () {
   fi
 
   $IPTABLES -A ${NAME}_ext_fw -j RETURN
+
+  if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    $IPTABLES -t raw -N ${CHAIN_RH_RAW_PREROUTING}
+    $IPTABLES -t rawpost -N ${CHAIN_RH_RAWPOST_POSTROUTING}
+  fi
 }
 
 cleanup_policy () {
@@ -537,6 +532,11 @@ cleanup_policy () {
 
   $IPTABLES -F ${NAME}_ext_fw
   $IPTABLES -X ${NAME}_ext_fw
+
+  $IPTABLES -t raw -F ${CHAIN_RH_RAW_PREROUTING} || true
+  $IPTABLES -t raw -X ${CHAIN_RH_RAW_PREROUTING} || true
+  $IPTABLES -t rawpost -F ${CHAIN_RH_RAWPOST_POSTROUTING} || true
+  $IPTABLES -t rawpost -X ${CHAIN_RH_RAWPOST_POSTROUTING} || true
 }
 
 rules () {
@@ -841,13 +841,13 @@ start () {
 stop () {
   test -f $RUN || return 0
 
+  cleanup_policy
+
   if [ -f $SERVICECLASS_STATE ]; then
     serviceclass_set cleanup
     serviceclass_fakearpd stop
     rm -f $SERVICECLASS_STATE
   fi
-   
-  cleanup_policy
 
   killall farpd >/dev/null 2>&1
 
