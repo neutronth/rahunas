@@ -45,13 +45,17 @@ class RahuI18N {
 
   public function localeSetup () {
     if (!empty ($_GET['language'])) {
-      $_SESSION['language'] = $_GET['language'];
-    } else if (empty ($_SESSION['language'])) {
+      setcookie ("rh_language", $_GET['language']);
+      $selected_lang =& $this->langlist[$_GET["language"]];
+    } else if (empty ($_COOKIE["rh_language"])) {
       $accept_lang = $this->getAcceptLanguage ();
-      $_SESSION['language'] = empty ($accept_lang) ? "English" : $accept_lang;
+      $lang = empty ($accept_lang) ? "English" : $accept_lang;
+      setcookie ("rh_language", $lang);
+      $selected_lang =& $this->langlist[$lang];
+    } else {
+      $selected_lang =& $this->langlist[$_COOKIE["rh_language"]];
     }
 
-    $selected_lang =& $this->langlist[$_SESSION['language']];
 
     if (!empty ($selected_lang['code'])) {
       setlocale (LC_ALL, $selected_lang['code']);

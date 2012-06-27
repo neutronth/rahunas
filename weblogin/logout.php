@@ -31,7 +31,6 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
-session_start();
 ob_start();
 require_once 'rahu_radius.class.php';
 require_once 'rahu_xmlrpc.class.php';
@@ -95,7 +94,7 @@ $forward_uri  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
 $forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
 $forward_uri .= "/login.php?sss=" . time();
 
-$request_url = $_SESSION['request_url'];
+$request_url = urldecode ($_GET['request_url']);
 $request_url_text = strlen($request_url) < 20 ? $request_url : substr($request_url, 0, 20) . " ...";
 
 
@@ -150,11 +149,6 @@ if (!empty($_POST['do_logout'])) {
     $racct->session_id    = $session_id;
     $racct->session_start = $session_start;
     $racct->acctStop();
-
-    /* Destroy current session */
-    session_regenerate_id();
-    session_destroy();
-    unset($_SESSION);
   }
 } else {
   $show_info = true;
@@ -213,12 +207,19 @@ $valid_text = !$valid ? "" : "" .
   "   <td><input type='submit' value='" . _("Logout") . "' id='rh_logout_button'></td>" .
   " </tr>" .
   "</table>";
-$request_uri = $_SERVER['REQUEST_URI'];
-$loginbox = "<form name='login' action='$request_uri' method='post'>" .
-            "  $valid_text ". 
-            "</form>";
 
-$forward_script  = $valid == false ? "self.location.replace('$forward_uri');" : "";
+if ($valid) {
+  $request_uri = $_SERVER['REQUEST_URI'];
+  $loginbox = "<form name='login' action='$request_uri' method='post' ".
+              "onsubmit='if (this.getAttribute (\"submitted\")) return false; ".
+              "this.setAttribute (\"submitted\", true); return true;'>" .
+              "  $valid_text ".
+              "</form>";
+  $forward_script = "";
+} else {
+  $loginbox = "";
+  $forward_script  = "self.location.replace('$forward_uri');";
+}
 
 $waiting_show  = $forward ? "visible_hide(wt, 'show');" 
                           : "visible_hide(wt, 'hide');";

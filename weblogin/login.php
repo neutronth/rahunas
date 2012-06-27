@@ -31,7 +31,6 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
-session_start();
 ob_start();
 require_once 'rahu_radius.class.php';
 require_once 'rahu_xmlrpc.class.php';
@@ -58,9 +57,9 @@ $LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ?
                 ":" . $config['NAS_LOGIN_PORT'] : "";
 $LogoutURL .= "/logout.php";
 $RequestURL = empty($_GET['request_url']) ? 
-                $config['DEFAULT_REDIRECT_URL']
-                : urldecode($_GET['request_url']);
-$_SESSION['request_url'] = $RequestURL;
+                urlencode($config['DEFAULT_REDIRECT_URL'])
+                : $_GET['request_url'];
+$LogoutURL .= "?request_url=" . $RequestURL;
 
 // Verify if the user already login
 $xmlrpc = new rahu_xmlrpc_client();
@@ -156,8 +155,6 @@ if (!$forward) {
       }
     }
   }
-} else {
-  $_SESSION['firstlogin'] = true;
 }
 ?>
 
@@ -165,27 +162,36 @@ if (!$forward) {
 // Login box
 $request_uri = $_SERVER['REQUEST_URI'];
 
-$loginbox = "<form name='login' action='$request_uri' method='post'>" .
-            "<table>" .
-            "<tr><td id='rh_login_text'>" . _("Username") . "</td>" .
-            "<td><input type='text' name='user' size='22'></td></tr>" .
-            "<tr><td id='rh_login_text'>" . _("Password") . "</td>" .
-            "<td><input type='password' name='passwd' size='22'></td></tr>" .
-            "<tr><td>&nbsp;</td>" .
-            "<td><input type='submit' value='" . _("Login") . "' id='rh_login_button'>" .
-            "</td></tr>" .
-            "</table>" .
-            "</form>";
+if (!$forward) {
+  $loginbox = "<form name='login' action='$request_uri' method='post' ".
+              "onsubmit='if (this.getAttribute (\"submitted\")) return false; ".
+              "this.setAttribute (\"submitted\", true); return true;'>" .
+              "<table>" .
+              "<tr><td id='rh_login_text'>" . _("Username") . "</td>" .
+              "<td><input type='text' name='user' size='22'></td></tr>" .
+              "<tr><td id='rh_login_text'>" . _("Password") . "</td>" .
+              "<td><input type='password' name='passwd' size='22'></td></tr>" .
+              "<tr><td>&nbsp;</td>" .
+              "<td><input type='submit' value='" . _("Login") . "' id='rh_login_button'>" .
+              "</td></tr>" .
+              "</table>" .
+              "</form>";
 
-$forward_script  = $forward ? "window.open('$RequestURL');" : "";
-$forward_script .= $forward ? "self.location.replace('$LogoutURL');" : "";
-$waiting_show  = $forward ? "visible_hide(wt, 'show');" 
-                          : "visible_hide(wt, 'hide');";
-$message_show  = !empty($message) ? "visible_hide(msg, 'show');" 
-                                  : "visible_hide(msg, 'hide');";
-$hide_wait = !empty($message) ? "setTimeout('hide_wait();', 2000);\n" : "";
-$force_forward = $hide_wait == "" && $forward ? 
-                   "self.location.replace('$LogoutURL');" : "";
+  $forward_script  = "";
+  $waiting_show    = "visible_hide(wt, 'hide');";
+  $force_forward   = "";
+} else {
+  $loginbox        = "";
+  $forward_script  = "window.open('$RequestURL');";
+  $forward_script .= "self.location.replace('$LogoutURL');";
+  $waiting_show    = "visible_hide(wt, 'show');";
+  $force_forward   = $hide_wait == "" ? "self.location.replace('$LogoutURL');"
+                                      : "";
+}
+
+$message_show = !empty($message) ? "visible_hide(msg, 'show');"
+                                 : "visible_hide(msg, 'hide');";
+$hide_wait    = !empty($message) ? "setTimeout('hide_wait();', 2000);\n" : "";
 
 $loginscript = "<script>" .
                "var msg=(document.all);\n" .  
@@ -241,7 +247,6 @@ $tpl->setString ("<!-- JavaScript -->", $loginscript);
 $tpl->setString ("<!-- LanguageList -->", $i18n->getLangList("<li>", "</li>"));
 $tpl->setString ("<!-- ChangePassword -->", "<li><a href='/chpwd.php'>" .
                     _("Change Password") . "</a></li>");
-$tpl->setString ("<body", "<body onload='document.login.user.focus();'");
 $tpl->render ();
 
 ob_end_flush();
