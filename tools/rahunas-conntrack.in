@@ -16,12 +16,17 @@ usage() {
   echo "Usage: $1 cut client_ip"
 }
 
+conncut() {
+  sleep ${DELAY}
+  $CONNTRACK -D -s $2 > /dev/null 2>&1
+  $CONNTRACK -D -d $2 > /dev/null 2>&1
+}
+
 N=$prefix/sbin/rahunas-conntrack
 
 case "$1" in
   cut)
-    sleep ${DELAY} && $CONNTRACK -D -s $2 > /dev/null 2>&1 &
-    sleep ${DELAY} && $CONNTRACK -D -d $2 > /dev/null 2>&1 &
+    conncut &
     MESSAGE="$2 flushed"
 
     echo $MESSAGE
