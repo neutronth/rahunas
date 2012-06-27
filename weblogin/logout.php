@@ -43,6 +43,9 @@ require_once 'header.php';
 require_once 'messages.php';
 require_once 'networkchk.php';
 
+
+$refresh_interval = 300;
+
 // Setup I18N
 $i18n = new RahuI18N ($rahu_langsupport);
 $i18n->localeSetup ();
@@ -79,12 +82,6 @@ function secs_to_human($secs) {
 }
 
 $current_url = $_SERVER['REQUEST_URI'];
-$interval = 60;
-$auto_refresh = false;
-
-if ($auto_refresh) {
-  header("Refresh: $interval; url=$current_url");
-}
 
 $ip = $_SERVER['REMOTE_ADDR'];
 $config = get_config_by_network($ip, $config_list);
@@ -117,6 +114,10 @@ if (is_array($retinfo)) {
   $isinfo = true;
 } else {
   $valid = false;
+}
+
+if ($retinfo["session_timeout"] > 0) {
+  header("Refresh: $refresh_interval; url=$current_url");
 }
 
 if (!empty($_POST['do_logout'])) {
@@ -185,8 +186,8 @@ $valid_text = !$valid ? "" : "" .
   " </tr>" .
   "" .
   "  <tr>" .
-  "   <td align='right'><b>" . _("Session Time") . ":</b></td>" .
-  "   <td>" . secs_to_human(time() - $info['session_start']) . "</td>" .
+  "   <td align='right'><b>" . ($info['session_timeout'] == 0 ? _("Session Time") : _("Session Remain Time")) . ":</b></td>" .
+  "   <td>" . ($info['session_timeout'] == 0 ? secs_to_human(time() - $info['session_start']) : secs_to_human($info['session_timeout'] - time())) . "</td>" .
   " </tr>" .
   "" .
   (strcmp ($info['serviceclass_description'], "(null)") == 0 ? "" :
