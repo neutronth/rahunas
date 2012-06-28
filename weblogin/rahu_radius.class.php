@@ -135,7 +135,8 @@ class rahu_radius_auth {
       if (!empty($this->attributes['reply_message'])) {
         if (strstr($this->attributes['reply_message'], "logged in"))
           $this->LoggedIn = true;
-        else if (strstr($this->attributes['reply_message'], "Your maximum"))
+        else if (strstr($this->attributes['reply_message'], "Your maximum") ||
+                 strstr($this->attributes['reply_message'], "Password Has Expired"))
           $this->Timeout = true;
       }
     }
