@@ -1,3 +1,16 @@
+rahunas (0.2.2-1squeeze1) stable; urgency=low
+
+  * Imported Upstream version 0.2.2
+  * Update rahunas init script to make it start/stop properly
+  * Add rahunas-serviceclass.conf to docs installation
+  * Update control file
+  * Move weblogin templates to /etc/rahunas/templates
+  * Add autopoint and libtool to build-deps
+  * Add install files
+  * Add conntrack to rahunas dependency
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 20 Aug 2012 13:03:04 +0700
+
 rahunas (0.2.0-1squeeze3) stable; urgency=low
 
   * debian/rahunas-weblogin.postinst:
