@@ -8,12 +8,14 @@
 #include <syslog.h>
 #include <time.h>
 #include <string.h>
-#include <libgda/libgda.h>
+#include <sqlite3.h>
 #include "rahunasd.h"
 #include "rh-task.h"
 #include "rh-ipset.h"
 #include "rh-utils.h"
 #include "rh-task-memset.h"
+
+#define COLNAME_MATCH(a, b) (strncmp(a, b, strlen(a)) == 0)
 
 struct dbset_row {
   gchar *session_id;
@@ -30,267 +32,216 @@ struct dbset_row {
   uint32_t service_class_slot_id;
 };
 
-gboolean get_errors (GdaConnection * connection)
+static void
+free_dbset_row (struct dbset_row *row)
 {
-  GList *list;
-  GList *node;
-  GdaConnectionEvent *error;
+  if (!row)
+    return;
 
-  list = (GList *) gda_connection_get_events(connection);
+  g_free (row->session_id);
+  g_free (row->vserver_id);
+  g_free (row->username);
+  g_free (row->ip);
+  g_free (row->mac);
+  g_free (row->service_class);
+}
 
-  for (node = g_list_first(list); node != NULL; node = g_list_next(node)) {
-    error = (GdaConnectionEvent *) node->data;
-    logmsg(RH_LOG_NORMAL, "DB Error no: %d", 
-             gda_connection_event_get_code(error));
-    logmsg(RH_LOG_NORMAL, "DB Desc: %s", 
-             gda_connection_event_get_description(error));
-    logmsg(RH_LOG_NORMAL, "DB Source: %s", 
-             gda_connection_event_get_source(error));
-    logmsg(RH_LOG_NORMAL, "DB SQL State: %s", 
-             gda_connection_event_get_sqlstate(error));
+static sqlite3 *
+openconn (void)
+{
+  sqlite3 *connection = NULL;
+  int  rc;
+
+  rc = sqlite3_open (RAHUNAS_DB, &connection);
+  if (rc) {
+    logmsg (RH_LOG_ERROR, "Task DBSET: could not open database, %s",
+            sqlite3_errmsg (connection));
+    sqlite3_close (connection);
+    connection = NULL;
   }
-}
-
-gboolean
-parse_dm_to_struct(GList **data_list, GdaDataModel *dm) {
-  gint  row_id;
-  gint  column_id;
-  const GValue *value;
-  gchar  *str;
-  const gchar  *title;
-  GdaNumeric *num;
-  struct dbset_row *row;
-  struct tm tm;
-  time_t time;
-
-  char tmp[80];
-
-  for (row_id = 0; row_id < gda_data_model_get_n_rows(dm); row_id++) {
-    row = (struct dbset_row *)g_malloc(sizeof(struct dbset_row));
-    if (row == NULL) {
-      /* Do implement the row list cleanup */
-    }
-
-    *data_list = g_list_append(*data_list, row); 
-
-    for (column_id = 0; column_id < gda_data_model_get_n_columns(dm); 
-           column_id++) {
-
-      title = gda_data_model_get_column_title(dm, column_id);
-      value = gda_data_model_get_value_at (dm, column_id, row_id, NULL);
-      str = gda_value_stringify(value);
-               
-      if (strncmp("session_id", title, 10) == 0) {
-        row->session_id = g_strdup(str);
-      } else if (strncmp("vserver_id", title, 10) == 0) {
-        row->vserver_id = g_strdup(str);
-      } else if (strncmp("username", title, 8) == 0) {
-        row->username = g_strdup(str);
-      } else if (strncmp("ip", title, 2) == 0) {
-        row->ip = g_strdup(str);
-      } else if (strncmp("mac", title, 3) == 0) {
-        row->mac = g_strdup(str);
-      } else if (strncmp("session_start", title, 13) == 0) {
-        strptime(str, "%s", &tm);
-        time = mktime(&tm);
-        memcpy(&row->session_start, &time, sizeof(time_t));
-      } else if (strncmp("session_timeout", title, 15) == 0) {
-        strptime(str, "%s", &tm);
-        time = mktime(&tm);
-        memcpy(&row->session_timeout, &time, sizeof(time_t));
-      } else if (strncmp("bandwidth_slot_id", title, 17) == 0) {
-        row->bandwidth_slot_id = atoi(str);
-      } else if (strncmp("bandwidth_max_down", title, 18) == 0) {
-        row->bandwidth_max_down = atol(str);
-      } else if (strncmp("bandwidth_max_up", title, 18) == 0) {
-        row->bandwidth_max_up = atol(str);
-      } else if (strncmp("service_class_slot_id", title,
-                         strlen("service_class_slot_id")) == 0) {
-          row->service_class_slot_id = atol(str);
-      } else if (strncmp("service_class", title,
-                         strlen("service_class")) == 0) {
-          row->service_class = g_strdup(str);
-      }
-    }
-  }
-  
-  return TRUE;
-}
-
-GList *execute_sql_command(GdaConnection *connection, const gchar *buffer)
-{
-  GdaSqlParser *parser = NULL;
-  GdaStatement *stmt   = NULL;
-  GdaSet       *params = NULL;
-  GList *data_list = NULL;
-  GList *list;
-  GList *node;
-  GdaDataModel *dm;
-  gboolean errors = FALSE;
-
-  parser = g_object_get_data (G_OBJECT (connection), "parser");
-
-  stmt = gda_sql_parser_parse_string (parser, buffer, NULL, NULL);
-  gda_statement_get_parameters (stmt, &params, NULL);
-
-  dm = gda_connection_statement_execute_select (connection, stmt, params, NULL);
-  if (dm) {
-    parse_dm_to_struct (&data_list, dm);
-    g_object_unref (dm);
-  }
-
-  if (params)
-    g_object_unref (params);
-
-  if (stmt)
-    g_object_unref (stmt);
-  
-  return errors == TRUE ? NULL : data_list;
-}
-
-void execute_sql(GdaConnection *connection, const gchar *buffer)
-{
-  GdaSqlParser *parser = NULL;
-  GdaStatement *stmt   = NULL;
-  GdaSet       *params = NULL;
-  gint         res     = 0;
-
-  parser = g_object_get_data (G_OBJECT (connection), "parser");
-
-  stmt = gda_sql_parser_parse_string (parser, buffer, NULL, NULL);
-  gda_statement_get_parameters (stmt, &params, NULL);
-
-  res = gda_connection_statement_execute_non_select (connection, stmt, params,
-                                                     NULL, NULL);
-  if (params)
-    g_object_unref (params);
-
-  if (stmt)
-    g_object_unref (stmt);
-}
-
-void list_datasource (void)
-{
-  GList *ds_list;
-  GList *node;
-  GdaDsnInfo *info;
-
-  info = gda_config_get_dsn_info (PROGRAM);
-
-  logmsg(RH_LOG_NORMAL, "Datasource: NAME: %s PROVIDER: %s",
-         info->name, info->provider);
-  logmsg(RH_LOG_NORMAL, "  CNC: %s", info->cnc_string);
-  logmsg(RH_LOG_NORMAL, "  DESC: %s", info->description);
-}
-
-void free_data_list(GList *data_list)
-{
-  GList *node;
-  struct dbset_row *row;
-
-  for (node = g_list_first(data_list); node != NULL; 
-         node = g_list_next (node)) {
-    row = (struct dbset_row *) node->data;
-    g_free(row->session_id);
-    g_free(row->vserver_id);
-    g_free(row->username);
-    g_free(row->ip);
-    g_free(row->mac);
-    g_free(row->service_class);
-  }
-  
-  g_list_free (data_list);  
-}
-
-gboolean restore_set(GList **data_list, RHVServer *vs)
-{
-  GList *node = NULL;
-  struct dbset_row *row = NULL;
-  uint32_t id;
-  GList *member_node = NULL;
-  struct rahunas_member *member = NULL;
-  struct task_req req;
-  unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
-  unsigned char max_try = 3;
- 
-  node = g_list_first(*data_list);
-
-  if (node == NULL)
-    return TRUE;
-
-  DP("Get data from DB if exist");
-
-  for (node; node != NULL; node = g_list_next(node)) {
-    row = (struct dbset_row *) node->data;
-
-    if (atoi(row->vserver_id) != vs->vserver_config->vserver_id)
-      continue;
-
-    id = iptoid(vs->v_map, row->ip);
-
-    if (id < 0)
-      continue;
-
-    req.id = id;
-    req.vserver_id = atoi(row->vserver_id);
-    req.username = row->username;
-    req.session_id = row->session_id;
-    parse_mac(row->mac, ethernet);
-    memcpy(req.mac_address, ethernet, ETH_ALEN);
-
-    req.session_start = row->session_start;
-    req.session_timeout = row->session_timeout;
-
-    req.bandwidth_slot_id = row->bandwidth_slot_id;
-    req.bandwidth_max_down = row->bandwidth_max_down; 
-    req.bandwidth_max_up = row->bandwidth_max_up;
-
-    req.serviceclass_name = row->service_class;
-    req.serviceclass_slot_id = row->service_class_slot_id;
-
-    rh_task_startsess(vs, &req);
-  }
-  return TRUE;
-}
-
-GdaConnection *
-openconn (GdaConnectionOptions options)
-{
-  GdaConnection *connection = NULL;
-  GdaSqlParser  *parser = NULL;
-  connection = gda_connection_open_from_dsn (PROGRAM, NULL, options, NULL);
-
-  parser = gda_connection_create_parser (connection);
-  if (!parser) {
-    parser = gda_sql_parser_new ();
-  }
-
-  g_object_set_data_full (G_OBJECT (connection), "parser", parser, g_object_unref);
 
   return connection;
+}
+
+static void
+closeconn (sqlite3 *connection)
+{
+  if (connection)
+    sqlite3_close (connection);
+}
+
+static int
+sql_execute_cb (void *NotUsed, int argc, char **argv, char **azColName)
+{
+  /* Do nothing */
+  return 0;
+}
+
+static int
+sql_execute (const char *sql)
+{
+  sqlite3 *connection = NULL;
+  char *zErrMsg       = NULL;
+  int rc;
+
+  if (!sql)
+    return -1;
+
+  connection = openconn ();
+  if (!connection)
+    return -1;
+
+  rc = sqlite3_exec (connection, sql, sql_execute_cb, 0, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    logmsg (RH_LOG_ERROR, "Task DBSET: could not execute sql (%s)", zErrMsg);
+    sqlite3_free (zErrMsg);
+  }
+
+  closeconn (connection);
+  return rc;
+}
+
+
+static int
+restore_set (RHVServer *vs)
+{
+  sqlite3 *connection = NULL;
+  char sql[256];
+  int  rc;
+  char **azResult = NULL;
+  char *zErrMsg   = NULL;
+  char *colname   = NULL;
+  char *value     = NULL;
+  int  nRow       = 0;
+  int  nColumn    = 0;
+  int  rowOffset  = 1;
+  int  i          = 0;
+
+  if (!vs)
+    return -1;
+
+  connection = openconn ();
+
+  if (!connection)
+    return -1;
+ 
+  DP("Get data from DB if exist");
+  snprintf(sql, sizeof (sql) - 1,
+           "SELECT * FROM dbset WHERE vserver_id='%d'",
+           vs->vserver_config->vserver_id);
+  sql[sizeof (sql) - 1] = '\0';
+
+  DP("SQL: %s", sql);
+
+  rc = sqlite3_get_table (connection, sql, &azResult, &nRow, &nColumn,
+                          &zErrMsg);
+  if (rc != SQLITE_OK) {
+    logmsg (RH_LOG_ERROR, "[%s] Task DBSET: could not get data (%s)",
+                          vs->vserver_config->vserver_name, zErrMsg);
+    sqlite3_free (zErrMsg);
+    closeconn (connection);
+    return -1;
+  }
+
+  while (rowOffset < (nRow + 1)) {
+    struct dbset_row row;
+    uint32_t id;
+    struct task_req req;
+    unsigned char ethernet[ETH_ALEN] = {0,0,0,0,0,0};
+    struct tm tm;
+    time_t time;
+
+    /* Fetch row data */
+    for (i = 0; i < nColumn; i++) {
+      colname = azResult[i];
+      value = azResult[(rowOffset * nColumn) + i];
+
+      DP ("Row: %s = %s", colname, value);
+
+      if (COLNAME_MATCH ("session_id", colname)) {
+        row.session_id = g_strdup (value);
+      } else if (COLNAME_MATCH ("vserver_id", colname)) {
+        row.vserver_id = g_strdup (value);
+      } else if (COLNAME_MATCH ("username", colname)) {
+        row.username = g_strdup (value);
+      } else if (COLNAME_MATCH ("ip", colname)) {
+        row.ip = g_strdup (value);
+      } else if (COLNAME_MATCH ("mac", colname)) {
+        row.mac = g_strdup (value);
+      } else if (COLNAME_MATCH ("session_start", colname)) {
+        strptime (value, "%s", &tm);
+        time = mktime (&tm);
+        memcpy (&row.session_start, &time, sizeof (time_t));
+      } else if (COLNAME_MATCH ("session_timeout", colname)) {
+        strptime (value, "%s", &tm);
+        time = mktime (&tm);
+        memcpy (&row.session_timeout, &time, sizeof (time_t));
+      } else if (COLNAME_MATCH ("bandwidth_slot_id", colname)) {
+        row.bandwidth_slot_id = atoi (value);
+      } else if (COLNAME_MATCH ("bandwidth_max_down", colname)) {
+        row.bandwidth_max_down = atol (value);
+      } else if (COLNAME_MATCH ("bandwidth_max_up", colname)) {
+        row.bandwidth_max_up = atol (value);
+      } else if (COLNAME_MATCH ("service_class_slot_id", colname)) {
+          row.service_class_slot_id = atol (value);
+      } else if (COLNAME_MATCH ("service_class", colname)) {
+          row.service_class = g_strdup (value);
+      }
+    }
+
+    /* Process row data */
+    if (atoi(row.vserver_id) != vs->vserver_config->vserver_id)
+      goto skip;
+
+    id = iptoid (vs->v_map, row.ip);
+
+    if (id < 0)
+      goto skip;
+
+    req.id = id;
+    req.vserver_id = atoi (row.vserver_id);
+    req.username = row.username;
+    req.session_id = row.session_id;
+    parse_mac(row.mac, ethernet);
+    memcpy(req.mac_address, ethernet, ETH_ALEN);
+
+    req.session_start = row.session_start;
+    req.session_timeout = row.session_timeout;
+
+    req.bandwidth_slot_id = row.bandwidth_slot_id;
+    req.bandwidth_max_down = row.bandwidth_max_down;
+    req.bandwidth_max_up = row.bandwidth_max_up;
+
+    req.serviceclass_name = row.service_class;
+    req.serviceclass_slot_id = row.service_class_slot_id;
+
+    rh_task_startsess(vs, &req);
+
+skip:
+    free_dbset_row (&row);
+    rowOffset++;
+  }
+
+  sqlite3_free_table (azResult);
+  closeconn (connection);
+  return 0;
 }
 
 /* Start service task */
 static int startservice ()
 {
-  GError *error = NULL;
-  GdaDsnInfo dsn_info = {
-    .name        = PROGRAM,
-    .provider    = "SQLite",
-    .cnc_string  = "DB_DIR=" RAHUNAS_DB_DIR ";DB_NAME=" DB_NAME,
-    .description = "RahuNAS DB Set",
-  };
+  sqlite3 *connection = NULL;
 
   logmsg(RH_LOG_NORMAL, "Task DBSET start..");
-   
-  gda_init();
-    
-  if (!gda_config_define_dsn (&dsn_info, &error)) {
-    logmsg (RH_LOG_ERROR, "Could not define DSN");
-    g_error_free (error);
+
+  /* Test database connection */
+  connection = openconn();
+  if (!connection) {
+    return -1;
   }
 
-  list_datasource();
+  /* Connection successfully connected, just close */
+  closeconn (connection);
 
   return 0;
 }
@@ -298,41 +249,20 @@ static int startservice ()
 /* Stop service task */
 static int stopservice  ()
 {
-  gda_config_remove_dsn (PROGRAM, NULL);
+  /* Do nothing */
   return 0;
 }
 
 /* Initialize */
 static void init (RHVServer *vs)
 {
-  GdaConnection *connection;
-  GList *data_list;
-  GList *node;
-  struct dbset_row *row;
-  char select_cmd[256];
-
   if (vs->vserver_config->init_flag == VS_RELOAD)
     return;
 
   logmsg(RH_LOG_NORMAL, "[%s] Task DBSET initialize..",
          vs->vserver_config->vserver_name);  
 
-  connection = openconn (GDA_CONNECTION_OPTIONS_READ_ONLY);
-
-  snprintf(select_cmd, sizeof (select_cmd), 
-           "SELECT * FROM dbset WHERE vserver_id='%d'",
-           vs->vserver_config->vserver_id);
-
-  DP("SQL: %s", select_cmd);
-
-  data_list = execute_sql_command(connection, select_cmd); 
-
-  restore_set(&data_list, vs);
-
-  free_data_list(data_list);
-
-  if (connection)
-    g_object_unref(G_OBJECT(connection));
+  restore_set(vs);
 }
 
 /* Cleanup */
@@ -344,15 +274,11 @@ static void cleanup (RHVServer *vs)
 /* Start session task */
 static int startsess (RHVServer *vs, struct task_req *req)
 {
-  GdaConnection *connection;
-  gint res;
   char startsess_cmd[512];
   char time_str[32];
   char time_str2[32];
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
-
-  connection = openconn (GDA_CONNECTION_OPTIONS_NONE);
 
   strftime(time_str, sizeof time_str, "%s", localtime(&req->session_start));
   strftime(time_str2, sizeof time_str2, "%s",
@@ -364,7 +290,7 @@ static int startsess (RHVServer *vs, struct task_req *req)
 
   member = (struct rahunas_member *) member_node->data;
 
-  snprintf(startsess_cmd, sizeof (startsess_cmd), "INSERT INTO dbset"
+  snprintf(startsess_cmd, sizeof (startsess_cmd) - 1, "INSERT INTO dbset"
          "(session_id,vserver_id,username,ip,mac,session_start,"
          "session_timeout,bandwidth_slot_id,bandwidth_max_down,"
          "bandwidth_max_up,service_class,service_class_slot_id) "
@@ -381,22 +307,16 @@ static int startsess (RHVServer *vs, struct task_req *req)
          req->bandwidth_max_up,
          member->serviceclass_name,
          member->serviceclass_slot_id);
+  startsess_cmd[sizeof (startsess_cmd) - 1] = '\0';
 
   DP("SQL: %s", startsess_cmd);
 
-  execute_sql(connection, startsess_cmd);
-
-  if (connection)
-    g_object_unref(G_OBJECT(connection));
-
-  return 0;
+  return sql_execute (startsess_cmd);
 }
 
 /* Stop session task */
 static int stopsess (RHVServer *vs, struct task_req *req)
 {
-  GdaConnection *connection;
-  gint res;
   char stopsess_cmd[256];
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
@@ -407,25 +327,19 @@ static int stopsess (RHVServer *vs, struct task_req *req)
 
   member = (struct rahunas_member *) member_node->data;
 
-  connection = openconn (GDA_CONNECTION_OPTIONS_NONE);
-
   DP("Username  : %s", member->username);
   DP("SessionID : %s", member->session_id);
 
-  snprintf(stopsess_cmd, sizeof (stopsess_cmd), "DELETE FROM dbset WHERE "
+  snprintf(stopsess_cmd, sizeof (stopsess_cmd) - 1, "DELETE FROM dbset WHERE "
          "session_id='%s' AND username='%s' AND vserver_id='%d'",
          member->session_id, 
          member->username,
          vs->vserver_config->vserver_id);
+  stopsess_cmd[sizeof (stopsess_cmd) - 1] = '\0';
 
   DP("SQL: %s", stopsess_cmd);
 
-  execute_sql(connection, stopsess_cmd);
-
-  if (connection)
-    g_object_unref(G_OBJECT(connection));
-
-  return 0;
+  return sql_execute (stopsess_cmd);
 }
 
 /* Commit start session task */

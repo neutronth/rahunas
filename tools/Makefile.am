@@ -3,6 +3,7 @@ MAINTAINERCLEANFILES = Makefile.in
 dist_sbin_SCRIPTS = \
 	rahunas-firewall \
 	rahunas-bandwidth \
+	rahunas-conntrack \
 	rahunas-weblogin-config-update
 
 bin_PROGRAMS = \

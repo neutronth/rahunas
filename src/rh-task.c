@@ -11,6 +11,7 @@
 #include "rh-task-ipset.h"
 #include "rh-task-dbset.h"
 #include "rh-task-bandwidth.h"
+#include "rh-task-conntrack.h"
 
 void task_register(RHMainServer *ms, struct task *task)
 {
@@ -60,6 +61,8 @@ void rh_task_register(RHMainServer *ms)
 
     if (ms->main_config->bandwidth_shape)
       rh_task_bandwidth_reg(ms);
+
+    rh_task_conntrack_reg(ms);
 
     rh_task_dbset_reg(ms);
     task_registered = 1;

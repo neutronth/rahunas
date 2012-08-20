@@ -135,7 +135,8 @@ class rahu_radius_auth {
       if (!empty($this->attributes['reply_message'])) {
         if (strstr($this->attributes['reply_message'], "logged in"))
           $this->LoggedIn = true;
-        else if (strstr($this->attributes['reply_message'], "Your maximum"))
+        else if (strstr($this->attributes['reply_message'], "Your maximum") ||
+                 strstr($this->attributes['reply_message'], "Password Has Expired"))
           $this->Timeout = true;
       }
     }
@@ -190,13 +191,13 @@ class rahu_radius_acct {
     $randno2 = rand(0,65535);
     $randno3 = rand(0,65535);
     $randno4 = rand(0,65535);
-    $randno = sprintf("%s%s%s%s", 
-                str_pad(dechex($randno1), 4, "0", STR_PAD_LEFT), 
-                str_pad(dechex($randno2), 4, "0", STR_PAD_LEFT), 
-                str_pad(dechex($randno3), 4, "0", STR_PAD_LEFT), 
+    $randno = sprintf("%s%s%s%s",
+                str_pad(dechex($randno1), 4, "0", STR_PAD_LEFT),
+                str_pad(dechex($randno2), 4, "0", STR_PAD_LEFT),
+                str_pad(dechex($randno3), 4, "0", STR_PAD_LEFT),
                 str_pad(dechex($randno4), 4, "0", STR_PAD_LEFT));
     $this->session_id = $randno;
-                                                     
+
     return $this->session_id;
   }
 
@@ -210,8 +211,22 @@ class rahu_radius_acct {
     $racct->addServer($this->host, $this->port, $this->secret);
     $racct->username = $this->username;
     $racct->authentic = RADIUS_AUTH_LOCAL;
-    $racct->session_id = empty($this->session_id) ? $this->gen_session_id() :
-                                                    $this->session_id;
+
+    if (empty($this->session_id)) {
+      switch($accttype) {
+        case "Start":
+          $this->session_id = $this->gen_session_id();
+          break;
+        case "Stop":
+          /* Fall-through */
+        case "Update":
+          /* Do not permit the requests that have no session ID */
+          return -1;
+          break;
+      }
+    }
+
+    $racct->session_id = $this->session_id;
     $racct->session_time = $this->get_session_time();
     $racct->useStandardAttributes = 0;
   
@@ -227,8 +242,7 @@ class rahu_radius_acct {
                              ip2long($this->framed_ip_address));
     $racct->putAttribute(RADIUS_CALLING_STATION_ID, $this->calling_station_id);
     $racct->putAttribute(RADIUS_NAS_IDENTIFIER, $this->nas_identifier);
-    $racct->putAttribute(RADIUS_NAS_IP_ADDRESS, ip2long($this->nas_ip_address));
-    $racct->putAttribute(RADIUS_NAS_PORT, $this->nas_port);
+    $racct->putAttribute(RADIUS_NAS_PORT, intval($this->nas_port));
     $racct->putAttribute(RADIUS_CALLED_STATION_ID, $this->called_station_id);
 
     switch($accttype) {

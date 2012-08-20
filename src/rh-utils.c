@@ -8,6 +8,7 @@
 #include <syslog.h>
 #include <glib.h>
 #include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -82,7 +83,8 @@ gchar *rh_string_get_sep(const char *haystack, const char *sep,
 
 int rh_openlog(const char *filename)
 {
-  return open(filename, O_WRONLY | O_APPEND | O_CREAT);
+  return open(filename, O_WRONLY | O_APPEND | O_CREAT,
+              S_IRWXU | S_IRGRP | S_IROTH);
 }
 
 int rh_closelog(int fd)
@@ -145,7 +147,8 @@ int rh_writepid(const char *pidfile, int pid)
 {
   int pidfd;
 
-  pidfd = open(DEFAULT_PID, O_WRONLY | O_TRUNC | O_CREAT);
+  pidfd = open(DEFAULT_PID, O_WRONLY | O_TRUNC | O_CREAT,
+               S_IRWXU | S_IRGRP | S_IROTH);
   if (pidfd) {
     dup2(pidfd, STDOUT_FILENO);
     fprintf(stdout, "%d\n", pid);

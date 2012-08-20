@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>RahuNAS Authentication</title>
+
+<!-- HTML5 shim, for IE6-9 support od HTML elements -->
+<!--[if lt IE 10]>
+<script src="js/html5.js"></script>
+<![endif] -->
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/rh-s3Slider.css" rel="stylesheet">
+<link href="css/rahunas.css" rel="stylesheet">
+
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap-dropdown.js"></script>
+<script src="js/s3Slider.js"></script>
+
+</head>
+<body>
+<div class="topbar" data-dropdown="dropdown" style="z-index: 99;">
+  <div class="topbar-inner">
+    <div class="container">
+      <h3><a href="login.php"><!-- Title --></a></h3>
+      <ul class="nav">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle">Language</a>
+          <ul class="dropdown-menu">
+            <!-- LanguageList -->
+          </ul>
+        </li>
+        <!-- ChangePassword --> 
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="rh-container-top" id="rh-stripe" style="height: 50px;"></div>
+
+<div class="container" id="middle-contents" style="height: 370px;">
+  <div class="row" style="height: 100%">
+    <div class="span7" style="display: table">
+      <div id='rahunas_login_container' style="vertical-align: middle">
+        <!-- Login -->
+      </div>
+    </div>
+    <div class="rh-container-right span9" style="height: 100%;">
+
+      <div id="slider">
+        <ul id="sliderContent">
+          <li class="sliderImage">
+            <a href="#"><img src="images/slide-01.jpg" /></a>
+            <span class="top">
+              <strong>RahuNAS</strong><br>
+              <ul>
+                <li>Fast and Reliable</li>
+                <li>Scale well with every size of networks</li>
+              </ul>
+            </span>
+          </li>
+          <li class="sliderImage">
+            <a href="#"><img src="images/slide-02.jpg" /></a>
+            <span class="top">
+              <strong>RahuNAS</strong><br>
+              <ul>
+                <li>Flexible management with VLAN capable</li>
+                <li>Feature rich users management</li>
+              </ul>
+            </span>
+          </li>
+          <li class="sliderImage">
+            <a href="#"><img src="images/slide-03.jpg" /></a>
+            <span class="right">
+              <strong>RahuNAS</strong>
+              <ul>
+                <li>Open source and Continuous development</li>
+              </ul>
+            </span>
+          </li>
+          <div class="clear sliderImage"></div>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="rh-container-bottom" id="rh-stripe" style="height: 10px;"></div>
+
+<div class="rh-container-footer" id="rh-footer" style="height: 30px;">
+<div class="container">
+<!-- Footer -->
+</div>
+<div class="container">
+Powered By <a href="http://www.rahunas.org"><span class="label success">RahuNAS</span></a>
+</div>
+</div>
+
+<!-- JavaScript -->
+
+<script>
+
+  $(document).ready(function() {
+    $(':submit').addClass("btn");
+    $(':submit').addClass("primary");
+    $(':button').addClass("btn");
+    $(':button').addClass("primary");
+
+    $('#slider').s3Slider({
+      timeOut: 10000
+    });
+
+    function footerHeight () {
+      var fh = $(window).height () - $('#middle-contents').height () - 80;
+
+      $('#rh-footer').height (fh);
+    }
+
+    footerHeight();
+
+    $(window).resize (function () {
+      footerHeight ();
+    });
+  });
+</script>
+</body>
+</html>

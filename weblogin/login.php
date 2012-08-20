@@ -1,6 +1,6 @@
 <?php
 /*
-  Copyright (c) 2008-2009, Neutron Soutmun <neo.neutron@gmail.com>
+  Copyright (c) 2008-2012, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -31,16 +31,21 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
-session_start();
 ob_start();
 require_once 'rahu_radius.class.php';
 require_once 'rahu_xmlrpc.class.php';
+require_once 'rahu_i18n.class.php';
+require_once 'rahu_langsupport.php';
+require_once 'rahu_render.class.php';
 require_once 'getmacaddr.php';
 require_once 'config.php';
 require_once 'header.php';
-require_once 'locale.php';
 require_once 'messages.php';
 require_once 'networkchk.php';
+
+// Setup I18N
+$i18n = new RahuI18N ($rahu_langsupport);
+$i18n->localeSetup ();
 
 $ip = $_SERVER['REMOTE_ADDR'];
 $config = get_config_by_network($ip, $config_list);
@@ -52,9 +57,9 @@ $LogoutURL .= !empty($config['NAS_LOGIN_PORT']) ?
                 ":" . $config['NAS_LOGIN_PORT'] : "";
 $LogoutURL .= "/logout.php";
 $RequestURL = empty($_GET['request_url']) ? 
-                $config['DEFAULT_REDIRECT_URL']
-                : urldecode($_GET['request_url']);
-$_SESSION['request_url'] = $RequestURL;
+                urlencode($config['DEFAULT_REDIRECT_URL'])
+                : $_GET['request_url'];
+$LogoutURL .= "?request_url=" . $RequestURL;
 
 // Verify if the user already login
 $xmlrpc = new rahu_xmlrpc_client();
@@ -76,81 +81,80 @@ try {
   $forward = false;
 }
 
-if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
+if (!$forward) {
+  if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
+    $_POST['user'] = trim($_POST['user']);
 
-  $message = "";
-  $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'], $config['RADIUS_ENCRYPT']);
-  $rauth->host = $config["RADIUS_HOST"];
-  $rauth->port = $config["RADIUS_AUTH_PORT"];
-  $rauth->secret = $config["RADIUS_SECRET"];
-  $rauth->start();
+    $message = "";
+    $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'], $config['RADIUS_ENCRYPT']);
+    $rauth->host = $config["RADIUS_HOST"];
+    $rauth->port = $config["RADIUS_AUTH_PORT"];
+    $rauth->secret = $config["RADIUS_SECRET"];
+    $rauth->start();
 
-  if ($rauth->isError()) {
-    $message = get_message('ERR_CONNECT_RADIUS');
-  } else if ($rauth->isAccept()) {
-    $message = get_message('OK_USER_AUTHORIZED');
-    $forward = true;
-    $racct = new rahu_radius_acct ($_POST['user']);
-    $racct->host = $config["RADIUS_HOST"];
-    $racct->port = $config["RADIUS_ACCT_PORT"];
-    $racct->secret = $config["RADIUS_SECRET"];
-    $racct->nas_identifier = $config["NAS_IDENTIFIER"];
-    $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-    $racct->nas_port = $config["NAS_PORT"];
-    $racct->framed_ip_address  = $_SERVER['REMOTE_ADDR'];
-    $racct->calling_station_id = returnMacAddress();
-    $racct->gen_session_id();
+    if ($rauth->isError()) {
+      $message = get_message('ERR_CONNECT_RADIUS');
+    } else if ($rauth->isAccept()) {
+      $message = get_message('OK_USER_AUTHORIZED');
+      $forward = true;
+      $racct = new rahu_radius_acct ($_POST['user']);
+      $racct->host = $config["RADIUS_HOST"];
+      $racct->port = $config["RADIUS_ACCT_PORT"];
+      $racct->secret = $config["RADIUS_SECRET"];
+      $racct->nas_identifier = $config["NAS_IDENTIFIER"];
+      $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
+      $racct->nas_port = $config["VSERVER_ID"];
+      $racct->framed_ip_address  = $_SERVER['REMOTE_ADDR'];
+      $racct->calling_station_id = returnMacAddress();
+      $racct->gen_session_id();
 
-    $serviceclass_attrib = defined('SERVICECLASS_ATTRIBUTE') ?
-                           SERVICECLASS_ATTRIBUTE :
-                           "WISPr-Billing-Class-Of-Service";
+      $serviceclass_attrib = defined('SERVICECLASS_ATTRIBUTE') ?
+                             SERVICECLASS_ATTRIBUTE :
+                             "WISPr-Billing-Class-Of-Service";
 
-    try {
-      $prepareData = array (
-        "IP" => $ip,
-        "Username" => $_POST['user'],
-        "SessionID" => $racct->session_id,
-        "MAC" => returnMacAddress(),
-        "Session-Timeout" => $rauth->attributes['session_timeout'],
-        "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
-        "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up'],
-        "Class-Of-Service" => $rauth->attributes[$serviceclass_attrib],
-      );
-      $result = $xmlrpc->do_startsession($vserver_id, $prepareData);
-      if (strstr($result,"Client already login")) {
-        $message = get_message('ERR_ALREADY_LOGIN');
+      try {
+        $prepareData = array (
+          "IP" => $ip,
+          "Username" => $_POST['user'],
+          "SessionID" => $racct->session_id,
+          "MAC" => returnMacAddress(),
+          "Session-Timeout" => $rauth->attributes['session_timeout'],
+          "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
+          "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up'],
+          "Class-Of-Service" => $rauth->attributes[$serviceclass_attrib],
+        );
+        $result = $xmlrpc->do_startsession($vserver_id, $prepareData);
+        if (strstr($result,"Client already login")) {
+          $message = get_message('ERR_ALREADY_LOGIN');
+          $forward = false;
+        } else if (strstr($result, "Greeting")) {
+          $split = explode ("Mapping ", $result);
+          $called_station_id = $split[1];
+          if (!empty ($called_station_id))
+            $racct->called_station_id = $called_station_id;
+
+          $racct->acctStart();
+        } else if (strstr($result, "Invalid IP Address")) {
+          $message = get_message('ERR_INVALID_IP');
+          $forward = false;
+        }
+      } catch (XML_RPC2_FaultException $e) {
+        $message = get_message('ERR_CONNECT_SERVER');
         $forward = false;
-      } else if (strstr($result, "Greeting")) {
-        $split = explode ("Mapping ", $result);
-        $called_station_id = $split[1];
-        if (!empty ($called_station_id))
-          $racct->called_station_id = $called_station_id;
-
-        $racct->acctStart();
-      } else if (strstr($result, "Invalid IP Address")) {
-        $message = get_message('ERR_INVALID_IP');
+      } catch (Exception $e) {
+        $message = get_message('ERR_CONNECT_SERVER');
         $forward = false;
       }
-    } catch (XML_RPC2_FaultException $e) {
-      $message = get_message('ERR_CONNECT_SERVER');
-      $forward = false;
-    } catch (Exception $e) {
-      $message = get_message('ERR_CONNECT_SERVER');
-      $forward = false;
-    }
-  } else {
-    if ($rauth->isLoggedIn()) {
-      $message = get_message('ERR_MAXIMUM_LOGIN');
-    } else if ($rauth->isTimeout()) {
-      $message = get_message('ERR_USER_EXPIRED');
     } else {
-      $message = get_message('ERR_INVALID_USERNAME_OR_PASSWORD');
+      if ($rauth->isLoggedIn()) {
+        $message = get_message('ERR_MAXIMUM_LOGIN');
+      } else if ($rauth->isTimeout()) {
+        $message = get_message('ERR_USER_EXPIRED');
+      } else {
+        $message = get_message('ERR_INVALID_USERNAME_OR_PASSWORD');
+      }
     }
   }
-}
-
-if ($forward) {
-  $_SESSION['firstlogin'] = true;
 }
 ?>
 
@@ -158,27 +162,36 @@ if ($forward) {
 // Login box
 $request_uri = $_SERVER['REQUEST_URI'];
 
-$loginbox = "<form name='login' action='$request_uri' method='post'>" .
-            "<table>" .
-            "<tr><td id='rh_login_text'>" . _("Username") . "</td>" .
-            "<td><input type='text' name='user' size='22'></td></tr>" .
-            "<tr><td id='rh_login_text'>" . _("Password") . "</td>" .
-            "<td><input type='password' name='passwd' size='22'></td></tr>" .
-            "<tr><td>&nbsp;</td>" .
-            "<td><input type='submit' value='" . _("Login") . "' id='rh_login_button'>" .
-            "</td></tr>" .
-            "</table>" .
-            "</form>";
+if (!$forward) {
+  $loginbox = "<form name='login' action='$request_uri' method='post' ".
+              "onsubmit='if (this.getAttribute (\"submitted\")) return false; ".
+              "this.setAttribute (\"submitted\", true); return true;'>" .
+              "<table>" .
+              "<tr><td id='rh_login_text'>" . _("Username") . "</td>" .
+              "<td><input type='text' name='user' size='22'></td></tr>" .
+              "<tr><td id='rh_login_text'>" . _("Password") . "</td>" .
+              "<td><input type='password' name='passwd' size='22'></td></tr>" .
+              "<tr><td>&nbsp;</td>" .
+              "<td><input type='submit' value='" . _("Login") . "' id='rh_login_button'>" .
+              "</td></tr>" .
+              "</table>" .
+              "</form>";
 
-$forward_script  = $forward ? "window.open('$RequestURL');" : "";
-$forward_script .= $forward ? "self.location.replace('$LogoutURL');" : "";
-$waiting_show  = $forward ? "visible_hide(wt, 'show');" 
-                          : "visible_hide(wt, 'hide');";
-$message_show  = !empty($message) ? "visible_hide(msg, 'show');" 
-                                  : "visible_hide(msg, 'hide');";
-$hide_wait = !empty($message) ? "setTimeout('hide_wait();', 2000);\n" : "";
-$force_forward = $hide_wait == "" && $forward ? 
-                   "self.location.replace('$LogoutURL');" : "";
+  $forward_script  = "";
+  $waiting_show    = "visible_hide(wt, 'hide');";
+  $force_forward   = "";
+} else {
+  $loginbox        = "";
+  $forward_script  = "window.open('$RequestURL');";
+  $forward_script .= "self.location.replace('$LogoutURL');";
+  $waiting_show    = "visible_hide(wt, 'show');";
+  $force_forward   = $hide_wait == "" ? "self.location.replace('$LogoutURL');"
+                                      : "";
+}
+
+$message_show = !empty($message) ? "visible_hide(msg, 'show');"
+                                 : "visible_hide(msg, 'hide');";
+$hide_wait    = !empty($message) ? "setTimeout('hide_wait();', 2000);\n" : "";
 
 $loginscript = "<script>" .
                "var msg=(document.all);\n" .  
@@ -227,30 +240,14 @@ $loginbox .= $loginmsg;
 ?>
 
 <?php
-// Template loading
-$tpl_path = "templates/" . $config['UAM_TEMPLATE'] . "/";
-$tpl_file = $tpl_path . $config['UAM_TEMPLATE'] . ".html";
-$handle = @fopen($tpl_file, "r");
-$html_buffer = "";
-if ($handle) {  
-  $css = "<link rel='stylesheet' type='text/css' href='" . $tpl_path . "rahunas.css'>";
-  $loginbox = $css . $loginbox;
-
-  while (!feof($handle)) {
-    $html_buffer .= fgets($handle, 4096);
-  }
-  fclose($handle);
-
-  $html_buffer = str_replace("images/", $tpl_path."images/", $html_buffer);
-  $html_buffer = str_replace("<!-- Title -->", $config["NAS_LOGIN_TITLE"], 
-                             $html_buffer);
-  $html_buffer = str_replace("<!-- Login -->", $loginbox, $html_buffer);
-  $html_buffer = str_replace("<!-- JavaScript -->", $loginscript, $html_buffer);
-  $html_buffer = str_replace("<body", 
-                             "<body onload='document.login.user.focus();'",
-                             $html_buffer);
-  print $html_buffer;
-}
+$tpl = new RahuRender ($config['UAM_TEMPLATE']);
+$tpl->setString ("<!-- Title -->", $config["NAS_LOGIN_TITLE"]);
+$tpl->setString ("<!-- Login -->", $loginbox);
+$tpl->setString ("<!-- JavaScript -->", $loginscript);
+$tpl->setString ("<!-- LanguageList -->", $i18n->getLangList("<li>", "</li>"));
+$tpl->setString ("<!-- ChangePassword -->", "<li><a href='/chpwd.php'>" .
+                    _("Change Password") . "</a></li>");
+$tpl->render ();
 
 ob_end_flush();
 ?>

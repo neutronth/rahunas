@@ -102,7 +102,7 @@ if ($GLOBALS["task"] == "do_stopacct") {
   $racct->framed_ip_address  = $ip;
   $racct->calling_station_id = $mac_address;
   $racct->terminate_cause = !empty($cause) ? $cause : RADIUS_TERM_NAS_ERROR;
-  $racct->nas_port = $config["NAS_PORT"];
+  $racct->nas_port = $config["VSERVER_ID"];
   $racct->session_id    = $session_id;
   $racct->session_start = $session_start;
   if ($racct->acctStop() === true) {
