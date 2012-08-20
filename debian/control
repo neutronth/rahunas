@@ -5,10 +5,12 @@ Maintainer: Neutron Soutmun <neo.neutron@gmail.com>
 Build-Depends:
  autoconf,
  automake,
+ autopoint,
  autotools-dev,
  debhelper (>= 7),
  libgnet-dev (>= 2.0.8),
- libsqlite3-dev
+ libsqlite3-dev,
+ libtool
 Standards-Version: 3.9.2
 Homepage: http://www.rahunas.org
 
