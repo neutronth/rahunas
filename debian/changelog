@@ -1,3 +1,9 @@
+rahunas (0.2.2-2squeeze1) stable; urgency=low
+
+  * Fix incorrect weblogin templates install dir
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 20 Aug 2012 16:30:45 +0700
+
 rahunas (0.2.2-1squeeze1) stable; urgency=low
 
   * Imported Upstream version 0.2.2
