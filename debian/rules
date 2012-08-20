@@ -29,6 +29,7 @@ endif
 TDIR:=debian/rahunas
 WEBSHAREDIR:=${TDIR}-weblogin/usr/share
 SITEDIR:=${WEBSHAREDIR}/rahunas
+CONFDIR:=${TDIR}-weblogin/etc/rahunas
 
 config.status:
 	dh_testdir
@@ -79,9 +80,11 @@ install-indep:
 
 	# Weblogin
 	mkdir -p $(WEBSHAREDIR)
+	mkdir -p $(CONFDIR)
 	cp -pr weblogin $(SITEDIR)
 	rm -f $(SITEDIR)/Makefile*
 	rm -f $(SITEDIR)/config.php
+	mv $(SITEDIR)/templates $(CONFDIR)/
 	find $(SITEDIR)/ -exec chown root:www-data {} \;
 	find $(SITEDIR)/ -type f -exec chmod 640 {} \;
 	find $(SITEDIR)/ -type d -exec chmod 750 {} \;
