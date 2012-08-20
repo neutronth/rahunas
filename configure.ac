@@ -3,7 +3,7 @@
 
 m4_define(rh_major, 0)
 m4_define(rh_minor, 2)
-m4_define(rh_micro, 1)
+m4_define(rh_micro, 2)
 
 AC_PREREQ(2.61)
 AC_INIT([RahuNAS], rh_major.rh_minor.rh_micro,[neo.neutron@gmail.com] )
