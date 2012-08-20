@@ -18,6 +18,7 @@ Package: rahunas
 Architecture: any
 Depends:
  bridge-utils,
+ conntrack,
  iproute,
  iptables,
  sqlite3 (>= 3.7.3),
