@@ -11,7 +11,7 @@ fi
 
 ucf /usr/share/doc/rahunas-weblogin/rahunas-weblogin.apache2.conf \
   /etc/rahunas/apache2.conf
-ucf /usr/share/doc/rahunas-weblogin/examples/config.php \
+ucf /usr/share/doc/rahunas-weblogin/config.php \
   /etc/rahunas/config.php
 
 if which a2enmod > /dev/null 2>&1; then

@@ -26,10 +26,7 @@ else
 CROSS= --build $(DEB_BUILD_GNU_TYPE)
 endif
 
-TDIR:=debian/rahunas
-WEBSHAREDIR:=${TDIR}-weblogin/usr/share
-SITEDIR:=${WEBSHAREDIR}/rahunas
-CONFDIR:=${TDIR}-weblogin/etc/rahunas
+TDIR:=debian/tmp
 
 config.status:
 	dh_testdir
@@ -78,18 +75,7 @@ install-indep:
 	dh_prep -i
 	dh_installdirs -i
 
-	# Weblogin
-	mkdir -p $(WEBSHAREDIR)
-	mkdir -p $(CONFDIR)
-	cp -pr weblogin $(SITEDIR)
-	rm -f $(SITEDIR)/Makefile*
-	rm -f $(SITEDIR)/config.php
-	mv $(SITEDIR)/templates $(CONFDIR)/
-	find $(SITEDIR)/ -exec chown root:www-data {} \;
-	find $(SITEDIR)/ -type f -exec chmod 640 {} \;
-	find $(SITEDIR)/ -type d -exec chmod 750 {} \;
-
-	install -D -m 0640 -o root -g www-data weblogin/config.php debian/rahunas-weblogin/usr/share/doc/rahunas-weblogin/examples/config.php
+	cd weblogin-po && $(MAKE) DESTDIR=$(CURDIR)/$(TDIR) install
 
 	dh_install -i
 
@@ -99,7 +85,7 @@ install-arch:
 	dh_prep -s
 	dh_installdirs -s
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/rahunas install
+	$(MAKE) DESTDIR=$(CURDIR)/$(TDIR) install
 
 	dh_install -s
 

@@ -1,0 +1,7 @@
+usr/bin/squid-auth-helper
+usr/sbin/rahunas-bandwidth
+usr/sbin/rahunas-conntrack
+usr/sbin/rahunas-firewall
+usr/sbin/rahunas-weblogin-config-update
+usr/sbin/rahunasd
+var/lib/rahunas/rahunas.db
