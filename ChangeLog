@@ -1,3 +1,1451 @@
+commit 8595adc849f1adc8d99e7731e82b6b456f72539f
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 20 08:30:04 2012 +0700
+
+    Bump version to 0.2.1
+
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 3d8486879e98de4298a6f3ff5b7785eeb80bd016
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Jun 28 10:17:24 2012 +0700
+
+    Also checking for "Password Has Expired" reply message
+
+ weblogin/rahu_radius.class.php |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit e725bace2a05a81bbc394473244c4493593dcf36
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 27 20:33:03 2012 +0700
+
+    Move serviceclass rules to policy setup
+    
+    * tools/rahunas-firewall.in:
+      - Move seviceclass rules to policy setup as it make the firewall
+        script cleanup the rules properly.
+
+ tools/rahunas-firewall.in |   36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
+
+commit ce11d5217a27dce70c3f7c438a3badb33241998b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 27 17:08:23 2012 +0700
+
+    Fix the conntrack cut did not forked and delay as expect
+
+ tools/rahunas-conntrack.in |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+commit 1a9489e9ba8ea510a4c22923491f0211874a06a9
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 27 11:51:49 2012 +0700
+
+    Show session remain time instead of session time for timed limit user
+    
+    * weblogin/logout.php:
+      - Show session remain time instead of session time for timed limit user.
+    * weblogin-po/rahunas-weblogin.pot, weblogin-po/th.po:
+      - Update translation for new string.
+
+ weblogin-po/rahunas-weblogin.pot |   50 ++++++++++++++++++++------------------
+ weblogin-po/th.po                |   50 ++++++++++++++++++++------------------
+ weblogin/logout.php              |   17 +++++++------
+ 3 files changed, 63 insertions(+), 54 deletions(-)
+
+commit 2959d5ee8f11eef932029d3683f580460c32dce8
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 27 11:00:35 2012 +0700
+
+    Prevent double submission and PHP session is no needed now
+    
+    * weblogin/{login,logout}.php:
+      - Prevent double submission by adding onsubmit() function handler which the
+        second submit would be rejected.
+      - Rearrange the code to hide the form on the data was submitted.
+    * weblogin/login.php:
+      - Drop <body onload='...'> and let the templates to done it by themself.
+    * weblogin/rahu_i18n.class.php:
+      - Drop PHP session and replaces by cookies.
+    * weblogin/rahu_radius.class.php:
+      - Drop all PHP session implementation as it is no needed.
+
+ weblogin/login.php             |   61 ++++++++++++++++++++++------------------
+ weblogin/logout.php            |   25 ++++++++--------
+ weblogin/rahu_i18n.class.php   |   12 +++++---
+ weblogin/rahu_radius.class.php |   38 ++++++++-----------------
+ 4 files changed, 65 insertions(+), 71 deletions(-)
+
+commit 9c3556ed8109ebd19ab7bab5a6bd79d51166d58b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Jun 25 23:08:04 2012 +0700
+
+    Delay for 5 seconds before cut-off the client's conntracks
+
+ tools/rahunas-conntrack.in |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+commit 92ba45d30727403db5cf61b789a0e2115ec0bc9e
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Jun 21 22:37:13 2012 +0700
+
+    Fix the service class slot id reservation failed
+    
+    * src/rh-task-serviceclass.c (_sc_get_slot_id):
+      - The SQL for slot id selection is incorrect, it should not return any
+        rows for none of slot reserved for specified id.
+
+ src/rh-task-serviceclass.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit fbb9fe1c0b5e69c8926c3c8912e8f3b3f6a028b0
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Jun 21 16:59:58 2012 +0700
+
+    Using vserver id as nas port to support darksolar control panel
+    
+    * weblogin/{login,logout,xmlrpc_service}.php:
+      - Using vserver id as nas port for RADIUS accounting.
+    * weblogin/rahu_radius.class.php:
+      - Value of RADIUS_NAS_PORT should be passed as int.
+
+ weblogin/login.php             |    2 +-
+ weblogin/logout.php            |    2 +-
+ weblogin/rahu_radius.class.php |    2 +-
+ weblogin/xmlrpc_service.php    |    2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+commit b5958340ee2c2ac04ea137baaaa1b0ee2f49b621
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 20 18:07:43 2012 +0700
+
+    Revert "Redirecting with 302 Move temporary instead of javascript."
+    
+    This reverts commit bf193dec6b6e73b6f697bb3e9ce1e2cb6c13d113.
+    
+    * Javascript could delay the request and virtually drop the non-brower
+      clients.
+
+ weblogin/index.php |   47 +++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 43 insertions(+), 4 deletions(-)
+
+commit fcea07fe5497261525f44433b8639c2c5ea57f85
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 20 17:55:43 2012 +0700
+
+    Change excluded traffic connmark to 6
+    
+    * tools/rahunas-firewall.in:
+      - Change excluded traffic connmark to 6.
+      - Do not redirect the traffic with connmark 6 to intecepting http
+        proxy.
+
+ tools/rahunas-firewall.in |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+commit bf193dec6b6e73b6f697bb3e9ce1e2cb6c13d113
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 19 00:07:09 2012 +0700
+
+    Redirecting with 302 Move temporary instead of javascript.
+
+ weblogin/index.php |   47 ++++-------------------------------------------
+ 1 file changed, 4 insertions(+), 43 deletions(-)
+
+commit ecfd651a6afbc429aa622be039ef3367a5472b29
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Jun 18 12:09:53 2012 +0700
+
+    Add connection tracking cutter
+    
+    * configure.ac, src/Makefile.am, tools/Makefile.am:
+      - Add connection tracking cutter.
+    * src/rh-task-connection.{h,c}:
+      - Connection cut on start/stop session.
+    * tools/rahunas-conntrack.in:
+      - Wrapper script. (requires conntrack tools from conntrack package)
+
+ configure.ac               |    1 +
+ src/Makefile.am            |    3 +
+ src/rh-task-conntrack.c    |  180 ++++++++++++++++++++++++++++++++++++++++++++
+ src/rh-task-conntrack.h    |   13 ++++
+ src/rh-task.c              |    3 +
+ tools/Makefile.am          |    1 +
+ tools/rahunas-conntrack.in |   34 +++++++++
+ 7 files changed, 235 insertions(+)
+
+commit b6e7a062fc52baf148cd776a2b7983b439143ee2
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun Jun 17 11:10:37 2012 +0700
+
+    Fix compiler warning
+
+ tools/squid-auth-helper.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+commit a94ea83c307e03bccbf2dc941f6e8f79a46378af
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun Jun 17 11:04:52 2012 +0700
+
+    Sync rahunas ipset header and fix compiler warning
+    
+    * src/ipset/ip_set_rahunas_ipiphash.h:
+      - Sync rahunas ipset ipiphash header.
+    * src/ipset/ip_set_{rahunas,rahunas_ipiphash}.h:
+      - Fix compiler warning.
+
+ src/ipset/ip_set_rahunas.h          |    3 +++
+ src/ipset/ip_set_rahunas_ipiphash.h |    7 ++++---
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+commit 5c3e98129adec250754447f0c65a932b2bab22a1
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Jun 16 21:47:22 2012 +0700
+
+    Correct the definition of task ipset header declaration
+
+ src/rh-task-ipset.h |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+commit 02d6cdf3ef61580942435bc674a8ac4eabbc2fb6
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Feb 6 13:25:28 2012 +0700
+
+    weblogin: Update login/logout and bump copyright years
+
+ weblogin/login.php      |  140 +++++++++++++++++++++++------------------------
+ weblogin/logout.php     |    7 ++-
+ weblogin/user.class.php |    7 ++-
+ 3 files changed, 81 insertions(+), 73 deletions(-)
+
+commit 66729536f40565e41b4da175f4f05b85232d42a5
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Feb 6 13:21:28 2012 +0700
+
+    Add nas sync example script
+
+ example/rh-nas-sync |  110 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 110 insertions(+)
+
+commit a0df05fb914d4ff98177f08efb761aeccc7fefbd
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Dec 28 15:34:21 2011 +0700
+
+    weblogin: Workaround for IE9
+    
+    * weblogin/templates/rahunas-bootstrap/rahunas-bootstrap.html:
+      - Change DOCTYPE to html without any further attributes which is a
+        declaration for HTML5.
+      - The page show blank screen on IE9, just workaround by also load the
+        html5.js even loading on IE9.
+
+ weblogin/templates/rahunas-bootstrap/rahunas-bootstrap.html |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit 823108d8770786f2ef1ae5aae248241916093346
+Merge: 55d7ffd 9b9e13b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Oct 6 16:29:36 2011 +0700
+
+    Merge branch 'feature/squid-auth-helper-mt' into develop
+
+commit 9b9e13bd4b3785fb55a4554ca02ceae0e7f34fd7
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Oct 6 16:19:04 2011 +0700
+
+    squid-auth-helper multi-threaded support
+    
+      * tools/squid-auth-helper.c:
+        - Support the concurrency > 1 in squid config setting. Could reduce
+          the children to get more memory back as it is not necessary to
+          spawn children much to serve the same scale now.
+        - Create up to 8 threads to serve the requests.
+
+ tools/squid-auth-helper.c |  209 ++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 151 insertions(+), 58 deletions(-)
+
+commit 6ff4a7845cd86f6a6af7c80845bf3f5ae04e9cfc
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Oct 4 20:18:59 2011 +0700
+
+    Fix memleaks on client socket fail
+    
+      * xmlrpc/xmlrpc-client.c (gnet_xmlrcp_client_new):
+        - Fix memleaks on client socket fail.
+
+ xmlrpc/xmlrpc-client.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+commit 55d7ffd24d04ed8fba2d1e40c03cf08c5786a095
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Oct 4 17:36:00 2011 +0700
+
+    Change default weblogin template to rahunas-bootstrap
+    
+      * example/rahunas-vserver.conf.in:
+        - Change default weblogin template to rahunas-bootstrap.
+
+ example/rahunas-vserver.conf.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 4f41bd281e34bb390f60ea5e482fe163ea080fb6
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Oct 4 17:27:26 2011 +0700
+
+    Update weblogin pot file and Thai translation
+    
+      * weblogin-po/rahunas-weblogin.pot:
+        - Update.
+      * weblogin-po/th.po:
+        - Merge and update Thai translation.
+
+ weblogin-po/rahunas-weblogin.pot |   65 ++++++++++++++---------------
+ weblogin-po/th.po                |   84 +++++++++++++++++++-------------------
+ 2 files changed, 76 insertions(+), 73 deletions(-)
+
+commit fa1a62327e5879206569bb8b3154fe72ede099c6
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Oct 4 17:18:16 2011 +0700
+
+    Update wording in the change password page
+    
+      * weblogin/chpwd.php, weblogin/user.class.php:
+        - Update wording.
+
+ weblogin/chpwd.php      |    6 +++---
+ weblogin/user.class.php |    4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+commit 3a845dd46340cce0aff10685d72437f72570920f
+Merge: 2ad9b50 60eb140
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Oct 4 17:11:36 2011 +0700
+
+    Merge branch 'feature/new-weblogin' into develop
+
+commit 2ad9b50d37d7540cc6819836f4ebf0317a482ecd
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Oct 4 17:10:05 2011 +0700
+
+    Forgot to add POTFILES.in
+    
+      * weblogin-po/POTFILES.in:
+        - Forgot to add POTFILES.in, the file list the translateable string
+          files.
+
+ weblogin-po/POTFILES.in |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+commit 60eb1400da19d19a353827a9e0a9b15188125174
+Author: Neutron Soutmun <neutron@rahunas.(none)>
+Date:   Mon Oct 3 21:14:41 2011 +0700
+
+    Set language regarding Accept-Language HTTP header
+    
+      * weblogin/rahu_i18n.class.php (getAcceptLanguage):
+        - Add private method to get/parse/manipulate the user accept language and
+          get one of them that we have supported.
+      * weblogin/rahu_i18n.class.php (localeSetup):
+        - Using the info from getAcceptLanguage() to set the language for user on
+          initial.
+
+ weblogin/rahu_i18n.class.php |   37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
+
+commit cf064010f0e32d0f9adb07901672fab7a8290666
+Author: Neutron Soutmun <neutron@rahunas.(none)>
+Date:   Mon Oct 3 14:46:59 2011 +0700
+
+    Update the old patterns to support new design
+    
+    	* weblogin/templates/{rahunas,kkulogin,kkuwifi}:
+        - Update to support new weblogin design.
+
+ weblogin/templates/kkulogin/css/kkulogin.css |   39 ++++++++++++++++++++++++++
+ weblogin/templates/kkulogin/kkulogin.html    |   12 ++++++++
+ weblogin/templates/kkulogin/rahunas.css      |   39 --------------------------
+ weblogin/templates/kkuwifi/css/kkuwifi.css   |   39 ++++++++++++++++++++++++++
+ weblogin/templates/kkuwifi/kkuwifi.html      |   12 ++++++++
+ weblogin/templates/kkuwifi/rahunas.css       |   39 --------------------------
+ weblogin/templates/rahunas/css/rahunas.css   |   39 ++++++++++++++++++++++++++
+ weblogin/templates/rahunas/rahunas.css       |   39 --------------------------
+ weblogin/templates/rahunas/rahunas.html      |   34 +++++++++++++++++++++-
+ 9 files changed, 174 insertions(+), 118 deletions(-)
+
+commit d82fe1578097b5b642aedcdae21bcec37d2bcaab
+Author: Neutron Soutmun <neutron@rahunas.(none)>
+Date:   Mon Oct 3 14:15:53 2011 +0700
+
+    Add new weblogin template "rahunas-bootstrap"
+    
+    	* templates/rahunas-bootstrap/*:
+        - The twitter-bootstrap web framework + s3slider based weblogin template,
+          fully support the new weblogin design.
+
+ .../rahunas-bootstrap/css/bootstrap.min.css        |  330 ++++++++++++++++++++
+ .../templates/rahunas-bootstrap/css/rahunas.css    |   84 +++++
+ .../rahunas-bootstrap/css/rh-s3Slider.css          |   62 ++++
+ .../rahunas-bootstrap/images/slide-01.jpg          |  Bin 0 -> 545833 bytes
+ .../rahunas-bootstrap/images/slide-02.jpg          |  Bin 0 -> 594737 bytes
+ .../rahunas-bootstrap/images/slide-03.jpg          |  Bin 0 -> 565146 bytes
+ .../rahunas-bootstrap/js/bootstrap-dropdown.js     |   50 +++
+ weblogin/templates/rahunas-bootstrap/js/html5.js   |    4 +
+ .../templates/rahunas-bootstrap/js/jquery.min.js   |    4 +
+ .../templates/rahunas-bootstrap/js/s3Slider.js     |  107 +++++++
+ .../rahunas-bootstrap/rahunas-bootstrap.html       |  127 ++++++++
+ 11 files changed, 768 insertions(+)
+
+commit 5c032f4acf402cdeea59f145273094eb374082b8
+Author: Neutron Soutmun <neutron@rahunas.(none)>
+Date:   Mon Oct 3 14:10:33 2011 +0700
+
+    Add i18n, render class
+    
+    	* weblogin/rahu_i18n.class.php, rahu_langsupport.php:
+        - Add i18n class which replaces the old locale codes.
+      * weblogin/rahu_render.class.php:
+        - Add render class which provides the functions of template rendering.
+      * weblogin/locale.php:
+        - Drop as unneeded, replaced by i18n class.
+      * weblogin/login.php, weblogin/logout.php, weblogin/chpwd.php:
+        - Change accordingly to i18n and render class.
+        - The languages list now should be replaced the "<!-- LanguageList -->" in
+          the template.
+        - Also replace the "<!-- ChangePassword -->" with the change password link.
+
+ weblogin/chpwd.php             |   37 ++++++--------
+ weblogin/locale.php            |  101 -------------------------------------
+ weblogin/login.php             |   41 ++++++---------
+ weblogin/logout.php            |   38 ++++++--------
+ weblogin/rahu_i18n.class.php   |  107 ++++++++++++++++++++++++++++++++++++++++
+ weblogin/rahu_langsupport.php  |   13 +++++
+ weblogin/rahu_render.class.php |   76 ++++++++++++++++++++++++++++
+ 7 files changed, 242 insertions(+), 171 deletions(-)
+
+commit 662ae783f4b889624897e562deae1621c84f60f4
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Oct 1 13:03:28 2011 +0700
+
+    Use autopoint to manage the weblogin translation
+    
+      * configure.ac:
+        - Add AM_GNU_GETTEXT{_VERSION} to initialize gettext.
+        - Add weblogin-po/Makefile.in to AC_CONFIG_FILES.
+      * autogen.sh:
+        - Add autopoint.
+      * config.h.in:
+        - Update accordingly to new generated by autopoint.
+      * weblogin/messages.po, weblogin/th_TH/*:
+        - Drop as unneeded.
+      * weblogin/locale/*, weblogin-po/*:
+        - Move weblogin/locale to weblogin-po.
+      * weblogin-po/LINGUAS:
+        - Add th to the languages list.
+      * weblogin-po/Makevars, weblogin-po/rahunas-weblogin.pot:
+        - Add initial setup for gettext translation build.
+      * weblogin-po/th.po:
+        - Migrate old translation.
+      * Makefile.am:
+        - Add weblogin-po to SUBDIRS.
+      * .gitignore, weblogin-po/.gitignore:
+        - Ignore auto-generated files by autopoint.
+
+ .gitignore                                    |    2 +
+ Makefile.am                                   |    2 +-
+ autogen.sh                                    |    1 +
+ config.h.in                                   |   29 ++++
+ configure.ac                                  |    5 +
+ weblogin-po/.gitignore                        |   10 ++
+ weblogin-po/LINGUAS                           |    1 +
+ weblogin-po/Makevars                          |   41 ++++++
+ weblogin-po/rahunas-weblogin.pot              |  190 +++++++++++++++++++++++++
+ weblogin-po/th.po                             |  189 ++++++++++++++++++++++++
+ weblogin/locale/messages.po                   |  150 -------------------
+ weblogin/locale/th_TH/LC_MESSAGES/messages.mo |  Bin 2942 -> 0 bytes
+ weblogin/locale/th_TH/LC_MESSAGES/messages.po |  157 --------------------
+ 13 files changed, 469 insertions(+), 308 deletions(-)
+
+commit 2f9fc9abf92804e53d4d2ef00ce5ac4c107b389b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Fri Sep 30 11:38:05 2011 +0700
+
+    Install rh-checkrad as sbin scripts
+    
+      * configure.ac:
+        - Add netsnmp-module/scripts/rh-checkrad to AC_CONFIG_FILES.
+      * netsnmp-module/rh-checkrad.in:
+        - Rename rh-checkrad to rh-checkrad.in
+        - Make the script using the path from configure on build time.
+      * netsnmp-module/Makefile.am:
+        - Install rh-checkrad as sbin scripts.
+
+ configure.ac                          |    1 +
+ netsnmp-module/Makefile.am            |    4 +-
+ netsnmp-module/scripts/rh-checkrad    |   58 ----------------------------
+ netsnmp-module/scripts/rh-checkrad.in |   67 +++++++++++++++++++++++++++++++++
+ 4 files changed, 71 insertions(+), 59 deletions(-)
+
+commit c6d18525d064b54b66d4adbf14dbb1d0dd3818ae
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 15:04:29 2011 +0700
+
+    Add timeout to checkrad script
+    
+      * netsnmp-module/scripts/rh-checkrad:
+        - Add timeout and retry.
+
+ netsnmp-module/scripts/rh-checkrad |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+commit 353d6b30430fdad1dea311839b45390251ea3bed
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 14:01:50 2011 +0700
+
+    Add sample checkrad script for RahuNAS
+    
+      * netsnmp-module/Makefile.am, scripts/rh-checkrad:
+        - Add sample checkrad script for RahuNAS.
+
+ netsnmp-module/Makefile.am         |    2 +-
+ netsnmp-module/scripts/rh-checkrad |   56 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+), 1 deletion(-)
+
+commit c16d18ecfd95c1c78a42cb262d9b7cdafddc5064
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 12:07:42 2011 +0700
+
+    Should send the client ip to radius instead
+    
+      * weblogin/rahu_radius.class.php (rahu_radius_acct):
+        - Should send the client ip to radius instead.
+
+ weblogin/rahu_radius.class.php |    1 -
+ 1 file changed, 1 deletion(-)
+
+commit 241c8ba7ced2f25d02969e27323bb1b8b5b5bca7
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 02:11:57 2011 +0700
+
+    Update login table on database updated
+    
+      * netsnmp-module/Makefile.am:
+        - Define RAHUNAS_DB.
+      * netsnmp-module/rhsnmp.c (rh_update_data, rh_remove_old_data_set,
+        rh_add_new_data_set):
+        - Make function static.
+      * netsnmp-module/rhsnmp.c (rh_update_data):
+        - Notify the update-thread when the database has been updated.
+        - Still update every 30 seconds which beware the missing events.
+
+ netsnmp-module/Makefile.am |    1 +
+ netsnmp-module/rhsnmp.c    |   82 +++++++++++++++++++++++++++++++++++++++-----
+ 2 files changed, 75 insertions(+), 8 deletions(-)
+
+commit 928656f5b79b62a860c982ffd2989b6f9a40c4d3
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 00:56:31 2011 +0700
+
+    Update .gitignore
+    
+      * .gitignore:
+        - Update to ignore config.guess, config.h.in~, config.sub ltmain.sh.
+
+ .gitignore |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+commit e0a807ca49747f3403a280d5255b11e6ef26ad02
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 00:50:55 2011 +0700
+
+    Add netsnmp-module
+    
+      * configure.ac:
+        - Add AC_CONFIG_MACRO_DIR.
+        - Add AC_PROG_LIBTOOL, LT_INIT.
+        - Drop AC_PROG_RANLIB as superseded by AC_PROG_LIBTOOL.
+        - Add --enable-netsnmp-module and check for "net-snmp-config" on
+          enabled.
+        - Add netsnmp-module/Makefile to AC_CONFIG_FILES.
+      * Makefile.am:
+        - Add netsnmp-module to SUBDIRS.
+      * autogen.sh:
+        - Add libtoolize.
+      * config.h.in:
+        - Updated.
+      * netsnmp-module/*:
+        - Add netsnmp-module and drafted RAHUNAS-MIB.
+
+ Makefile.am                     |    3 +-
+ autogen.sh                      |    1 +
+ config.h.in                     |    3 +
+ configure.ac                    |   22 ++-
+ netsnmp-module/Makefile.am      |   34 +++++
+ netsnmp-module/mibs/RAHUNAS-MIB |   90 ++++++++++++
+ netsnmp-module/rhsnmp.c         |  303 +++++++++++++++++++++++++++++++++++++++
+ netsnmp-module/rhsnmp.h         |    8 ++
+ 8 files changed, 462 insertions(+), 2 deletions(-)
+
+commit 042b4814fa2a8b03499cb161d26f42807a2a2217
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 00:40:54 2011 +0700
+
+    Update the database schema
+    
+      * data/rahunas.db:
+        - Update the database schema, add service_class (string) and
+          service_class_slot_id (int).
+
+ data/rahunas.db |  Bin 5120 -> 5120 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+commit dc6cdce2418f218dcb7797fb6efecfe424d83b0d
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 00:37:23 2011 +0700
+
+    Add rh_ prefix to major,minor,micro define
+    
+      * configure.ac:
+        - Add rh_ prefix to major, minor, micro define to prevent the
+          confusion as they are used in libtool scripts.
+
+ configure.ac |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+commit 73da9daaa0c2bbf2116a51186a27efaa4618d41d
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 00:27:38 2011 +0700
+
+    Switch to sqlite3 native API
+    
+      * configure.ac:
+        - Drop libgda check.
+        - Add libsqlite3 check.
+      * src/Makefile.am:
+        - Drop libgda cflags/libs.
+        - Add libsqlite3 cflags/libs.
+        - Rename RAHUNAS_DB_DIR to RAHUNAS_DB which now declare the fullpath
+          to db file.
+      * src/rh-task-dbset.c, src/rh-task-serviceclass.c:
+        - Migrate to libsqlite3 native API.
+
+ configure.ac               |   10 +-
+ src/Makefile.am            |    6 +-
+ src/rh-task-dbset.c        |  432 ++++++++++++++++++--------------------------
+ src/rh-task-serviceclass.c |   62 ++++---
+ 4 files changed, 219 insertions(+), 291 deletions(-)
+
+commit 3b60405304d9d393a2ed0d36f9e43f539f961c44
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Sep 29 00:10:48 2011 +0700
+
+    Add mode to open() as it's required for hardening build
+    
+      * src/rh-utils.c (rh_openlog, rh_writepid):
+        - Add mode to the third arguments of open() as it's required for
+          hardening build if the flags O_CREAT is present. Mode is currently
+          set to 0744 for both log and pid file.
+        - Add missing header include (sys/types.h).
+
+ src/rh-utils.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+commit 783022e757b1298d4c5afb8b37f1306d8213147d
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Sep 13 15:23:06 2011 +0700
+
+    Fix session_id is empty in case already in session
+    
+      * weblogin/rahu_radius.class.php (gen_session_id):
+        - Fix session_id is empty by mistake in the case that the session_id already
+          in the session variable. Should set the $this->session_id too.
+
+ weblogin/rahu_radius.class.php |   28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+commit c8fddb10fb08fae598bfe41af818eb83deb209fc
+Author: Suriya Soutmun <darksolar@gmail.com>
+Date:   Mon Sep 26 18:19:01 2011 +0700
+
+    Destroy object after used.
+    
+      * weblogin/chpwd.php:
+        - unset object after not use it.
+
+ weblogin/chpwd.php |    1 +
+ 1 file changed, 1 insertion(+)
+
+commit 19132fabee7df241e326981abdeff05319df84bd
+Author: Suriya Soutmun <darksolar@gmail.com>
+Date:   Mon Sep 26 18:08:55 2011 +0700
+
+    Add change password page.
+    
+      * weblogin/{chpwd.php, radius-dbconfig.php, user.class.php}:
+        - chpwd.php is a password changer page after password has been changed it
+          will redirect to login page.
+        - radius-dbconfig.php is a config file store detail to connect to
+          radius database backend.
+        - user.class.php is a class file to create a radius database connection
+          object and use it to check and change password.
+
+ weblogin/chpwd.php           |  181 ++++++++++++++++++++++++++++++++++++++++++
+ weblogin/radius-dbconfig.php |    6 ++
+ weblogin/user.class.php      |  136 +++++++++++++++++++++++++++++++
+ 3 files changed, 323 insertions(+)
+
+commit 5d2b232350232d3c7e8e8fd416c2d84bf9df27e6
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Sep 13 14:21:45 2011 +0700
+
+    Remove white-spaces from the username
+    
+      * weblogin/login.php:
+        - Remove white-spaces from the username
+
+ weblogin/login.php |    1 +
+ 1 file changed, 1 insertion(+)
+
+commit 6661f09a2e6f822ef068c383527094aec7b7b5e4
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Sep 7 18:23:16 2011 +0700
+
+    Prevent double login, invalid logout/update info
+    
+      * weblogin/rahu_radius.class.php (gen_session_id):
+        - Keep the generated session_id in the session variable to prevent the
+          double login with different session_id by mistake.
+      * weblogin/rahu_radius.class.php (rahu_radius_acct):
+        - Do not permit the requests that have no session_id.
+
+ weblogin/rahu_radius.class.php |   34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
+
+commit 34a6ec5005b242b699dcd00b4ac1dae47ae806cf
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Sep 7 17:25:29 2011 +0700
+
+    Fix program die on SIGPIPE
+    
+      * src/rahunasd.c (main):
+        - Program should ignore SIGPIPE.
+
+ src/rahunasd.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+commit 67e9c0f2e49be66f8b024a9ec3ab409e74b5045d
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 21 16:47:10 2011 +0700
+
+    === Release 0.2.0 ===
+
+ NEWS |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+commit 0689196636498f5ef2219550ec79bf0f7c40aa41
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 21 13:31:28 2011 +0700
+
+    Add config.h.in back after accidentally removed.
+
+ config.h.in |  111 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 111 insertions(+)
+
+commit 4b5d05b46785f944e0d4ba506afeb9df499a6aac
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 21 11:08:58 2011 +0700
+
+    Fix compiler warnings
+    
+      * src/rahunasd.c:
+        - Declare termstring = "" instead.
+      * src/rh-ipset.{h, c}:
+        - Declare unsigned variable as unsigned int instead.
+      * src/rh-ipset.c (set_ipiphash_adtip):
+        - Fix typo which should call set_ipiphash_adtip_nb() instead.
+      * src/rh-serviceclass.c, src/rh-task-serviceclass.c:
+        - Include string.h to fix the compiler warnings.
+      * src/rh-serviceclass.{h,c}:
+        - Replace struct main_server and struct serviceclass with RHMainServer and
+          RHSvClass respectively.
+      * src/rh-task-ipset.c (set_cleanup):
+        - Fix wrong type casting.
+      * src/rh-task-memset.c (startsess):
+        - Fix compiler warnnings on assigning "const char *" to "char *" variable.
+      * src/rh-task-serviceclass.c:
+        - Fix compiler warnnings on rh_free().
+        - Free member->mapping_ip before assign new data.
+      * src/Makefile.am:
+        - Add src/ipset/*.h headers to makefile which they should included in
+          tarball.
+
+ src/Makefile.am            |    5 ++++
+ src/rahunasd.c             |    2 +-
+ src/rh-ipset.c             |   14 +++++-----
+ src/rh-ipset.h             |   14 +++++-----
+ src/rh-serviceclass.c      |   62 ++++++++++++++++++++++----------------------
+ src/rh-serviceclass.h      |   26 +++++++++----------
+ src/rh-task-ipset.c        |    2 +-
+ src/rh-task-memset.c       |    9 ++++---
+ src/rh-task-serviceclass.c |    9 ++++++-
+ 9 files changed, 79 insertions(+), 64 deletions(-)
+
+commit cb5371333692435b9818b9043a26980e404202d1
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Jun 20 22:46:42 2011 +0700
+
+    Cherry-picks the code from 0.1.x branch
+    
+      * The codes have been refactor and fix the compiler warnings.
+      * Adjust the codes for new API changes from 0.1.x branch.
+
+ configure.ac                                  |    4 +-
+ data/rahunas.db                               |  Bin 7168 -> 5120 bytes
+ src/Makefile.am                               |    3 +-
+ src/rahunasd.c                                |  166 ++++++++++++++++++++-----
+ src/rahunasd.h                                |    4 +-
+ src/rh-config.c                               |   96 +++++++-------
+ src/rh-config.h                               |    4 +-
+ src/rh-ipset.c                                |   24 ++--
+ src/rh-ipset.h                                |   10 +-
+ src/rh-server.c                               |   64 +++++-----
+ src/rh-server.h                               |   32 +++--
+ src/rh-serviceclass.h                         |    2 +
+ src/rh-task-bandwidth.c                       |   33 ++---
+ src/rh-task-bandwidth.h                       |    8 +-
+ src/rh-task-dbset.c                           |   40 +++---
+ src/rh-task-dbset.h                           |    4 +-
+ src/rh-task-ipset.c                           |   27 ++--
+ src/rh-task-ipset.h                           |    4 +-
+ src/rh-task-iptables.c                        |   25 ++--
+ src/rh-task-iptables.h                        |    4 +-
+ src/rh-task-memset.c                          |   45 +++----
+ src/rh-task-memset.h                          |    8 +-
+ src/rh-task-serviceclass.c                    |   26 ++--
+ src/rh-task-serviceclass.h                    |    6 +-
+ src/rh-task.c                                 |   30 ++---
+ src/rh-task.h                                 |   44 +++----
+ src/rh-utils.c                                |   19 +--
+ src/rh-utils.h                                |    6 +-
+ src/rh-xmlrpc-cmd.c                           |    2 +-
+ src/rh-xmlrpc-cmd.h                           |    2 +-
+ src/rh-xmlrpc-server.c                        |   39 ++++--
+ tools/Makefile.am                             |    3 +-
+ weblogin/locale/th_TH/LC_MESSAGES/messages.mo |  Bin 3348 -> 2942 bytes
+ 33 files changed, 473 insertions(+), 311 deletions(-)
+
+commit 215b3eba66c465438d9ed78037766d0f7f7b4dea
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Aug 3 11:33:34 2010 +0700
+
+    Do not kill farpd if state file does not exists
+
+ tools/rahunas-firewall.in |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit bcaa56a1aacfdd97e998a3a689c6505d9d498193
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 2 18:27:04 2010 +0700
+
+    Update weblogin messages and translations
+
+ weblogin/locale/messages.po                   |   91 +++++++++++++-------
+ weblogin/locale/th_TH/LC_MESSAGES/messages.mo |  Bin 2942 -> 3348 bytes
+ weblogin/locale/th_TH/LC_MESSAGES/messages.po |  111 ++++++++++++++++---------
+ 3 files changed, 135 insertions(+), 67 deletions(-)
+
+commit 9cc499e6aa2f0efe017f2068a42fac839e7dad53
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 2 18:03:02 2010 +0700
+
+    Class-Of-Service description return to weblogin
+    
+      * Serviceclass description return to weblogin and display to user.
+      * "Expired" was renamed to "Session End".
+      * Session Time now display in human readable form.
+
+ src/rahunasd.h                 |    1 +
+ src/rh-task-memset.c           |    1 +
+ src/rh-task-serviceclass.c     |    1 +
+ src/rh-xmlrpc-server.c         |    5 +++--
+ weblogin/logout.php            |   47 +++++++++++++++++++++++++++++++++++-----
+ weblogin/rahu_xmlrpc.class.php |    7 ++++--
+ 6 files changed, 53 insertions(+), 9 deletions(-)
+
+commit 8597e18a98e752c070e5e0e6bcc476434e00376b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 2 16:52:57 2010 +0700
+
+    Don't show error for invalid serviceclass request
+
+ src/rh-task-serviceclass.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+commit 6e30b688454c216e2301e6982a97c96fd8979803
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 2 16:11:13 2010 +0700
+
+    Add fakearpd setup and update example configs
+    
+      * Add fakearpd setup into firewall script.
+      * Update example configs.
+      * Login page should get the SERVICECLASS_ATTRIBUTE from config.
+
+ example/rahunas-serviceclass.conf.in    |   29 +++++++++++++-------------
+ example/rahunas-vserver.conf.in         |    3 ++-
+ example/rahunas.conf.in                 |    6 +++++-
+ src/rh-config.c                         |    2 ++
+ tools/rahunas-firewall.in               |   34 +++++++++++++++++++++++++++++++
+ tools/rahunas-weblogin-config-update.in |    2 ++
+ weblogin/login.php                      |    6 +++++-
+ 7 files changed, 64 insertions(+), 18 deletions(-)
+
+commit 0fe3338bb0575f76a17fae81826cb8a06cc892e2
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun Aug 1 11:03:04 2010 +0700
+
+    Fix database not update
+    
+      * Fix database not update due to not enough buffer space for string.
+      * Fix daemon that could not start on RH_DEBUG is defined (Debug mode).
+
+ src/rh-task-dbset.c    |    4 ++--
+ src/rh-task-iptables.c |    5 +++--
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+commit 02490869b15736707d50f900a6af8fc9a5fa46a2
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun Aug 1 09:38:58 2010 +0700
+
+    Bump version to 0.2.0
+    
+      * Bump version to 0.2.0 as next release which does not backward compattible
+        with the old 0.1.x at all.
+      * 0.2.x should setup on Debian GNU/Linux Squeeze or later only.
+
+ configure.ac |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit b757414513a523a3d56a017e5cc41fc24bb68c8a
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Jul 31 19:35:13 2010 +0700
+
+    Fix and update serviceclass
+    
+      * XML-RPC server correctly parsing the class-of-service parameter.
+      * Update firewall script to fix the rules of service class support
+        do not work as expect.
+      * Fix serviceclass task which segfault on stop session.
+
+ src/rh-task-serviceclass.c |   13 ++++++--
+ src/rh-xmlrpc-server.c     |    3 ++
+ tools/rahunas-firewall.in  |   76 +++++++++++++++++++++++++-------------------
+ 3 files changed, 57 insertions(+), 35 deletions(-)
+
+commit 3cbe0c2fb30e0b5337ba35e14fb6cafda374e7b9
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Fri Jul 30 18:07:26 2010 +0700
+
+    Remove unused VIP_* from weblogin config update
+
+ tools/Makefile.am                       |    1 -
+ tools/rahunas-weblogin-config-update.in |    4 ----
+ 2 files changed, 5 deletions(-)
+
+commit 43154f8625f76af133f75133b2517fd6565f6b35
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Jul 29 23:34:53 2010 +0700
+
+    Add implementation of class-of-service
+    
+      * Add new implementation of class-of-service which respect to the RADIUS
+        Attribute "WISPr-Billing-Class-Of-Service"
+      * Remove the concept of vip users and use the class-of-service concept which
+        more flexibility instead.
+      * Update the firewall script which "--option ! xxx" is deprecated and should
+        replaced by "! --option xxx".
+      * Update the firewall script to support the serviceclass concept.
+      * Update weblogin which should send the class-of-service name when RADIUS
+        return this attribute back.
+      * src/include has been removed (no needs).
+
+ configure.ac                                      |    1 -
+ src/Makefile.am                                   |   12 +-
+ src/include/linux/netfilter_ipv4/ip_set.h         |  499 ---------------------
+ src/include/linux/netfilter_ipv4/ip_set_rahunas.h |   45 --
+ src/ipset/ip_set.h                                |    2 +
+ src/ipset/ip_set_hashes.h                         |  314 +++++++++++++
+ src/ipset/ip_set_rahunas_ipiphash.h               |   38 ++
+ src/rahunasd.c                                    |   36 ++
+ src/rahunasd.h                                    |    3 +
+ src/rh-config.c                                   |   73 ++-
+ src/rh-config.h                                   |   17 +-
+ src/rh-ipset.c                                    |   71 +++
+ src/rh-ipset.h                                    |    7 +-
+ src/rh-server.c                                   |    1 +
+ src/rh-server.h                                   |   16 +-
+ src/rh-serviceclass.c                             |  310 +++++++++++++
+ src/rh-serviceclass.h                             |   37 ++
+ src/rh-task-dbset.c                               |   20 +-
+ src/rh-task-memset.c                              |   10 +
+ src/rh-task-serviceclass.c                        |  300 +++++++++++++
+ src/rh-task-serviceclass.h                        |   12 +
+ src/rh-task.c                                     |    3 +
+ src/rh-task.h                                     |    2 +
+ src/rh-xmlrpc-server.c                            |   12 +-
+ tools/rahunas-firewall.in                         |  103 +++--
+ tools/rahunas-vipmap.in                           |   29 --
+ weblogin/login.php                                |   11 +-
+ 27 files changed, 1304 insertions(+), 680 deletions(-)
+
+commit 732bc1be8e814ff17f8d31268e1de28124d93aeb
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Jul 3 22:56:12 2010 +0700
+
+    Add example/rahunas-serviceclass.conf.in
+
+ example/rahunas-serviceclass.conf.in |   67 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+commit 91cc1f0494e2742d8912b634840f407467867384
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Jul 3 22:44:35 2010 +0700
+
+    Add serviceclass config
+
+ configure.ac                    |    1 +
+ data/rahunas.db                 |  Bin 5120 -> 7168 bytes
+ example/Makefile.am             |    3 +-
+ example/rahunas-vserver.conf.in |    5 -
+ src/Makefile.am                 |    5 +-
+ src/rahunasd.h                  |    1 -
+ src/rh-config.c                 |  114 +++++++++++++-----
+ src/rh-config.h                 |   22 ++--
+ src/rh-server.c                 |    5 -
+ src/rh-server.h                 |    1 -
+ src/rh-task-ipset.c             |   26 -----
+ src/rh-task-iptables.c          |   14 +--
+ src/rh-task-vipmap.c            |  243 ---------------------------------------
+ src/rh-task-vipmap.h            |   17 ---
+ src/rh-task.c                   |    3 -
+ src/rh-task.h                   |    2 -
+ src/rh-xmlrpc-server.c          |    8 +-
+ 17 files changed, 110 insertions(+), 360 deletions(-)
+
+commit 220ede90c3faa437b8d007e8a21f95f9593f5b97
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Jun 2 20:33:16 2010 +0700
+
+    Fix incorrect data from set
+
+ src/rahunasd.c |   22 ++++++------
+ src/rh-ipset.c |  104 +++++++++++++++++++++++++++++++++++++++++++++++++-------
+ src/rh-ipset.h |    3 ++
+ 3 files changed, 107 insertions(+), 22 deletions(-)
+
+commit 515ff2ddacebb620c4e26ed850fd078bc8326b6b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 1 17:27:58 2010 +0700
+
+    Suppressed warning message of libgda
+    
+      * Suppressed warning message of libgda, only existent objects which parsing to
+        *_unref () function.
+
+ src/rh-task-dbset.c |   23 ++++++++++++++++-------
+ 1 file changed, 16 insertions(+), 7 deletions(-)
+
+commit 0ad914f16f45bc416845896689a33f167f5042b4
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 1 14:16:46 2010 +0700
+
+    Fix dbset failed to query
+    
+      * Could not query to database due to invalid parser, should create parser.
+
+ src/rh-task-dbset.c |   39 ++++++++++++++++++++++++++++-----------
+ 1 file changed, 28 insertions(+), 11 deletions(-)
+
+commit b813a36b8aa5f1fd2232fa35f3fa834eed82cfd4
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 1 13:36:43 2010 +0700
+
+    Add ipset headers, rahunas updated struct changes
+
+ src/Makefile.am            |    1 +
+ src/ipset/ip_set.h         |  569 ++++++++++++++++++++++++++++++++++++++++++++
+ src/ipset/ip_set_bitmaps.h |  120 ++++++++++
+ src/ipset/ip_set_rahunas.h |   48 ++++
+ src/rahunasd.c             |    4 +-
+ src/rh-ipset.h             |    4 +-
+ src/rh-task-ipset.c        |    2 +-
+ 7 files changed, 743 insertions(+), 5 deletions(-)
+
+commit 5b03d8ef2ea0413facfc3de5765dedf570413239
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 1 09:52:25 2010 +0700
+
+    Update IPSET_VERSION to 4.2
+
+ src/Makefile.am |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit bb07c0dc0f8f1a1ae27a95e6d73a0a7cabaa989b
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun May 30 17:23:04 2010 +0700
+
+    Migrating to libgda-4, some APIs changes
+    
+      * Migrating to libgda-4, some APIs changes (no backward compatibility)
+      * libgda-3 stop supporting at 0.1.7
+
+ configure.ac        |    2 +-
+ src/rh-task-dbset.c |  135 +++++++++++++++++++++------------------------------
+ 2 files changed, 56 insertions(+), 81 deletions(-)
+
+commit dbdf730fcc6eb10d03996a16635dcd61e3f4475c
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue May 25 11:37:05 2010 +0700
+
+    Do nothing when no vipuser request
+
+ config.h.in          |  111 --------------------------------------------------
+ src/rh-task-vipmap.c |    6 +++
+ 2 files changed, 6 insertions(+), 111 deletions(-)
+
+commit 3cb3fa84ccae9037456fa5639c821072e1008eae
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed May 12 00:52:29 2010 +0700
+
+    Add tools/rahunas-vipmap.in
+
+ configure.ac            |    1 +
+ tools/Makefile.am       |    1 +
+ tools/rahunas-vipmap.in |   29 +++++++++++++++++++++++++++++
+ 3 files changed, 31 insertions(+)
+
+commit 51ab753fe09334e3fdb1e236991bc8bc761f24df
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed May 12 00:34:20 2010 +0700
+
+    Add new task the vipmap task
+
+ src/Makefile.am                |    5 +-
+ src/rahunasd.h                 |    1 +
+ src/rh-config.c                |    7 ++
+ src/rh-config.h                |    2 +
+ src/rh-server.c                |    5 +
+ src/rh-server.h                |    1 +
+ src/rh-task-ipset.c            |   28 +++++
+ src/rh-task-vipmap.c           |  237 ++++++++++++++++++++++++++++++++++++++++
+ src/rh-task-vipmap.h           |   17 +++
+ src/rh-task.c                  |    3 +
+ src/rh-task.h                  |    2 +
+ src/rh-xmlrpc-server.c         |   12 +-
+ tools/rahunas-firewall.in      |    2 +
+ weblogin/login.php             |   15 ++-
+ weblogin/rahu_radius.class.php |    2 +
+ 15 files changed, 334 insertions(+), 5 deletions(-)
+
+commit 36a0e5221c990a88845b49a130d1ecaf98b08848
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue May 11 17:56:57 2010 +0700
+
+    Add vip_ip field into dbset table in database
+
+ data/rahunas.db |  Bin 5120 -> 5120 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+commit ba96d443f9d765f2bc3bba150f6c9a7e860f2e5e
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue May 11 17:46:20 2010 +0700
+
+    Add vipmap to rahunas config
+    
+      * Add vipmap to rahunas config.
+      * firwall script now setup the vipmap properly.
+
+ src/rahunasd.c            |   25 -------------------------
+ src/rh-config.c           |   23 +++++++++++++++++++++++
+ src/rh-config.h           |    4 ++++
+ src/rh-task-iptables.c    |   16 +++++++++++-----
+ tools/rahunas-firewall.in |   10 +++++-----
+ 5 files changed, 43 insertions(+), 35 deletions(-)
+
+commit 06ccf5c2be67c30786d69cfc0f595d0866ca8627
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue May 11 15:16:41 2010 +0700
+
+    Ignore error warning on kill farpd process
+
+ tools/rahunas-firewall.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 9e0edab4df3702f2fb13a5997fd34174d27cc8e7
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue May 11 13:19:48 2010 +0700
+
+    Add vipmap to config and scripts
+
+ example/rahunas-vserver.conf.in         |    5 +++
+ tools/rahunas-firewall.in               |   55 +++++++++++++++++++++++++++++++
+ tools/rahunas-weblogin-config-update.in |    4 +++
+ 3 files changed, 64 insertions(+)
+
+commit d1175cd01729fc971450428163831c7080bc86d4
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 18:46:23 2009 +0700
+
+    Bump version to 0.1.8
+
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 6bfc4df01c9d7a55c8cb20e27577efa910712d95
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 18:45:30 2009 +0700
+
+    === Release 0.1.7 ===
+
+ NEWS |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+commit 85ae78e4e6a2069ffee336d33834a7eb84254ee1
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 18:40:33 2009 +0700
+
+    Yet another fix firewall script for _ext_fw
+    
+      * Keep the external interfaces list in state file for inter-call process
+
+ tools/rahunas-firewall.in |    9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+commit da073f8a69753a15298bfde3407d5563594472db
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 18:05:11 2009 +0700
+
+    Fix firewall script to stop _ext_fw properly
+
+ tools/rahunas-firewall.in |   18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+commit 6860f2707d8da41d7d90511b3309d1853988731a
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 16:20:28 2009 +0700
+
+    Bump version to 0.1.7
+
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit a43ab21a62266b9a4671bd81894022e56934c27e
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 16:13:38 2009 +0700
+
+    === Release 0.1.6 ===
+
+ NEWS |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+commit f947fbf519faeaa105b8df830c6030924a957e16
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 15:58:29 2009 +0700
+
+    Add .gitignore
+
+ .gitignore |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+commit c9d8db9916965607ae249b301f1991b931044ee8
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Sep 19 15:50:15 2009 +0700
+
+    Add common firewall code
+    
+      [ Security Fix ]
+      * Add common firewall code with new extra config fields in rahunas
+        main config file.
+      * If no new config fields setting, the old behavior is used which the
+        external interfaces accept all connections.
+
+ example/rahunas.conf.in   |    4 ++++
+ tools/rahunas-firewall.in |   49 ++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 50 insertions(+), 3 deletions(-)
+
+commit aefa26aefdd4538de7337e9c9b0cced45abb1d74
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Fri Sep 18 17:29:58 2009 +0700
+
+    Fix daemon get stuck at 100% CPU when no log file
+    
+      * Fix daemon get stuck when the log file does not exists, requested access
+        to the file is not allowed or any errors. (Thanks Theppitak for the issue
+        of this case)
+
+ src/rahunasd.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit 8099ec906a89243a29bf56431c7f4ad523fdbf67
+Merge: 32a7d0b 3a492ca
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Fri Sep 18 17:19:32 2009 +0700
+
+    Merge branch 'squid-helper'
+
+commit 3a492caaf18e4f9cf7353f9fc766ff40b9a5f6e8
+Author: Theppitak Karoonboonyanan <thep@linux.thai.net>
+Date:   Fri Sep 18 12:51:49 2009 +0700
+
+    Do not made a persistent conn, per request instead
+    
+      * Do not made a persistent xmlrpc connection from the helper to rahunasd,
+        made the connection per request instead (more consistent).
+      * Return the IP address rather than throw an error and die.
+
+ tools/squid-auth-helper.c |   38 +++++++++++++++++++++++---------------
+ 1 file changed, 23 insertions(+), 15 deletions(-)
+
+commit 32a7d0b3c2cb9590acab21127c832ac496991463
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Fri Sep 18 12:48:36 2009 +0700
+
+    Do not match the rate limit request from localhost
+
+ tools/rahunas-firewall.in |   13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+commit ad5b5e3bf7cfb41faf68cf39fb6878f172f99ce8
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Sep 16 13:07:48 2009 +0700
+
+    Bump version to 0.1.6
+
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 40e65736b51757710a627c021a149b01856fd3e8
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Sep 16 12:28:03 2009 +0700
+
+    Add squid external auth helper
+    
+      * Add squid-auth-helper that provides the function for squid proxy/cache to
+        requests the username with respect to client's IP.
+        Squid using this information for logging and users tracking later.
+      * Update Makefile.am to support squid-auth-helper build.
+
+ src/Makefile.am           |    2 +-
+ tools/Makefile.am         |   16 ++++
+ tools/squid-auth-helper.c |  190 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 207 insertions(+), 1 deletion(-)
+
+commit d676a993abcb8f5e93a382a8d8c96e154d3511e3
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Jul 20 15:01:36 2009 +0700
+
+    Prevent bandwidth script from non-existing iface
+    
+      * Prevent the bandwidth script from non-existing interface name.
+      * State the return message "NOT COMPLETED" from bandwidth script is error,
+        which need to do something such as in the add and remove bandwidth slot to
+        retry for 3 times when this error occured before give up.
+
+ src/rh-task-bandwidth.c    |    7 +++-
+ tools/rahunas-bandwidth.in |   94 ++++++++++++++++++++++++++++++--------------
+ 2 files changed, 70 insertions(+), 31 deletions(-)
+
+commit 3a270e6b9c8024f92173abe5abff7e7326d1b062
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Jul 4 15:48:02 2009 +0700
+
+    Remove vlan_* config fields from example config
+    
+      - Remove vlan_* config fields, handle externaly.
+
+ example/rahunas-vserver.conf.in |    3 ---
+ 1 file changed, 3 deletions(-)
+
+commit 6e28b633ff202a5f94cfba5ae3ed6b1bdc114c53
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sat Jul 4 15:40:09 2009 +0700
+
+    Support multiple ext-dev in rahunas-firewall
+    
+      + Suuport multiple externel device in rahunas-firewall, now in config file
+        can enter more than one device in the dev_external field. (Will solve the
+        masquerade issue in the load balance system)
+      + Detect the ip of the proxy host which it is the local interface and open
+        port at the firewall for authenticated users.
+
+ tools/rahunas-firewall.in |   82 ++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 67 insertions(+), 15 deletions(-)
+
+commit c651b1df6cb843dbdb44bf3395551bccc274866d
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Jul 2 19:14:47 2009 +0700
+
+    Fix typo in rahunas-firewall
+
+ tools/rahunas-firewall.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit a8b045f5f30a07399baf17a451ccc1ffe89fc00e
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun Jun 21 10:09:04 2009 +0700
+
+    Fix the ifb initial on config reload
+    
+      * The ifb does not reinitial when reloading config that cuases the bandwidth
+        task does not work correctly after reload.
+
+ src/rh-task-bandwidth.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+commit 01863bb35ee1addfb4ee2537a72e21586da5cfb1
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Jun 18 20:52:30 2009 +0700
+
+    Fix ifb_reserved, fault bit shifting
+    
+      * Fix the ifb_reserved that doing the fault bit shifting which cause the
+        program running in malfunction, the maximum ifb is ifb8 rather than
+        ifb31 (i386) or ifb63 (amd64).
+
+ src/rh-config.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit c5765564ff34716a76660e3a1acd1733bbd764f2
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Jun 15 11:03:03 2009 +0700
+
+    Remove leading and trailing of get string
+
+ src/rh-utils.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+commit 3c938ec1ba5298fbc2ff0c1d8bb91a4c842188c9
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 9 10:32:33 2009 +0700
+
+    Bump version to 0.1.5
+
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 7d86850b98014981d02f95c933296d84099e874a
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Tue Jun 9 10:29:51 2009 +0700
+
+    === Release 0.1.4 ===
+    
+      * Update ChangeLog (git log --stat).
+      * Remove weblogin/ChangeLog, now merge in ChangeLog.
+
+ ChangeLog          | 2917 +++++++++++++++++++++++++++++++++++++++-------------
+ weblogin/ChangeLog |    4 -
+ 2 files changed, 2206 insertions(+), 715 deletions(-)
+
 commit 7751a641e2a294d986b002dd01264b7d068258a2
 Author: Neutron Soutmun <neo.neutron@gmail.com>
 Date:   Tue Jun 9 10:24:52 2009 +0700
@@ -30,7 +1478,7 @@ Date:   Tue Jun 9 10:07:55 2009 +0700
  data/Makefile.am                             |    8 +-
  example/rahunas.init.in                      |    6 +-
  lcfg/Makefile.am                             |    3 +-
- src/Makefile.am                              |   78 ++--
+ src/Makefile.am                              |   78 +--
  src/include/linux/netfilter_ipv4/Makefile.am |    3 -
  src/rh-task-bandwidth.c                      |   12 +-
  src/rh-task-dbset.c                          |    2 +-
@@ -74,7 +1522,7 @@ Date:   Mon Jun 8 18:36:19 2009 +0700
         such as the network load balancing.
 
  tools/firewall.sh.in |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
 commit 2f0141c49bb55157f24738404aa77367a6a45fed
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -87,8 +1535,8 @@ Date:   Mon Jun 8 18:29:43 2009 +0700
       * IMQ is now deprecated. (not support).
 
  src/rh-config.c         |  135 +++++++++++++++++++++++++++++++++++++++++++++++
- src/rh-config.h         |   21 +++++++
- src/rh-task-bandwidth.c |   78 +++++++++++++++++++++------
+ src/rh-config.h         |   21 ++++++++
+ src/rh-task-bandwidth.c |   78 ++++++++++++++++++++-------
  tools/bandwidth.sh.in   |   86 ++++++++++++++++++++++++------
  tools/firewall.sh.in    |    8 ---
  5 files changed, 286 insertions(+), 42 deletions(-)
@@ -193,7 +1641,7 @@ Date:   Thu Apr 30 16:13:55 2009 +0700
 
  ChangeLog                          |    4 ++++
  tools/weblogin-config-update.sh.in |   26 ++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 0 deletions(-)
+ 2 files changed, 30 insertions(+)
 
 commit 58a7596ffa8e80a6c8db834191f7ce1f45fd44f9
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -207,7 +1655,7 @@ Date:   Thu Apr 30 13:38:23 2009 +0700
 
  ChangeLog       |    4 ++++
  data/rahunas.db |  Bin 3072 -> 5120 bytes
- 2 files changed, 4 insertions(+), 0 deletions(-)
+ 2 files changed, 4 insertions(+)
 
 commit cc256e1ea17aa9076b61545f70aa23f191790a80
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -221,7 +1669,7 @@ Date:   Wed Apr 29 08:46:42 2009 +0700
 
  ChangeLog               |    4 ++++
  example/rahunas.init.in |    5 ++++-
- 2 files changed, 8 insertions(+), 1 deletions(-)
+ 2 files changed, 8 insertions(+), 1 deletion(-)
 
 commit 2c382b427d652c3a7166f5516bafbae8cae543fd
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -235,7 +1683,7 @@ Date:   Mon Apr 27 19:22:35 2009 +0700
 
  ChangeLog       |    4 ++++
  src/rh-server.c |    2 +-
- 2 files changed, 5 insertions(+), 1 deletions(-)
+ 2 files changed, 5 insertions(+), 1 deletion(-)
 
 commit f1184f9058b0f965c8cada118eee1e542b26d70b
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -271,8 +1719,8 @@ Date:   Mon Apr 27 08:48:29 2009 +0700
     	* tools/firewall.sh.in: Add the KEEP_SET funtionality.
 
  ChangeLog               |   12 ++++
- example/rahunas.init.in |   25 +++++++-
- src/rahunasd.c          |   73 ++++++++++++++++++--
+ example/rahunas.init.in |   25 ++++++-
+ src/rahunasd.c          |   73 +++++++++++++++++---
  src/rh-config.h         |    9 +++
  src/rh-ipset.c          |    2 +-
  src/rh-server.c         |  169 +++++++++++++++++++++++++++++++++++++++++------
@@ -298,9 +1746,9 @@ Date:   Thu Apr 23 10:19:24 2009 +0700
     	* tools/firewall.sh.in: Prevent the script to start the same rules again for
     	  each virtual server.
 
- ChangeLog               |    8 +++
- example/rahunas.init.in |  118 ++++++++++++++++++++++++++++++++--------------
- tools/firewall.sh.in    |   18 ++++++-
+ ChangeLog               |    8 ++++
+ example/rahunas.init.in |  118 ++++++++++++++++++++++++++++++++---------------
+ tools/firewall.sh.in    |   18 ++++++--
  3 files changed, 105 insertions(+), 39 deletions(-)
 
 commit 32a2b8614528260422ecc05a560bd58085982248
@@ -330,7 +1778,7 @@ Date:   Mon Apr 20 17:19:20 2009 +0700
 
  ChangeLog               |    5 +++++
  example/rahunas.init.in |    2 ++
- 2 files changed, 7 insertions(+), 0 deletions(-)
+ 2 files changed, 7 insertions(+)
 
 commit ca3a480eac5252c2fd4f7e4a3509e2082b69d686
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -343,10 +1791,10 @@ Date:   Mon Apr 20 17:14:05 2009 +0700
     	* +tools/weblogin-config-update.sh.in: Add new weblogin config in php update script.
     	* configure.ac: Updated accordingly.
 
- ChangeLog                          |    5 ++
+ ChangeLog                          |    5 +++
  configure.ac                       |    1 +
  tools/weblogin-config-update.sh.in |   81 ++++++++++++++++++++++++++++++++++++
- 3 files changed, 87 insertions(+), 0 deletions(-)
+ 3 files changed, 87 insertions(+)
 
 commit ebf1b313a3bf00f239329f7fe3a81e40e23b0296
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -369,14 +1817,14 @@ Date:   Mon Apr 20 14:21:34 2009 +0700
  ChangeLog               |   12 +++
  src/Makefile.am         |    2 +
  src/rahunasd.c          |   11 ++-
- src/rh-config.c         |  182 ++++++++++++++++++++++++++++++++++-
+ src/rh-config.c         |  182 +++++++++++++++++++++++++++++++++--
  src/rh-config.h         |   40 +++++++-
  src/rh-server.c         |   33 ++++++-
  src/rh-task-bandwidth.c |   37 +++-----
- src/rh-task-dbset.c     |   52 ++++------
+ src/rh-task-dbset.c     |   52 +++++-----
  src/rh-task-ipset.c     |   38 ++++----
  src/rh-task-iptables.c  |  216 ++++++++++++++++++++++++++++++++++++++++++
- src/rh-task-iptables.h  |   11 ++
+ src/rh-task-iptables.h  |   11 +++
  src/rh-task-memset.c    |   29 +++---
  src/rh-task.c           |   65 +++++++------
  src/rh-task.h           |   16 ++--
@@ -399,10 +1847,10 @@ Date:   Sat Apr 18 12:33:01 2009 +0700
     	  - Move the dhcp firewall code from vserver section to policy.
     	  - Adjust the webserver access limit rate for performance tuning.
 
- ChangeLog                       |   10 +++++++
- example/rahunas-vserver.conf.in |    2 -
- example/rahunas.conf.in         |    2 +
- tools/firewall.sh.in            |   50 ++++++++++++++++++++++++--------------
+ ChangeLog                       |   10 ++++++++
+ example/rahunas-vserver.conf.in |    2 --
+ example/rahunas.conf.in         |    2 ++
+ tools/firewall.sh.in            |   50 ++++++++++++++++++++++++---------------
  4 files changed, 43 insertions(+), 21 deletions(-)
 
 commit ae7e7e4f3e3672207f051839f33df6649f41dca1
@@ -446,7 +1894,7 @@ Date:   Mon Apr 6 09:08:31 2009 +0700
 
  ChangeLog              |    8 ++++++++
  example/firewall.sh.in |    8 ++++++++
- 2 files changed, 16 insertions(+), 0 deletions(-)
+ 2 files changed, 16 insertions(+)
 
 commit b5e3f15c3ecb424e105dd5a93288c5f134de6816
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -466,10 +1914,10 @@ Date:   Mon Apr 6 00:26:38 2009 +0700
     	  to use the current timestamp;
 
  ChangeLog              |   11 ++++++++
- src/rahunasd.c         |    4 +-
+ src/rahunasd.c         |    4 +--
  src/rh-task-dbset.c    |   68 ++++++++++++------------------------------------
- src/rh-task-ipset.c    |    4 +-
- src/rh-task-memset.c   |   23 ++++++++++-----
+ src/rh-task-ipset.c    |    4 +--
+ src/rh-task-memset.c   |   23 ++++++++++------
  src/rh-task.h          |    1 +
  src/rh-xmlrpc-server.c |    1 +
  7 files changed, 49 insertions(+), 63 deletions(-)
@@ -488,7 +1936,7 @@ Date:   Fri Apr 3 08:57:10 2009 +0700
  ChangeLog                 |    5 +++++
  weblogin/login.php        |    3 +++
  weblogin/squid_helper.php |    2 ++
- 3 files changed, 10 insertions(+), 0 deletions(-)
+ 3 files changed, 10 insertions(+)
 
 commit 25f5f8d725eebedddfef0077d95b9b3d0f9f4d8b
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -593,7 +2041,7 @@ Date:   Tue Mar 31 23:48:07 2009 +0700
 
  ChangeLog    |    4 ++++
  configure.ac |    2 +-
- 2 files changed, 5 insertions(+), 1 deletions(-)
+ 2 files changed, 5 insertions(+), 1 deletion(-)
 
 commit 8a08898437cea973302c8e04b31c4de7b8bd273b
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -610,7 +2058,7 @@ Date:   Tue Mar 31 23:37:39 2009 +0700
  ChangeLog |    6 ++++++
  NEWS      |   25 +++++++++++++++++++++++++
  TODO      |    1 -
- 3 files changed, 31 insertions(+), 1 deletions(-)
+ 3 files changed, 31 insertions(+), 1 deletion(-)
 
 commit d5429ac493626297fd051130458377c954ff3cda
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -660,27 +2108,27 @@ Date:   Tue Mar 31 23:04:41 2009 +0700
  example/rahunas-vserver.conf.in |   39 +++
  example/rahunas.conf.in         |  105 +--------
  src/Makefile.am                 |    6 +-
- src/rahunasd.c                  |  308 ++++++++++---------------
+ src/rahunasd.c                  |  308 ++++++++++--------------
  src/rahunasd.h                  |   14 +-
  src/rh-config.c                 |  173 +++++++++++---
- src/rh-config.h                 |   39 +++-
+ src/rh-config.h                 |   39 ++-
  src/rh-ipset.c                  |   80 +++----
  src/rh-ipset.h                  |   12 +-
  src/rh-server.c                 |  167 +++++++++++++
  src/rh-server.h                 |   36 +++
- src/rh-task-bandwidth.c         |  141 +++++++-----
- src/rh-task-bandwidth.h         |   23 ++-
- src/rh-task-dbset.c             |  208 ++++++++++++-----
+ src/rh-task-bandwidth.c         |  141 ++++++-----
+ src/rh-task-bandwidth.h         |   23 +-
+ src/rh-task-dbset.c             |  208 +++++++++++-----
  src/rh-task-dbset.h             |    2 +-
  src/rh-task-ipset.c             |   97 ++++----
  src/rh-task-ipset.h             |    2 +-
- src/rh-task-memset.c            |  214 +++++++++++-------
+ src/rh-task-memset.c            |  214 ++++++++++-------
  src/rh-task-memset.h            |    4 +-
- src/rh-task.c                   |   89 ++++----
+ src/rh-task.c                   |   89 +++----
  src/rh-task.h                   |   49 ++--
  src/rh-utils.c                  |  123 ++++++++++
  src/rh-utils.h                  |   11 +
- src/rh-xmlrpc-cmd.c             |   34 ++--
+ src/rh-xmlrpc-cmd.c             |   34 +--
  src/rh-xmlrpc-cmd.h             |    2 +-
  src/rh-xmlrpc-server.c          |  148 +++++++-----
  weblogin/config.php             |    9 +-
@@ -765,7 +2213,7 @@ Date:   Tue Mar 17 13:09:47 2009 +0700
 
  ChangeLog                 |    6 ++++++
  weblogin/squid_helper.php |   44 ++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 50 insertions(+), 0 deletions(-)
+ 2 files changed, 50 insertions(+)
 
 commit d7c24ae802e2ce208d63e02030041791f845b00f
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -796,7 +2244,7 @@ Date:   Thu Mar 12 19:39:22 2009 +0700
 
  ChangeLog |    4 ++++
  TODO      |    1 +
- 2 files changed, 5 insertions(+), 0 deletions(-)
+ 2 files changed, 5 insertions(+)
 
 commit 9f0c89df4e8415fac95d461caf2a7e18132ef2c4
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -809,20 +2257,20 @@ Date:   Thu Mar 12 19:15:53 2009 +0700
  debian/control                       |   42 -----------
  debian/copyright                     |   29 --------
  debian/examples/config.php           |   21 ------
- debian/examples/rahunas.conf         |  100 -------------------------
- debian/rahunas-weblogin.apache2.conf |   56 --------------
+ debian/examples/rahunas.conf         |  100 --------------------------
+ debian/rahunas-weblogin.apache2.conf |   56 ---------------
  debian/rahunas-weblogin.docs         |    1 -
  debian/rahunas-weblogin.postinst     |   47 ------------
- debian/rahunas-weblogin.postrm       |   60 ---------------
- debian/rahunas.default               |    8 --
+ debian/rahunas-weblogin.postrm       |   60 ----------------
+ debian/rahunas.default               |    8 ---
  debian/rahunas.docs                  |    3 -
- debian/rahunas.init                  |   76 -------------------
+ debian/rahunas.init                  |   76 --------------------
  debian/rahunas.logrotate             |   13 ----
  debian/rahunas.postinst              |   17 -----
  debian/rahunas.postrm                |   18 -----
  debian/rules                         |  132 ----------------------------------
  debian/watch                         |    2 -
- 18 files changed, 0 insertions(+), 631 deletions(-)
+ 18 files changed, 631 deletions(-)
 
 commit d8fb0a8cd1934f72dea14e2261ca2a63b50ede06
 Merge: 44f56b1 9820572
@@ -848,17 +2296,17 @@ Date:   Thu Mar 12 19:04:57 2009 +0700
     	    code style of the whole project.
 
  ChangeLog                      |   10 +++
- weblogin/config.php            |   32 +++++++++
- weblogin/header.php            |   32 +++++++++
- weblogin/index.php             |   32 +++++++++
- weblogin/locale.php            |  138 ++++++++++++++++++++++++---------------
- weblogin/login.php             |   32 +++++++++
- weblogin/logout.php            |   32 +++++++++
- weblogin/messages.php          |   32 +++++++++
+ weblogin/config.php            |   32 ++++++++++
+ weblogin/header.php            |   32 ++++++++++
+ weblogin/index.php             |   32 ++++++++++
+ weblogin/locale.php            |  138 +++++++++++++++++++++++++---------------
+ weblogin/login.php             |   32 ++++++++++
+ weblogin/logout.php            |   32 ++++++++++
+ weblogin/messages.php          |   32 ++++++++++
  weblogin/rahu_dictionary.php   |   80 ++++++++++++++++-------
- weblogin/rahu_radius.class.php |   36 ++++++++++
+ weblogin/rahu_radius.class.php |   36 +++++++++++
  weblogin/rahu_xmlrpc.class.php |   35 ++++++++++
- weblogin/xmlrpc_service.php    |   32 +++++++++
+ weblogin/xmlrpc_service.php    |   32 ++++++++++
  12 files changed, 446 insertions(+), 77 deletions(-)
 
 commit 44f56b156a1e8c8a8f266b53c0cc6f0ea4f97c98
@@ -872,20 +2320,20 @@ Date:   Wed Feb 25 03:36:03 2009 +0700
  debian/control                       |   42 +++++++++++
  debian/copyright                     |   29 ++++++++
  debian/examples/config.php           |   21 ++++++
- debian/examples/rahunas.conf         |  100 +++++++++++++++++++++++++
- debian/rahunas-weblogin.apache2.conf |   56 ++++++++++++++
+ debian/examples/rahunas.conf         |  100 ++++++++++++++++++++++++++
+ debian/rahunas-weblogin.apache2.conf |   56 +++++++++++++++
  debian/rahunas-weblogin.docs         |    1 +
  debian/rahunas-weblogin.postinst     |   47 ++++++++++++
- debian/rahunas-weblogin.postrm       |   60 +++++++++++++++
- debian/rahunas.default               |    8 ++
+ debian/rahunas-weblogin.postrm       |   60 ++++++++++++++++
+ debian/rahunas.default               |    8 +++
  debian/rahunas.docs                  |    3 +
- debian/rahunas.init                  |   76 +++++++++++++++++++
+ debian/rahunas.init                  |   76 ++++++++++++++++++++
  debian/rahunas.logrotate             |   13 ++++
  debian/rahunas.postinst              |   17 +++++
  debian/rahunas.postrm                |   18 +++++
  debian/rules                         |  132 ++++++++++++++++++++++++++++++++++
  debian/watch                         |    2 +
- 18 files changed, 631 insertions(+), 0 deletions(-)
+ 18 files changed, 631 insertions(+)
 
 commit 20d320c0bd3c5422cf526cb9b249a1ae52a76652
 Merge: e29b312 358103f
@@ -926,7 +2374,7 @@ Date:   Mon Feb 9 19:36:03 2009 +0700
 
  ChangeLog    |    4 ++++
  configure.ac |    2 +-
- 2 files changed, 5 insertions(+), 1 deletions(-)
+ 2 files changed, 5 insertions(+), 1 deletion(-)
 
 commit f507faf0f99419fa9ddcbfcb4fe5807a5bb95641
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -944,9 +2392,9 @@ Date:   Mon Feb 9 19:30:04 2009 +0700
     	* src/rh-task-bandwidth.c: Reduce the maximum slots respectively to
     		  new changes.
 
- ChangeLog               |   10 ++++
- example/bandwidth.sh.in |  115 +++++++++++++++++++++++++++++++++++-----------
- example/firewall.sh.in  |  100 ++++++++++++++++++++++++++++++++++------
+ ChangeLog               |   10 +++++
+ example/bandwidth.sh.in |  115 +++++++++++++++++++++++++++++++++++------------
+ example/firewall.sh.in  |  100 ++++++++++++++++++++++++++++++++++-------
  src/rh-task-bandwidth.c |    4 +-
  4 files changed, 184 insertions(+), 45 deletions(-)
 
@@ -962,7 +2410,7 @@ Date:   Thu Jan 29 22:30:31 2009 +0700
 
  ChangeLog          |    6 +-
  lcfg/lcfg_static.c |  281 +++++++++++++++++++++++++++++++++++++++++++++++-----
- lcfg/lcfg_static.h |   64 ++++++++++++-
+ lcfg/lcfg_static.h |   64 +++++++++++-
  3 files changed, 325 insertions(+), 26 deletions(-)
 
 commit 7dc3e62a6d30fae802d0b101d0f3f2e07cd63199
@@ -997,8 +2445,8 @@ Date:   Wed Jan 7 19:39:18 2009 +0700
     		whole weblogin dir.
     	* -weblogin/Makfile.am: Removed unnecessary now.
 
- ChangeLog            |    6 +++++
- Makefile.am          |    3 +-
+ ChangeLog            |    6 ++++++
+ Makefile.am          |    3 ++-
  configure.ac         |    1 -
  weblogin/Makefile.am |   53 --------------------------------------------------
  4 files changed, 8 insertions(+), 55 deletions(-)
@@ -1015,7 +2463,7 @@ Date:   Tue Dec 9 17:49:18 2008 +0700
     	  distribute it in the tarball.
 
  ChangeLog            |    5 ++++
- weblogin/Makefile.am |   64 ++++++++++++++++++++++++++++++++++++++++---------
+ weblogin/Makefile.am |   64 ++++++++++++++++++++++++++++++++++++++++----------
  2 files changed, 57 insertions(+), 12 deletions(-)
 
 commit 8606d15e50a6814125c2f90f840168f1da9b5186
@@ -1028,8 +2476,8 @@ Date:   Tue Dec 9 17:21:01 2008 +0700
     
     	* weblogin/Makefile.am: Rewrite makefile to install weblogin properly.
 
- ChangeLog            |    4 +++
- weblogin/Makefile.am |   62 ++++++++-----------------------------------------
+ ChangeLog            |    4 ++++
+ weblogin/Makefile.am |   62 ++++++++------------------------------------------
  2 files changed, 14 insertions(+), 52 deletions(-)
 
 commit d6db53dc311feecf9e867baf36c82ee00a842bd1
@@ -1071,7 +2519,7 @@ Date:   Tue Dec 9 15:21:47 2008 +0700
     	* configure.ac, Makefile.am: Update accordingly to weblogin/Makefile.am.
     	* NEWS: Change release date to 2008-12-09 due to forgot to install weblogin.
 
- ChangeLog            |    6 +++++
+ ChangeLog            |    6 ++++++
  Makefile.am          |    2 +-
  NEWS                 |    2 +-
  configure.ac         |    1 +
@@ -1093,7 +2541,7 @@ Date:   Wed Dec 3 21:39:51 2008 +0700
  ChangeLog |    6 ++++++
  NEWS      |   29 +++++++++++++++++++++++++++++
  TODO      |    3 +++
- 3 files changed, 38 insertions(+), 0 deletions(-)
+ 3 files changed, 38 insertions(+)
 
 commit ced0165ec003f62981e745e2eac2ee6dc380680c
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1140,10 +2588,10 @@ Date:   Wed Dec 3 16:28:13 2008 +0700
 
  ChangeLog              |    7 ++
  src/rahunasd.c         |  239 ++++++++++++++++++++++++------------------------
- src/rahunasd.h         |   14 ++--
+ src/rahunasd.h         |   14 +--
  src/rh-config.h        |    6 +-
  src/rh-ipset.c         |  200 ++++++++++++++++++++--------------------
- src/rh-ipset.h         |   64 +++++++-------
+ src/rh-ipset.h         |   64 ++++++-------
  src/rh-task-ipset.c    |    2 +-
  src/rh-task-memset.c   |   26 +++---
  src/rh-task.h          |    2 +-
@@ -1184,7 +2632,7 @@ Date:   Fri Nov 28 02:30:12 2008 +0700
  ChangeLog           |    4 ++++
  weblogin/config.php |    1 +
  weblogin/locale.php |    5 +++++
- 3 files changed, 10 insertions(+), 0 deletions(-)
+ 3 files changed, 10 insertions(+)
 
 commit 4d2c06ee915febc5138d22096dc2708ffda8fd35
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1229,14 +2677,14 @@ Date:   Fri Nov 28 00:58:34 2008 +0700
  weblogin/locale/th_TH/LC_MESSAGES/messages.mo |  Bin 0 -> 2988 bytes
  weblogin/locale/th_TH/LC_MESSAGES/messages.po |  107 +++++++++++++++++++++++
  weblogin/login.php                            |  116 +++++++++++++------------
- weblogin/logout.php                           |  115 +++++++++++--------------
- weblogin/messages.php                         |   20 ++++
+ weblogin/logout.php                           |  115 +++++++++++-------------
+ weblogin/messages.php                         |   20 +++++
  weblogin/note.txt                             |    2 +
  weblogin/rahu-loading.gif                     |  Bin 4208 -> 0 bytes
  weblogin/rahu-waiting.gif                     |  Bin 4051 -> 0 bytes
- weblogin/templates/kkulogin/rahunas.css       |   39 ++++++++
- weblogin/templates/kkuwifi/rahunas.css        |   39 ++++++++
- weblogin/templates/rahunas/rahunas.css        |   39 ++++++++
+ weblogin/templates/kkulogin/rahunas.css       |   39 +++++++++
+ weblogin/templates/kkuwifi/rahunas.css        |   39 +++++++++
+ weblogin/templates/rahunas/rahunas.css        |   39 +++++++++
  weblogin/templates/rahunas/rahunas.html       |    2 +-
  17 files changed, 544 insertions(+), 126 deletions(-)
 
@@ -1257,13 +2705,13 @@ Date:   Thu Nov 27 16:30:09 2008 +0700
     	  - Convert tab to 2 spaces (Beautify code for text editor compatibility).
 
  ChangeLog                      |   10 ++
- weblogin/config.php            |   26 +++---
+ weblogin/config.php            |   26 ++---
  weblogin/index.php             |    2 +-
  weblogin/login.php             |   74 +++++++-------
- weblogin/logout.php            |   70 +++++++-------
+ weblogin/logout.php            |   70 ++++++-------
  weblogin/rahu_radius.class.php |  220 ++++++++++++++++++++--------------------
- weblogin/rahu_xmlrpc.class.php |   72 +++++++-------
- weblogin/xmlrpc_service.php    |   28 +++---
+ weblogin/rahu_xmlrpc.class.php |   72 ++++++-------
+ weblogin/xmlrpc_service.php    |   28 ++---
  8 files changed, 256 insertions(+), 246 deletions(-)
 
 commit b4a26aabb88b85808593bdd8ad8a81533ec24a36
@@ -1332,7 +2780,7 @@ Date:   Thu Nov 27 02:11:40 2008 +0700
  example/rahunas.firewall  |  374 --------------
  lcfg/Makefile.am          |    3 +
  lcfg/lcfg_static.c        | 1209 +++++++++++++++++++++++++++++++++++++++++++++
- lcfg/lcfg_static.h        |   55 ++
+ lcfg/lcfg_static.h        |   55 +++
  src/Makefile.am           |    6 +-
  src/rahunasd.c            |   19 +-
  src/rahunasd.h            |    1 +
@@ -1371,11 +2819,11 @@ Date:   Wed Nov 26 12:11:35 2008 +0700
     	  Move rahunas.* wrapper scripts to example dir.
 
  ChangeLog                 |    6 +
- example/rahunas.bandwidth |  153 ++++++++++++++++++
+ example/rahunas.bandwidth |  153 +++++++++++++++++++
  example/rahunas.default   |   59 +++++++
  example/rahunas.firewall  |  374 +++++++++++++++++++++++++++++++++++++++++++++
  example/rahunas.init      |   76 +++++++++
- rahunas.bandwidth         |  153 ------------------
+ rahunas.bandwidth         |  153 -------------------
  rahunas.default           |   59 -------
  rahunas.firewall          |  374 ---------------------------------------------
  rahunas.init              |   76 ---------
@@ -1394,7 +2842,7 @@ Date:   Wed Nov 26 12:05:42 2008 +0700
 
  ChangeLog    |    5 +++++
  configure.ac |    1 -
- 2 files changed, 5 insertions(+), 1 deletions(-)
+ 2 files changed, 5 insertions(+), 1 deletion(-)
 
 commit 83ebe9bc38aa3fa85605831531071e3546adc32c
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1438,17 +2886,17 @@ Date:   Tue Nov 25 20:19:36 2008 +0700
     	* data/rahunas.db:
     	  Alter the schema of dbset table to support bandwidth fields.
 
- ChangeLog                                 |   36 +++
+ ChangeLog                                 |   36 ++++
  data/rahunas.db                           |  Bin 3072 -> 3072 bytes
  rahunas.bandwidth                         |  153 +++++++++++++
  rahunas.default                           |    4 +
- rahunas.firewall                          |   26 +++-
+ rahunas.firewall                          |   26 ++-
  rahunas.init                              |    9 +-
  src/Makefile.am                           |    2 +
  src/rahunasd.h                            |    1 +
  src/rh-task-bandwidth.c                   |  331 +++++++++++++++++++++++++++++
  src/rh-task-bandwidth.h                   |   11 +
- src/rh-task-dbset.c                       |   35 +++-
+ src/rh-task-dbset.c                       |   35 ++-
  src/rh-task-ipset.c                       |    2 +-
  src/rh-task-memset.c                      |    2 +-
  src/rh-task.c                             |    3 +
@@ -1537,7 +2985,7 @@ Date:   Wed Nov 12 12:32:51 2008 +0700
 
  ChangeLog           |    5 +++++
  weblogin/logout.php |    3 ++-
- 2 files changed, 7 insertions(+), 1 deletions(-)
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
 commit bce70864aab3506a820c9496736a32ff4bf1ec9c
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1555,7 +3003,7 @@ Date:   Tue Nov 11 12:27:38 2008 +0700
 
  ChangeLog                                     |    8 ++
  rahunas.default                               |   38 +++++++-
- rahunas.firewall                              |  122 +++++++++++++++++++++---
+ rahunas.firewall                              |  122 +++++++++++++++++++++----
  weblogin/config.php                           |    1 +
  weblogin/login.php                            |    4 +-
  weblogin/logout.php                           |    4 +-
@@ -1680,7 +3128,7 @@ Date:   Thu Oct 16 16:31:42 2008 +0700
  weblogin/templates/kkuwifi/images/w2_04.jpg    |  Bin 0 -> 17817 bytes
  weblogin/templates/kkuwifi/kkuwifi.html        |  149 ++++++++++++++++
  weblogin/xmlrpc_service.php                    |   82 +++++++++
- 28 files changed, 1144 insertions(+), 0 deletions(-)
+ 28 files changed, 1144 insertions(+)
 
 commit bb6aa015dfc870f0dcd29ea031588890999b8013
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1689,7 +3137,7 @@ Date:   Thu Oct 16 16:09:14 2008 +0700
     Add rahunas.init
 
  rahunas.init |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 commit 4fdd19812ed0468d0560dd0e2b18f804a4c17fc8
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1701,7 +3149,7 @@ Date:   Thu Oct 16 16:06:39 2008 +0700
     
     	* -rahunas.in: Remove unnecessary.
 
- ChangeLog  |    4 +++
+ ChangeLog  |    4 ++++
  rahunas.in |   68 ------------------------------------------------------------
  2 files changed, 4 insertions(+), 68 deletions(-)
 
@@ -1713,7 +3161,7 @@ Date:   Thu Oct 16 15:39:43 2008 +0700
 
  ChangeLog       |    6 ++++++
  data/rahunas.db |  Bin 3072 -> 3072 bytes
- 2 files changed, 6 insertions(+), 0 deletions(-)
+ 2 files changed, 6 insertions(+)
 
 commit 1ade179cf87fe3f8aba4862327e0f232e240e0da
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1727,10 +3175,10 @@ Date:   Thu Oct 16 15:33:31 2008 +0700
     	  initialize daemon, firewall and daemon config.
     	* data/rahunas.db: Remove the tested data from db.
 
- rahunas.default  |   27 ++++++++++++
+ rahunas.default  |   27 +++++++++++++
  rahunas.firewall |  117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
  rahunas.init     |   68 +++++++++++++++++++++++++++++++
- 3 files changed, 212 insertions(+), 0 deletions(-)
+ 3 files changed, 212 insertions(+)
 
 commit f51abe393259f4b3a94cea5d277c2dd5865696ee
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -1788,7 +3236,7 @@ Date:   Fri Oct 10 03:26:19 2008 +0700
  configure.ac                                 |   19 +-
  data/Makefile.am                             |    5 +
  data/rahunas.db                              |  Bin 0 -> 3072 bytes
- src/Makefile.am                              |   32 ++-
+ src/Makefile.am                              |   32 +-
  src/include/linux/netfilter_ipv4/Makefile.am |    3 +
  src/rahunasd.c                               |    2 +-
  src/rahunasd.h                               |    2 -
@@ -1825,22 +3273,22 @@ Date:   Fri Sep 12 18:56:30 2008 +0700
  AUTHORS                |    1 +
  ChangeLog              |   14 +++
  src/Makefile.am        |    5 +-
- src/rahunasd.c         |  263 +++--------------------------------------------
+ src/rahunasd.c         |  263 ++++--------------------------------------------
  src/rahunasd.h         |   26 ++---
  src/rh-config.h        |   27 +++++
  src/rh-ipset.c         |   85 +++++++++++++++-
  src/rh-ipset.h         |    7 ++
  src/rh-task-dbset.c    |  182 +++++++++++++++++++++++++++++++++
- src/rh-task-dbset.h    |   12 ++
+ src/rh-task-dbset.h    |   12 +++
  src/rh-task-ipset.c    |  146 +++++++++++++++++++++++++++
- src/rh-task-ipset.h    |   12 ++
+ src/rh-task-ipset.h    |   12 +++
  src/rh-task-memset.c   |  195 +++++++++++++++++++++++++++++++++++
- src/rh-task-memset.h   |   12 ++
+ src/rh-task-memset.h   |   12 +++
  src/rh-task.c          |  186 ++++++++++++++++++++++++++++++++++
  src/rh-task.h          |   75 ++++++++++++++
  src/rh-utils.c         |    1 +
  src/rh-utils.h         |    1 -
- src/rh-xmlrpc-server.c |   68 +++---------
+ src/rh-xmlrpc-server.c |   68 ++++---------
  19 files changed, 998 insertions(+), 320 deletions(-)
 
 commit b1bb912de56607e397dd65f43cce29f66f79a172
@@ -1858,7 +3306,7 @@ Date:   Wed Sep 3 01:32:54 2008 +0700
     	* src/rh-xmlrpc-cmd.{h,c}: Change send_xmlrpc_stopacct() API, which provide
     	  the ability to send the cause of the stop accounting.
 
- ChangeLog           |    9 +++
+ ChangeLog           |    9 ++++
  src/rahunasd.c      |  139 +++++++++++++++++++++++++++++++++------------------
  src/rahunasd.h      |   12 ++++-
  src/rh-radius.h     |   30 +++++++++++
@@ -1893,11 +3341,11 @@ Date:   Tue Sep 2 19:42:51 2008 +0700
     	* src/rahunasd.c: Move the send_xmlrpc_stopacct() code to rh-xmlrpc-cmd.
     	* src/Makefile.am: Update accordingly to new change.
 
- ChangeLog           |    6 +++++
+ ChangeLog           |    6 ++++++
  src/Makefile.am     |    1 +
  src/rahunasd.c      |   51 +--------------------------------------------
  src/rh-xmlrpc-cmd.c |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++
- src/rh-xmlrpc-cmd.h |   11 +++++++++
+ src/rh-xmlrpc-cmd.h |   11 ++++++++++
  5 files changed, 76 insertions(+), 50 deletions(-)
 
 commit 519335242b7470dc89e5e91d52582195e45396f2
@@ -1912,9 +3360,9 @@ Date:   Mon Sep 1 17:53:20 2008 +0700
     	* src/rh-xmlrpc-server.c: Free the allocated memory of the the vars that
     	  calling rh_string_get_sep().
 
- ChangeLog              |    6 +++
+ ChangeLog              |    6 ++++
  src/rahunasd.c         |   88 ------------------------------------------------
- src/rh-xmlrpc-server.c |   33 +++++++++++------
+ src/rh-xmlrpc-server.c |   33 +++++++++++-------
  3 files changed, 27 insertions(+), 100 deletions(-)
 
 commit 12686296a0e00688288092cda40598010f20765e
@@ -1934,7 +3382,7 @@ Date:   Sun Aug 31 02:14:57 2008 +0700
     	  - Implement new function rh_string_get_sep() which more clean looking code.
     	* src/Makefile.am: Update accordingly to new change.
 
- ChangeLog              |   11 +++++++
+ ChangeLog              |   11 ++++++++
  src/Makefile.am        |    3 +-
  src/rahunasd.c         |   25 +----------------
  src/rahunasd.h         |    3 --
@@ -1994,9 +3442,9 @@ Date:   Sat Aug 23 02:55:53 2008 +0700
 
  ChangeLog      |    9 +++++++++
  src/rahunasd.h |    4 ++--
- src/rh-ipset.c |   22 +++++++++++++++++-----
+ src/rh-ipset.c |   24 ++++++++++++++++++------
  src/rh-ipset.h |    1 +
- 4 files changed, 29 insertions(+), 7 deletions(-)
+ 4 files changed, 30 insertions(+), 8 deletions(-)
 
 commit ff1a85e6e39d18e4a172ee1c715d9d659f54d694
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -2030,13 +3478,13 @@ Date:   Thu Aug 21 12:25:09 2008 +0700
     	* src/rh-ipset.{h,c}: Add code to support ipset Flush set command.
     	* + rahunas.in: Add init script example.
 
- ChangeLog              |    9 +++++
- rahunas.in             |   68 ++++++++++++++++++++++++++++++++++++++
- src/rahunasd.c         |   84 +++++++++++++++++++++++++++++++++--------------
+ ChangeLog              |    9 ++++++
+ rahunas.in             |   68 +++++++++++++++++++++++++++++++++++++++
+ src/rahunasd.c         |   84 ++++++++++++++++++++++++++++++++++--------------
  src/rahunasd.h         |   38 +++++++++++-----------
  src/rh-ipset.c         |   14 +++++++-
- src/rh-ipset.h         |    2 +
- src/rh-xmlrpc-server.c |   22 +++++++++---
+ src/rh-ipset.h         |    2 ++
+ src/rh-xmlrpc-server.c |   22 +++++++++----
  7 files changed, 186 insertions(+), 51 deletions(-)
 
 commit 940b7164fee2c46618ac60a14f649090e0e5825f
@@ -2051,7 +3499,7 @@ Date:   Thu Aug 21 00:22:02 2008 +0700
 
  ChangeLog      |    4 ++++
  src/rahunasd.c |    1 -
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
 commit 4779ef2ad69195f0e8b3c5eb6d2ab82ef0d178f9
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -2067,7 +3515,7 @@ Date:   Thu Aug 21 00:17:12 2008 +0700
  ChangeLog                                         |    7 +-
  src/include/linux/netfilter_ipv4/ip_set.h         |  499 +++++++++++++++++++++
  src/include/linux/netfilter_ipv4/ip_set_rahunas.h |   45 ++
- 3 files changed, 550 insertions(+), 1 deletions(-)
+ 3 files changed, 550 insertions(+), 1 deletion(-)
 
 commit 80e39d7f90a349fc628223c0a231a3728da74118
 Author: Neutron Soutmun <neo.neutron@gmail.com>
@@ -2084,7 +3532,7 @@ Date:   Thu Aug 21 00:09:13 2008 +0700
     	  implementation.
     	* src/Makefile.am: Adjust to support new native ipset implementation.
 
- ChangeLog              |    9 +
+ ChangeLog              |    9 ++
  src/Makefile.am        |   10 +-
  src/Makefile.in        |  421 ------------------------------------------------
  src/ipset-control.c    |  139 ----------------
@@ -2146,7 +3594,7 @@ Date:   Wed Aug 20 00:08:07 2008 +0700
 
  ChangeLog      |   10 +++++++++
  src/rahunasd.c |   18 +---------------
- src/rahunasd.h |   62 ++++++++++++++++++++++++++++++++-----------------------
+ src/rahunasd.h |   62 ++++++++++++++++++++++++++++++++------------------------
  3 files changed, 47 insertions(+), 43 deletions(-)
 
 commit 1e3eada120a4707336e838eac0384f12d2e61031
@@ -2184,7 +3632,7 @@ Date:   Tue Aug 19 22:49:00 2008 +0700
  ChangeLog                       |    3 +
  Makefile.am                     |    1 +
  autogen.sh                      |    5 +
- config.h.in                     |  111 ++++++
+ config.h.in                     |  111 +++++++
  configure.ac                    |   47 +++
  src/Makefile.am                 |    8 +
  src/Makefile.in                 |  421 +++++++++++++++++++++++
@@ -2203,4 +3651,4 @@ Date:   Tue Aug 19 22:49:00 2008 +0700
  xmlrpc/xmlrpc-client.c          |  279 ++++++++++++++++
  xmlrpc/xmlrpc-server.c          |  411 +++++++++++++++++++++++
  xmlrpc/xmlrpc.h                 |   85 +++++
- 24 files changed, 3703 insertions(+), 0 deletions(-)
+ 24 files changed, 3703 insertions(+)

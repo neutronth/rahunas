@@ -1,0 +1,67 @@
+#!/bin/sh
+# rh-checkrad	See if a user is (still) logged in on RahuNAS.
+#
+#		This is used by the FreeRADIUS server to check
+#		if its idea of a user logged in on RahuNAS
+#		is correct if a double login is detected.
+#
+# Called as:	nas_type nas_ip nas_port login session_id
+#
+# Returns:	0 = no duplicate, 1 = duplicate, >1 = error.
+#
+# Author: Neutron Soutmun <neutron@rahunas.org>
+# Date:   2011-09-29
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+LOGDIR=@localstatedir@/log/freeradius
+LOGFILE=${LOGDIR}/rh-checkrad.log
+
+SNMPGET=`which snmpget`
+SNMP_VERSION="2c"
+SNMP_COMMUNITY="public"
+SNMP_TIMEOUT=3
+SNMP_RETRY=1
+
+# See RAHUNAS-MIB draft: RAHUNAS-MIB::rahunasAuthenLoginUsername
+RH_LOGINUSERNAME_MIB=".1.3.6.1.4.1.38668.1.1.1.2"
+
+# Parsing arguments
+NASTYPE=$1
+NASIP=$2
+NASPORT=$3
+LOGIN=$4
+SESSIONID=$5
+
+if [ ! -x ${SNMPGET} ]; then
+  echo "No snmp-get installed, please install"
+  exit 2
+fi
+
+if [ $# -lt 5 -o "x$1" = "x--help" ]; then
+  echo "Usage: $0 nas_type nas_ip nas_port login session_id"
+  exit 2
+fi
+
+# Support only "rahunas" type
+if [ "x$NASTYPE" != "xrahunas" ]; then
+  exit 0;
+fi
+
+
+# Process
+RET=0
+LOGMSG="Query for ${LOGIN} (${SESSIONID}) on ${NASIP}: "
+USER=`$SNMPGET -v${SNMP_VERSION} -c${SNMP_COMMUNITY} -Oqv -t${SNMP_TIMEOUT} -r${SNMP_RETRY} ${NASIP} ${RH_LOGINUSERNAME_MIB}.\"${SESSIONID}\" | sed -e 's/"//g'`
+
+if [ "x$LOGIN" = "x${USER}" ]; then
+  LOGMSG="${LOGMSG} Active"
+  RET=1;
+else
+  LOGMSG="${LOGMSG} Inactive"
+fi
+
+echo ${LOGMSG} >> $LOGFILE
+exit ${RET};

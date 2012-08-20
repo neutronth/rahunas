@@ -1,6 +1,6 @@
 <?php
 /*
-  Copyright (c) 2008-2010, Neutron Soutmun <neo.neutron@gmail.com>
+  Copyright (c) 2008-2012, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -31,16 +31,24 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
-session_start();
 ob_start();
 require_once 'rahu_radius.class.php';
 require_once 'rahu_xmlrpc.class.php';
+require_once 'rahu_i18n.class.php';
+require_once 'rahu_langsupport.php';
+require_once 'rahu_render.class.php';
 require_once 'getmacaddr.php';
 require_once 'config.php';
 require_once 'header.php';
-require_once 'locale.php';
 require_once 'messages.php';
 require_once 'networkchk.php';
+
+
+$refresh_interval = 300;
+
+// Setup I18N
+$i18n = new RahuI18N ($rahu_langsupport);
+$i18n->localeSetup ();
 
 function secs_to_human($secs) {
   $units = array (
@@ -74,12 +82,6 @@ function secs_to_human($secs) {
 }
 
 $current_url = $_SERVER['REQUEST_URI'];
-$interval = 60;
-$auto_refresh = false;
-
-if ($auto_refresh) {
-  header("Refresh: $interval; url=$current_url");
-}
 
 $ip = $_SERVER['REMOTE_ADDR'];
 $config = get_config_by_network($ip, $config_list);
@@ -89,7 +91,7 @@ $forward_uri  = $config['NAS_LOGIN_PROTO'] . "://" . $config['NAS_LOGIN_HOST'];
 $forward_uri .= !empty($config['NAS_LOGIN_PORT']) ? ":" . $config['NAS_LOGIN_PORT'] : "";
 $forward_uri .= "/login.php?sss=" . time();
 
-$request_url = $_SESSION['request_url'];
+$request_url = urldecode ($_GET['request_url']);
 $request_url_text = strlen($request_url) < 20 ? $request_url : substr($request_url, 0, 20) . " ...";
 
 
@@ -112,6 +114,10 @@ if (is_array($retinfo)) {
   $isinfo = true;
 } else {
   $valid = false;
+}
+
+if ($retinfo["session_timeout"] > 0) {
+  header("Refresh: $refresh_interval; url=$current_url");
 }
 
 if (!empty($_POST['do_logout'])) {
@@ -137,7 +143,7 @@ if (!empty($_POST['do_logout'])) {
     $racct->secret = $config["RADIUS_SECRET"];
     $racct->nas_identifier = $config["NAS_IDENTIFIER"];
     $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-    $racct->nas_port = $config["NAS_PORT"];
+    $racct->nas_port = $config["VSERVER_ID"];
     $racct->framed_ip_address  = $ip;
     $racct->calling_station_id = $mac_address;
     $racct->terminate_cause = RADIUS_TERM_USER_REQUEST;
@@ -180,8 +186,8 @@ $valid_text = !$valid ? "" : "" .
   " </tr>" .
   "" .
   "  <tr>" .
-  "   <td align='right'><b>" . _("Session Time") . ":</b></td>" .
-  "   <td>" . secs_to_human(time() - $info['session_start']) . "</td>" .
+  "   <td align='right'><b>" . ($info['session_timeout'] == 0 ? _("Session Time") : _("Session Remain Time")) . ":</b></td>" .
+  "   <td>" . ($info['session_timeout'] == 0 ? secs_to_human(time() - $info['session_start']) : secs_to_human($info['session_timeout'] - time())) . "</td>" .
   " </tr>" .
   "" .
   (strcmp ($info['serviceclass_description'], "(null)") == 0 ? "" :
@@ -202,12 +208,19 @@ $valid_text = !$valid ? "" : "" .
   "   <td><input type='submit' value='" . _("Logout") . "' id='rh_logout_button'></td>" .
   " </tr>" .
   "</table>";
-$request_uri = $_SERVER['REQUEST_URI'];
-$loginbox = "<form name='login' action='$request_uri' method='post'>" .
-            "  $valid_text ". 
-            "</form>";
 
-$forward_script  = $valid == false ? "self.location.replace('$forward_uri');" : "";
+if ($valid) {
+  $request_uri = $_SERVER['REQUEST_URI'];
+  $loginbox = "<form name='login' action='$request_uri' method='post' ".
+              "onsubmit='if (this.getAttribute (\"submitted\")) return false; ".
+              "this.setAttribute (\"submitted\", true); return true;'>" .
+              "  $valid_text ".
+              "</form>";
+  $forward_script = "";
+} else {
+  $loginbox = "";
+  $forward_script  = "self.location.replace('$forward_uri');";
+}
 
 $waiting_show  = $forward ? "visible_hide(wt, 'show');" 
                           : "visible_hide(wt, 'hide');";
@@ -261,28 +274,14 @@ $loginbox .= $loginmsg;
 ?>
 
 <?php
-// Template loading
-$tpl_path = "templates/" . $config['UAM_TEMPLATE'] . "/";
-$tpl_file = $tpl_path . $config['UAM_TEMPLATE'] . ".html";
-$handle = @fopen($tpl_file, "r");
-$html_buffer = "";
-if ($handle) {  
-  $css = "<link rel='stylesheet' type='text/css' href='" . $tpl_path . "rahunas.css'>";
-  $loginbox = $css . $loginbox;
-
-  while (!feof($handle)) {
-    $html_buffer .= fgets($handle, 4096);
-  }
-  fclose($handle);
-
-  $html_buffer = str_replace("images/", $tpl_path."images/", $html_buffer);
-  $html_buffer = str_replace("<!-- Title -->", $config["NAS_LOGIN_TITLE"], 
-                             $html_buffer);
-  $html_buffer = str_replace("<!-- Login -->", $loginbox, $html_buffer);
-  $html_buffer = str_replace("<!-- JavaScript -->", $loginscript, $html_buffer);
-  print $html_buffer;
-}
-
+$tpl = new RahuRender ($config['UAM_TEMPLATE']);
+$tpl->setString ("<!-- Title -->", $config["NAS_LOGIN_TITLE"]);
+$tpl->setString ("<!-- Login -->", $loginbox);
+$tpl->setString ("<!-- JavaScript -->", $loginscript);
+$tpl->setString ("<!-- LanguageList -->", $i18n->getLangList("<li>", "</li>"));
+$tpl->setString ("<!-- ChangePassword -->", "<li><a href='/chpwd.php'>" .
+                    _("Change Password") . "</a></li>");
+$tpl->render ();
 
 ob_end_flush();
 ?>

@@ -34,14 +34,46 @@
   font-weight: bolder;
   text-align: left;
 }
+
+#rh_language ul {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#rh_language li {
+  display: inline;
+  padding-left: 10px;
+}
+
+#rh_changepassword {
+  text-align: right;
+  padding-right: 30px;
+}
+
+#rh_changepassword a, #rh_changepassword a:visited {
+  text-decoration: none;
+  color: #ffffff;
+}
+
+#rh_changepassword a:hover {
+  text-decoration: underline;
+}
+
+#rh_changepassword li {
+  display: inline;
+}
 -->
 </style>
+<link href="css/rahunas.css" rel="stylesheet">
 </head>
 
 <body>
+<div id='rh_language' style=""><ul>Language: <!-- LanguageList --><ul></div>
 <div id='rahunas_container'>
   <div id='rahunas_title'><!-- Title --></div>
-  <div id='rahunas_login_container'><!-- Login --></div>
+  <div id='rahunas_login_container'><!-- Login -->
+  <div id="rh_changepassword">[ <!-- ChangePassword --> ]</div>
+  </div>
 </div>
 <!-- JavaScript -->
 </body>

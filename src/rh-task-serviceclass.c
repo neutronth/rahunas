@@ -6,12 +6,13 @@
 
 #include <string.h>
 #include <syslog.h>
-#include <libgda/libgda.h>
+#include <sqlite3.h>
 
 #include "rahunasd.h"
 #include "rh-serviceclass.h"
 #include "rh-ipset.h"
 #include "rh-task.h"
+#include "rh-task-memset.h"
 
 static struct set *rh_serviceclass_set = NULL;
 
@@ -21,51 +22,64 @@ static uint32_t _sc_get_slot_id(struct rahunas_serviceclass_config *sc_config)
   time_t random_time;
   int  retry = 30;
   char select_cmd[256];
-  GdaConnection *connection = NULL;
-  GdaSqlParser  *parser = NULL;
-  GList *data_list = NULL;
+  sqlite3 *connection = NULL;
+  int  rc;
 
   if (sc_config == NULL)
     return 0;
 
-  connection = gda_connection_open_from_dsn (PROGRAM, NULL,
-                 GDA_CONNECTION_OPTIONS_READ_ONLY, NULL);
-  parser = gda_connection_create_parser (connection);
-  if (!parser) {
-    parser = gda_sql_parser_new ();
+  rc = sqlite3_open (RAHUNAS_DB, &connection);
+  if (rc) {
+    logmsg (RH_LOG_ERROR, "Task SERVICECLASS: could not open database, %s",
+            sqlite3_errmsg (connection));
+    sqlite3_close (connection);
+    return -1;
   }
 
-  g_object_set_data_full (G_OBJECT (connection), "parser", parser, g_object_unref);
-
   while (slot_id == 0 && (--retry > 0)) {
+    int  rc;
+    char **azResult = NULL;
+    char *zErrMsg   = NULL;
+    char *colname   = NULL;
+    char *value     = NULL;
+    int  nRow       = 0;
+    int  nColumn    = 0;
+
     time(&random_time);
     srandom(random_time);
     slot_id = random() % sc_config->network_size;
 
     if (slot_id != 0) {
-      memset (&select_cmd, '\0', sizeof (select_cmd));
       snprintf(select_cmd, sizeof (select_cmd) - 1,
-               "SELECT * FROM dbset WHERE service_class = '%s' "
-               "AND service_class_slot_id = %u",
+               "SELECT service_class_slot_id FROM dbset WHERE "
+               "service_class = '%s' AND service_class_slot_id = %u",
                sc_config->serviceclass_name, slot_id);
+      select_cmd[sizeof (select_cmd) - 1] = '\0';
 
       DP("SQL: %s", select_cmd);
-      data_list = execute_sql_command(connection, select_cmd);
+      rc = sqlite3_get_table (connection, select_cmd, &azResult, &nRow,
+                              &nColumn, &zErrMsg);
+      if (rc != SQLITE_OK) {
+        logmsg (RH_LOG_ERROR, "Task SERVICECLASS: could not get slot id form db"
+                              " (%s)", zErrMsg);
+        sqlite3_free (zErrMsg);
+        sqlite3_free_table (azResult);
+        sqlite3_close (connection);
+        return 0;
+      }
 
-      if (g_list_first (data_list) == NULL) {
-        // Available
-        free_data_list(data_list);
-        break;
-      } else {
-        // Not available, retry
-        free_data_list(data_list);
+      sqlite3_free_table (azResult);
+
+      if (nRow > 0) {
         slot_id = 0;
+        continue;
+      } else {
+        break;
       }
     }
   }
 
-  if (connection)
-    g_object_unref(G_OBJECT(connection));
+  sqlite3_close (connection);
 
   return slot_id;
 }
