@@ -2,16 +2,27 @@ Source: rahunas
 Section: net
 Priority: optional
 Maintainer: Neutron Soutmun <neo.neutron@gmail.com>
-Build-Depends: debhelper (>= 7), autotools-dev, autoconf, automake,
- libgnet-dev (>= 2.0.8), libgda-4.0-dev (>= 4.0.12)
+Build-Depends:
+ autoconf,
+ automake,
+ autotools-dev,
+ debhelper (>= 7),
+ libgnet-dev (>= 2.0.8),
+ libsqlite3-dev
 Standards-Version: 3.9.2
 Homepage: http://www.rahunas.org
 
 Package: rahunas
 Architecture: any
-Depends: libgnet2.0-0 (>= 2.0.8), libgda-4.0-4 (>= 4.0.12), iptables,
- xtables-addons-common, iproute, bridge-utils, ucf (>= 0.28),
- sqlite3 (>= 3.7.3), ${shlibs:Depends}, ${misc:Depends}
+Depends:
+ bridge-utils,
+ iproute,
+ iptables,
+ sqlite3 (>= 3.7.3),
+ ucf (>= 0.28),
+ xtables-addons-common,
+ ${misc:Depends},
+ ${shlibs:Depends}
 Suggests: rahunas-config
 Description: Network Access Server based on IP Sets
  RahuNAS is an open source Network Access Server (NAS) based on
@@ -34,8 +45,15 @@ Description: Network Access Server based on IP Sets
 
 Package: rahunas-weblogin
 Architecture: all
-Depends: rahunas, php5, php5-radius, php5-xmlrpc, php5-curl, php-pear,
- ucf (>= 0.28), ${misc:Depends}
+Depends:
+ php-pear,
+ php5,
+ php5-curl,
+ php5-radius,
+ php5-xmlrpc,
+ rahunas,
+ ucf (>= 0.28),
+ ${misc:Depends}
 Suggests: freeradius (>= 2.0.4)
 Description: Web base login for RahuNAS
  The web base login writen in PHP with the multilingual (English and Thai)
