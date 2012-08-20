@@ -54,11 +54,11 @@ stop () {
 
   # Wait until the rahunasd has really stopped.
   sleep 2
-  if test -n "$PID" && kill -0 $PID 2>/dev/null
+  if test -n "$PID" && kill -0 `cat $PID` 2>/dev/null
   then
     log_action_begin_msg " ... Waiting"
     cnt=0
-    while kill -0 $PID 2>/dev/null
+    while kill -0 `cat $PID` 2>/dev/null
     do
       cnt=`expr $cnt + 1`
       if [ $cnt -gt 24 ]
