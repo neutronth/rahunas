@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2012-06-27 04:39+0000\n"
+"POT-Creation-Date: 2012-08-20 08:58+0700\n"
 "PO-Revision-Date: 2011-10-04 17:24+0700\n"
 "Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
@@ -33,7 +33,7 @@ msgstr "เปลี่ยนรหัสผ่านเรียบร้อย
 msgid "Please apply all information"
 msgstr "กรุณากรอกข้อมูลให้ครบถ้วน"
 
-#: weblogin/chpwd.php:97 weblogin/login.php:170 weblogin/logout.php:175
+#: weblogin/chpwd.php:97 weblogin/login.php:170 weblogin/logout.php:176
 msgid "Username"
 msgstr "ชื่อผู้ใช้"
 
@@ -50,7 +50,7 @@ msgid "Confirm Password"
 msgstr "ยืนยันรหัสผ่าน"
 
 #: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:249
-#: weblogin/logout.php:282
+#: weblogin/logout.php:283
 msgid "Change Password"
 msgstr "เปลี่ยนรหัสผ่าน"
 
@@ -70,71 +70,71 @@ msgstr ""
 msgid "Login"
 msgstr "เข้าสู่ระบบ"
 
-#: weblogin/logout.php:52
+#: weblogin/logout.php:55
 msgid "day"
 msgstr "วัน"
 
-#: weblogin/logout.php:53
+#: weblogin/logout.php:56
 msgid "days"
 msgstr "วัน"
 
-#: weblogin/logout.php:55
+#: weblogin/logout.php:58
 msgid "hour"
 msgstr "ชั่วโมง"
 
-#: weblogin/logout.php:56
+#: weblogin/logout.php:59
 msgid "hours"
 msgstr "ชั่วโมง"
 
-#: weblogin/logout.php:58
+#: weblogin/logout.php:61
 msgid "minute"
 msgstr "นาที"
 
-#: weblogin/logout.php:59
+#: weblogin/logout.php:62
 msgid "minutes"
 msgstr "นาที"
 
-#: weblogin/logout.php:61
+#: weblogin/logout.php:64
 msgid "second"
 msgstr "วินาที"
 
-#: weblogin/logout.php:62
+#: weblogin/logout.php:65
 msgid "seconds"
 msgstr "วินาที"
 
-#: weblogin/logout.php:179
+#: weblogin/logout.php:180
 msgid "Session Start"
 msgstr "เริ่มวาระ"
 
-#: weblogin/logout.php:183
+#: weblogin/logout.php:184
 msgid "Session End"
 msgstr "สิ้นสุดวาระ"
 
-#: weblogin/logout.php:184
+#: weblogin/logout.php:185
 msgid "Never"
 msgstr "ไม่มีกำหนด"
 
-#: weblogin/logout.php:188
+#: weblogin/logout.php:189
 msgid "Session Time"
 msgstr "เวลาใช้งาน"
 
-#: weblogin/logout.php:188
+#: weblogin/logout.php:189
 msgid "Session Remain Time"
 msgstr "เหลือเวลาในวาระ"
 
-#: weblogin/logout.php:194
+#: weblogin/logout.php:195
 msgid "Class of service"
 msgstr "บริการพิเศษ"
 
-#: weblogin/logout.php:199
+#: weblogin/logout.php:200
 msgid "Request URL"
 msgstr "URL ที่ร้องขอ"
 
-#: weblogin/logout.php:206
+#: weblogin/logout.php:207
 msgid "OK"
 msgstr "ตกลง"
 
-#: weblogin/logout.php:207
+#: weblogin/logout.php:208
 msgid "Logout"
 msgstr "เลิกใช้งาน"
 
