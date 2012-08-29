@@ -1,3 +1,11 @@
+rahunas (0.2.3-1squeeze1) stable; urgency=low
+
+  * Imported Upstream version 0.2.3
+  * debian/rahunas.dirs:
+    - Install /etc/rahunas/serviceclass.d directory.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 29 Aug 2012 12:08:36 +0700
+
 rahunas (0.2.2-2squeeze1) stable; urgency=low
 
   * Fix incorrect weblogin templates install dir
