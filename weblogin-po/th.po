@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2012-08-20 09:06+0700\n"
+"POT-Creation-Date: 2012-08-29 11:39+0700\n"
 "PO-Revision-Date: 2011-10-04 17:24+0700\n"
 "Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
@@ -49,7 +49,7 @@ msgstr "รหัสผ่านใหม่"
 msgid "Confirm Password"
 msgstr "ยืนยันรหัสผ่าน"
 
-#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:249
+#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:252
 #: weblogin/logout.php:283
 msgid "Change Password"
 msgstr "เปลี่ยนรหัสผ่าน"

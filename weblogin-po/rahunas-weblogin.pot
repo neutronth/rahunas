@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: rahunas 0.2.2\n"
+"Project-Id-Version: rahunas 0.2.3\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2012-08-20 09:06+0700\n"
+"POT-Creation-Date: 2012-08-29 11:39+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,7 +49,7 @@ msgstr ""
 msgid "Confirm Password"
 msgstr ""
 
-#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:249
+#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:252
 #: weblogin/logout.php:283
 msgid "Change Password"
 msgstr ""

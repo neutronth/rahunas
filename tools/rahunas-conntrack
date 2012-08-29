@@ -1,13 +1,13 @@
 #!/bin/sh
-# File: bandwidth.sh
-# Description: The bandwidth shaper wrapper script for RahuNAS
+# File: rahunas-conntrack
+# Description: The conntrack tool wrapper script for RahuNAS
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 prefix=/usr/local
 exec_prefix=${prefix}
 
 CONNTRACK=/usr/sbin/conntrack
-DELAY=5
+DELAY=1
 
 MESSAGE=""
 MSG_NOT_COMPLETED="NOT COMPLETED"
@@ -17,16 +17,15 @@ usage() {
 }
 
 conncut() {
-  sleep ${DELAY}
-  $CONNTRACK -D -s $2 > /dev/null 2>&1
-  $CONNTRACK -D -d $2 > /dev/null 2>&1
+  CLIENT_IP=$1
+  su -c "sleep ${DELAY}; $CONNTRACK -D -s $CLIENT_IP > /dev/null 2>&1; $CONNTRACK -D -d $CLIENT_IP > /dev/null 2>&1" &
 }
 
 N=$prefix/sbin/rahunas-conntrack
 
 case "$1" in
   cut)
-    conncut &
+    conncut $2
     MESSAGE="$2 flushed"
 
     echo $MESSAGE

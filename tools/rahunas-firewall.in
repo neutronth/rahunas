@@ -293,6 +293,18 @@ navigation_rules () {
   else #stop
     for dev in $DEV_EXTERNAL_LIST; do
       sed -i "/$dev/d" $MAIN_EXT_IFACE_LIST
+
+      $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+
+      # RAW - Service class
+      $IPTABLES -t raw $action ${CHAIN_RH_RAW_PREROUTING} -i $dev \
+        -m set --set rahunas_serviceclass dst \
+        -j RAHURAWDNAT --bind-set rahunas_serviceclass >/dev/null 2>&1 || true
+
+      $IPTABLES -t rawpost $action ${CHAIN_RH_RAWPOST_POSTROUTING} -o $dev\
+        -m set --set rahunas_serviceclass src \
+        -j RAHURAWSNAT --bind-set rahunas_serviceclass >/dev/null 2>&1 || true
+
     done
   fi
 
@@ -533,10 +545,10 @@ cleanup_policy () {
   $IPTABLES -F ${NAME}_ext_fw
   $IPTABLES -X ${NAME}_ext_fw
 
-  $IPTABLES -t raw -F ${CHAIN_RH_RAW_PREROUTING} || true
-  $IPTABLES -t raw -X ${CHAIN_RH_RAW_PREROUTING} || true
-  $IPTABLES -t rawpost -F ${CHAIN_RH_RAWPOST_POSTROUTING} || true
-  $IPTABLES -t rawpost -X ${CHAIN_RH_RAWPOST_POSTROUTING} || true
+  $IPTABLES -t raw -F ${CHAIN_RH_RAW_PREROUTING} >/dev/null 2>&1 || true
+  $IPTABLES -t raw -X ${CHAIN_RH_RAW_PREROUTING} >/dev/null 2>&1 || true
+  $IPTABLES -t rawpost -F ${CHAIN_RH_RAWPOST_POSTROUTING} >/dev/null 2>&1 || true
+  $IPTABLES -t rawpost -X ${CHAIN_RH_RAWPOST_POSTROUTING} >/dev/null 2>&1 || true
 }
 
 rules () {
