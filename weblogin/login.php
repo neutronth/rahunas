@@ -187,6 +187,9 @@ if (!$forward) {
   $waiting_show    = "visible_hide(wt, 'show');";
   $force_forward   = $hide_wait == "" ? "self.location.replace('$LogoutURL');"
                                       : "";
+  $force_forward   = $hide_wait == "" ?
+                       "setTimeout(function () {" .
+                       "self.location.replace('$LogoutURL');}, 2000);" : "";
 }
 
 $message_show = !empty($message) ? "visible_hide(msg, 'show');"
