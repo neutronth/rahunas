@@ -6,8 +6,9 @@ INIT=${prefix}/etc/default/rahunas
 
 get_section_name () {
   file=$1
-  
-  grep "^.*\= {$" $file | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
+
+  test -n "$file" || return
+  test -e "$file" && grep "^.*\= {$" "$file" | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
 }
 
 get_config_value () {
@@ -15,7 +16,8 @@ get_config_value () {
   key=$2
   file=$3
 
-  cat $file | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+  test -n "$file" || return
+  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
 }
 
 # Main

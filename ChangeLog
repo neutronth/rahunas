@@ -1,3 +1,116 @@
+commit 3ef6acac3c81b8620336f896c496ee747df8e410
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Aug 30 08:41:23 2012 +0700
+
+    === Release 0.2.4 ===
+
+ ChangeLog |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 113 insertions(+)
+
+commit cb8ac67c5513da9250e44b95b33fa04af89b4259
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Aug 30 08:38:08 2012 +0700
+
+    Update weblogin translation template files
+
+ weblogin-po/rahunas-weblogin.pot |    4 ++--
+ weblogin-po/th.po                |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+commit 0766389d3eff2fc5f35c6e310933f3929251709e
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Aug 30 08:35:46 2012 +0700
+
+    Bump version to 0.2.4
+
+ configure.ac |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 4efd289cce73c410269c937f902d5c789f2524b0
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Thu Aug 30 08:30:20 2012 +0700
+
+    Fix the helper scripts get stuck
+    
+    * tools/rahunas-{bandwidth,firewall,weblogin-config-update}.in:
+      - The helper scripts get stuck in the case that serviceclass enabled
+        but no any config files in /etc/rahunas/serviceclass.d.
+        The 'cat' and 'grep' without any files parameter cause this bug.
+
+ tools/rahunas-bandwidth.in              |    3 ++-
+ tools/rahunas-firewall.in               |    8 +++++---
+ tools/rahunas-weblogin-config-update.in |    8 +++++---
+ 3 files changed, 12 insertions(+), 7 deletions(-)
+
+commit af2f8d51ab65a077e198426df5ed57c0f289751a
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Aug 29 11:35:44 2012 +0700
+
+    === Release 0.2.3 ===
+    
+    - Update weblogin translation files
+
+ configure.ac                     |    2 +-
+ weblogin-po/rahunas-weblogin.pot |    6 +++---
+ weblogin-po/th.po                |    4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+commit da2ab5eb44551d8296d4d6fbd124ac82a4a931a2
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 27 11:04:38 2012 +0700
+
+    Fix conntrack cut bugs and ignore firewall warnings
+    
+    * tools/rahunas-conntrack.in:
+      - Parsing the client's ip to function.
+      - Fix the calling of conntrack tool by wrapping with su command that
+        it forks properly now.
+      - Reduce the DELAY time to 1.
+    * tools/rahunas-firewall.in:
+      - Ignore warning of non-existent service class rules in table raw
+        and rawnat.
+    * weblogin/login.php:
+      - Add the success login redirection time delay to 2 seconds as it
+        is needed for the conntrack tool to finish their work.
+
+ tools/rahunas-conntrack.in |   13 ++++++-------
+ tools/rahunas-firewall.in  |   20 ++++++++++++++++----
+ weblogin/login.php         |    3 +++
+ 3 files changed, 25 insertions(+), 11 deletions(-)
+
+commit e24ddbda49a0335117c87beebbc36bc4f757a3b7
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 20 09:05:12 2012 +0700
+
+    === Release 0.2.2 ===
+    
+    - Update weblogin translation files
+
+ configure.ac                     |    2 +-
+ weblogin-po/rahunas-weblogin.pot |    4 ++--
+ weblogin-po/th.po                |    2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+commit b310445346b03647d38b0171ef26b2a749f9b0c9
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 20 09:03:00 2012 +0700
+
+    Update weblogin pot/po file
+
+ weblogin-po/rahunas-weblogin.pot |   42 +++++++++++++++++++-------------------
+ weblogin-po/th.po                |   40 ++++++++++++++++++------------------
+ 2 files changed, 41 insertions(+), 41 deletions(-)
+
+commit c7066c6d6d670d8d41625271a07722b5b4a933ed
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon Aug 20 08:54:52 2012 +0700
+
+    === Release 0.2.1 ===
+
+ ChangeLog | 1698 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ NEWS      |   17 +
+ 2 files changed, 1590 insertions(+), 125 deletions(-)
+
 commit 8595adc849f1adc8d99e7731e82b6b456f72539f
 Author: Neutron Soutmun <neo.neutron@gmail.com>
 Date:   Mon Aug 20 08:30:04 2012 +0700
