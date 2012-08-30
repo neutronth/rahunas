@@ -1,3 +1,9 @@
+rahunas (0.2.4-1squeeze2) stable; urgency=low
+
+  * Add farpd to rahunas dependency
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Thu, 30 Aug 2012 09:24:18 +0700
+
 rahunas (0.2.4-1squeeze1) stable; urgency=low
 
   * Imported Upstream version 0.2.4
