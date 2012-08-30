@@ -19,6 +19,7 @@ Architecture: any
 Depends:
  bridge-utils,
  conntrack,
+ farpd,
  iproute,
  iptables,
  sqlite3 (>= 3.7.3),
