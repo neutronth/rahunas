@@ -569,9 +569,14 @@ rules () {
   ##
   # Allow incoming to our DNS server
   ##
-  if [ "$DNS" = "yes" ]; then
+  if [ "$DNS" = "yes" -o "$DNS" = "intercept" ]; then
     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
+
+    if [ "$DNS" = "intercept" ]; then
+      $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p udp --dport domain \
+        ! -d $VSERVER_IP -j REDIRECT --to-port 53
+    fi
   elif [ "$DNS" = "no" ]; then
     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j DROP
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
@@ -805,7 +810,7 @@ serviceclass_fakearpd () {
       fi
     done
   elif [ "$opt" = "stop" ] && [ -f $FARPD_STATE ]; then
-    killall -9 $FARPD &> /dev/null 2>&1
+    killall -9 $FARPD > /dev/null 2>&1 &
     rm -f $FARPD_STATE
   fi
 }
