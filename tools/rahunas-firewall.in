@@ -574,7 +574,7 @@ rules () {
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
 
     if [ "$DNS" = "intercept" ]; then
-      $IPTABLES -t nat -i $DEV_INTERNAL \
+      $IPTABLES -t nat $DEV_IN_PARAM $DEV_INTERNAL \
         -A $CHAIN_NAT_PREROUTING -p udp --dport domain \
         ! -d $VSERVER_IP -j REDIRECT --to-port 53
     fi
