@@ -1,4 +1,63 @@
-commit 3ef6acac3c81b8620336f896c496ee747df8e410
+commit 3a09af90bc88b766751146a0e1cad9dcede4d3a6
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Mon May 13 14:37:09 2013 +0700
+
+    === Release 0.2.5 ===
+    
+    [build]
+    - Bump version to 0.2.5
+    - Update Changelog
+    
+    [weblogin]
+    - Update po files
+    
+    Signed-off-by: Neutron Soutmun <neo.neutron@gmail.com>
+
+ ChangeLog                        |   61 +++++++++++++++++++++++++++++++++++++-
+ configure.ac                     |    2 +-
+ weblogin-po/rahunas-weblogin.pot |   10 +++----
+ weblogin-po/th.po                |    8 ++---
+ 4 files changed, 70 insertions(+), 11 deletions(-)
+
+commit 697f4badf0f7fd04912d8caf03c998d79b8ed538
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Apr 10 21:31:49 2013 +0700
+
+    Fix DNS interception in "bridge" mode
+    
+    Signed-off-by: Neutron Soutmun <neo.neutron@gmail.com>
+
+ tools/rahunas-firewall.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 2543f7f63dd6fe873627569f99e81d373f6eff19
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Fri Mar 8 12:49:41 2013 +0700
+
+    Should only intercept the DNS request from clients
+
+ tools/rahunas-firewall.in |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit f040642bb866ce0dd1f8cfb27689e0e92d723879
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Wed Nov 7 15:45:47 2012 +0700
+
+    Add DNS intercept option and fix bashisms
+
+ tools/rahunas-firewall.in |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+commit d0a0028c4190d06cb20462f1c6f6a4a8056fffb4
+Author: Neutron Soutmun <neo.neutron@gmail.com>
+Date:   Sun Sep 2 09:44:40 2012 +0700
+
+    [weblogin] Fix typo, escape username and password
+
+ weblogin/user.class.php |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+commit aa64c0d2980ea0c460f90cbbc17a03a48eebfcaf
 Author: Neutron Soutmun <neo.neutron@gmail.com>
 Date:   Thu Aug 30 08:41:23 2012 +0700
 

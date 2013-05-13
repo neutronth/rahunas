@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: rahunas 0.2.4\n"
+"Project-Id-Version: rahunas 0.2.5\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2012-08-30 08:37+0700\n"
+"POT-Creation-Date: 2013-05-13 14:45+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -182,14 +182,14 @@ msgstr ""
 msgid "Success! User has been logout"
 msgstr ""
 
-#: weblogin/user.class.php:80
+#: weblogin/user.class.php:81
 msgid "Error: Could not get data from database"
 msgstr ""
 
-#: weblogin/user.class.php:85 weblogin/user.class.php:105
+#: weblogin/user.class.php:86 weblogin/user.class.php:106
 msgid "Invalid username or password"
 msgstr ""
 
-#: weblogin/user.class.php:123
+#: weblogin/user.class.php:127
 msgid "Error: Could not change password"
 msgstr ""
