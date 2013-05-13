@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2012-08-30 08:37+0700\n"
+"POT-Creation-Date: 2013-05-13 14:45+0700\n"
 "PO-Revision-Date: 2011-10-04 17:24+0700\n"
 "Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
@@ -182,14 +182,14 @@ msgstr "สำเร็จ! ผู้ใช้นี้ผ่านการต�
 msgid "Success! User has been logout"
 msgstr "สำเร็จ! ผู้ใช้นี้ ได้เลิกใช้งานแล้ว"
 
-#: weblogin/user.class.php:80
+#: weblogin/user.class.php:81
 msgid "Error: Could not get data from database"
 msgstr "ผิดพลาด: ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้"
 
-#: weblogin/user.class.php:85 weblogin/user.class.php:105
+#: weblogin/user.class.php:86 weblogin/user.class.php:106
 msgid "Invalid username or password"
 msgstr "ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้อง"
 
-#: weblogin/user.class.php:123
+#: weblogin/user.class.php:127
 msgid "Error: Could not change password"
 msgstr "ผิดพลาด: ไม่สามารถเปลี่ยนรหัสผ่านได้"

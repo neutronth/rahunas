@@ -73,7 +73,8 @@ class UserDB {
   }
 
   function check_password ($username, $password) {
-    $sql = "SELECT attribute, value FROM radcheck WHERE username = '$username' AND attribute LIKE '%Password'";
+    $escaped_username = pg_escape_string ($username);
+    $sql = "SELECT attribute, value FROM radcheck WHERE username = '$escaped_username' AND attribute LIKE '%Password'";
     $result = pg_query($this->db_conn, $sql); 
 
     if (!$result) {
@@ -98,8 +99,8 @@ class UserDB {
         $this->pass_type = "ClearText";
         $checkpass = $password;
     }
-    if ($row[1] == $checkpass) {
-      $thsi->pass_attribute = $row[0];
+    if ($row[1] === $checkpass) {
+      $this->pass_attribute = $row[0];
       return TRUE;
     } else {
       $this->message = _("Invalid username or password");
@@ -116,7 +117,10 @@ class UserDB {
       default:
         $newpass = $password;
     }
-    $sql = "UPDATE radcheck SET value='$newpass' WHERE username='$username' AND attribute = '" . $this->pass_attribute . "'";
+
+    $escaped_username = pg_escape_string ($username);
+    $escaped_password = pg_escape_string ($newpass);
+    $sql = "UPDATE radcheck SET value='$escaped_password' WHERE username='$escaped_username' AND attribute = '" . $this->pass_attribute . "'";
     $result = pg_query($this->db_conn, $sql); 
 
     if (!$result) {

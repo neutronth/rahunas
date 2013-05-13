@@ -2,8 +2,8 @@
 # File: rahunas-conntrack
 # Description: The conntrack tool wrapper script for RahuNAS
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-prefix=/usr/local
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/sbin:/usr/bin
+prefix=/usr
 exec_prefix=${prefix}
 
 CONNTRACK=/usr/sbin/conntrack
