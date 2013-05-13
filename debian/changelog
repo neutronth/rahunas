@@ -1,3 +1,10 @@
+rahunas (0.2.5-1squeeze1) stable; urgency=low
+
+  * Imported Upstream version 0.2.5
+  * Bump standard-versions to 3.9.4, no changes needed
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 13 May 2013 15:09:29 +0700
+
 rahunas (0.2.4-1squeeze2) stable; urgency=low
 
   * Add farpd to rahunas dependency
