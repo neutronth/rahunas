@@ -12,8 +12,8 @@
 # Author: Neutron Soutmun <neutron@rahunas.org>
 # Date:   2011-09-29
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-prefix=/usr/local
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/sbin:/usr/bin
+prefix=/usr
 exec_prefix=${prefix}
 
 LOGDIR=${prefix}/var/log/freeradius
