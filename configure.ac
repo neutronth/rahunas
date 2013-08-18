@@ -3,7 +3,7 @@
 
 m4_define(rh_major, 0)
 m4_define(rh_minor, 2)
-m4_define(rh_micro, 5)
+m4_define(rh_micro, 6)
 
 AC_PREREQ(2.61)
 AC_INIT([RahuNAS], rh_major.rh_minor.rh_micro,[neo.neutron@gmail.com] )
@@ -13,7 +13,7 @@ AC_CONFIG_SRCDIR([src/rahunasd.h])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_SUBST(RAHUNAS_VERSION, major.minor.micro)
+AC_SUBST(RAHUNAS_VERSION, rh_major.rh_minor.rh_micro)
 AC_SUBST(PROGRAM, "RahuNAS")
 
 # gettext
