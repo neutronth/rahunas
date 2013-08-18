@@ -19,7 +19,7 @@
 #include "rh-task-memset.h"
 #include "rh-utils.h"
 
-static unsigned short slot_flags[MAX_SLOT_PAGE] = {1};
+static unsigned short slot_flags[MAX_SLOT_PAGE];
 static unsigned short slot_count = 0;
 
 unsigned short _get_slot_id()
@@ -34,13 +34,15 @@ unsigned short _get_slot_id()
     return 0;
 
   // Do a random slot_id 
+  time(&(random_time));
+  srandom(random_time);
+  srandom(random());
+
   while (slot_id == 0) {
-    time(&(random_time));
-    srandom(random_time);
     slot_id = random()/(int)(((unsigned int)RAND_MAX + 1) / (MAX_SLOT_ID + 1));
    
     // Check validity
-    page = slot_id / PAGE_SIZE; 
+    page = slot_id / PAGE_SIZE;
     id_on_page = slot_id % PAGE_SIZE;
    
     if (!(slot_flags[page] & (1 << id_on_page))) {
@@ -48,7 +50,22 @@ unsigned short _get_slot_id()
       break;
     }
 
+    // Second try, probe other slot in current page
+    int avail = 0;
+    int id    = 0;
+    for (id = 0; id < PAGE_SIZE; id++) {
+      if (!(slot_flags[page] & (1 << id))) {
+        slot_id = (page * PAGE_SIZE) + id;
+        avail = 1;
+        break;
+      }
+    }
+
+    if (avail)
+      break;
+
     // Slot not available, retry
+    srandom(slot_id);
     slot_id = 0;
   }
 
@@ -66,6 +83,23 @@ void mark_reserved_slot_id(unsigned int slot_id)
   slot_count++;
   slot_flags[page] |= 1 << id_on_page;
 }
+
+void unmark_reserved_slot_id(unsigned int slot_id)
+{
+  unsigned short page       = 0;
+  unsigned char  id_on_page = 0;
+  unsigned short id_flag    = 0;
+
+  page = slot_id / PAGE_SIZE;
+  id_on_page = slot_id % PAGE_SIZE;
+  id_flag = 1 << id_on_page;
+
+  if (slot_count > 0)
+    slot_count--;
+
+  slot_flags[page] &= ~(id_flag);
+}
+
 
 int bandwidth_exec(RHVServer *vs, char *const args[])
 {
@@ -228,6 +262,10 @@ static void init (RHVServer *vs)
   if (!vs)
     return;
 
+  if (vs->vserver_config->init_flag <= VS_INIT) {
+    memset (slot_flags, 0, sizeof (unsigned short) * MAX_SLOT_PAGE);
+  }
+
   if (vs->vserver_config->init_flag == VS_RELOAD)
     goto initial;
 
@@ -340,11 +378,9 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
   snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
 
   if (bandwidth_del(vs, &bw_req) == 0) {
+    unmark_reserved_slot_id (member->bandwidth_slot_id);
     member->bandwidth_slot_id = 0;
 
-    if (slot_count > 0)
-      slot_count--;
-  
     return 0; 
   } else {
     return -1;
