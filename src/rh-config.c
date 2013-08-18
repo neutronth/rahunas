@@ -10,12 +10,13 @@
 #include <syslog.h>
 #include <dirent.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "rahunasd.h"
 #include "rh-config.h"
 
 GList *interfaces_list = NULL;
-static unsigned long ifb_reserved = 0;
+static uint64_t ifb_reserved = 0;
 
 enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size, 
                                  void *user_data) {
@@ -491,7 +492,7 @@ GList *append_interface (GList *inf,
     {
       iface = (struct interfaces *)runner->data;
       if (iface->dev_internal &&
-          strncmp(iface->dev_internal, inf_name, strlen(inf_name)) == 0)
+          strcmp(iface->dev_internal, inf_name) == 0)
         {
           // Already in the list
           (iface->hit)++;
@@ -568,7 +569,7 @@ struct interfaces *get_interface (GList *inf,
   while (runner != NULL)
     {
       iface = (struct interfaces *) runner->data;
-      if (strncmp (iface->dev_internal, inf_name, strlen (inf_name)) == 0)
+      if (strcmp (iface->dev_internal, inf_name) == 0)
         return iface;
 
       runner = g_list_next (runner);
@@ -580,11 +581,11 @@ struct interfaces *get_interface (GList *inf,
 int ifb_interface_reserve (void)
 {
   int i;
-  unsigned long mask = 1;
+  uint64_t mask = 1;
 
   for (i=0; i < MAX_IFB_IFACE; i++)
     {
-      mask = 1 << i;
+      mask = 1llu << i;
       if (!(ifb_reserved & mask))
         {
           ifb_reserved |= mask;
@@ -597,9 +598,10 @@ int ifb_interface_reserve (void)
 
 void ifb_interface_release (int ifno)
 {
-  unsigned long mask = 1;
+  uint64_t mask = 1;
+  uint64_t shift = (uint64_t) ifno;
 
-  mask <<= ifno;
+  mask <<= shift;
   mask = ~mask;
   ifb_reserved &= mask;
 }
