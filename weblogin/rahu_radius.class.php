@@ -127,8 +127,10 @@ class rahu_radius_auth {
         foreach ($data as $attr_id => $val) {
           $get_helper = "radius_cvt_" . 
                         $vendors[$ven_id][$attr_id]["AttributeType"];
-          $this->attributes[$vendors[$ven_id][$attr_id]["AttributeName"]] =
-            $get_helper($val);
+          if (function_exists ($get_helper)) {
+            $this->attributes[$vendors[$ven_id][$attr_id]["AttributeName"]] =
+              $get_helper($val);
+          }
         }
       }
       
