@@ -19,14 +19,14 @@
 #include "rh-task-memset.h"
 #include "rh-utils.h"
 
-static unsigned short slot_flags[MAX_SLOT_PAGE];
-static unsigned short slot_count = 0;
+static uint64_t slot_flags[MAX_SLOT_PAGE];
+static uint64_t slot_count = 0;
 
-unsigned short _get_slot_id()
+uint16_t _get_slot_id()
 {
-  unsigned short slot_id    = 0;
-  unsigned short page       = 0;
-  unsigned char  id_on_page = 0;
+  uint16_t slot_id    = 0;
+  uint16_t page       = 0;
+  uint8_t  id_on_page = 0;
   time_t random_time;
 
   // Slot is full 
@@ -51,31 +51,27 @@ unsigned short _get_slot_id()
     }
 
     // Second try, probe other slot in current page
-    int avail = 0;
-    int id    = 0;
+    uint16_t id    = 0;
     for (id = 0; id < PAGE_SIZE; id++) {
       if (!(slot_flags[page] & (1 << id))) {
         slot_id = (page * PAGE_SIZE) + id;
-        avail = 1;
-        break;
+        goto done;
       }
     }
-
-    if (avail)
-      break;
 
     // Slot not available, retry
     srandom(slot_id);
     slot_id = 0;
   }
 
+done:
   return slot_id;
 }
 
-void mark_reserved_slot_id(unsigned int slot_id)
+void mark_reserved_slot_id(uint16_t slot_id)
 {
-  unsigned short page       = 0;
-  unsigned char  id_on_page = 0;
+  uint16_t page       = 0;
+  uint8_t  id_on_page = 0;
 
   page = slot_id / PAGE_SIZE; 
   id_on_page = slot_id % PAGE_SIZE;
@@ -84,11 +80,11 @@ void mark_reserved_slot_id(unsigned int slot_id)
   slot_flags[page] |= 1 << id_on_page;
 }
 
-void unmark_reserved_slot_id(unsigned int slot_id)
+void unmark_reserved_slot_id(uint16_t slot_id)
 {
-  unsigned short page       = 0;
-  unsigned char  id_on_page = 0;
-  unsigned short id_flag    = 0;
+  uint16_t page       = 0;
+  uint8_t  id_on_page = 0;
+  uint16_t id_flag    = 0;
 
   page = slot_id / PAGE_SIZE;
   id_on_page = slot_id % PAGE_SIZE;
