@@ -1,28 +1,75 @@
 #!/bin/sh
-# File: bandwidth.sh
+# File: rahunas-bandwidth
 # Description: The bandwidth shaper wrapper script for RahuNAS
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
 prefix=@prefix@
-exec_prefix=@exec_prefix@
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:${prefix}/sbin:${prefix}/bin
+exec_prefix=${prefix}
 
 TC=/sbin/tc
 IP=/sbin/ip
+BC=/usr/bin/bc
 IFCONFIG=/sbin/ifconfig
 
-INIT=@sysconfdir@/default/rahunas
-RUN=@localstatedir@/run/rahunas-bandwidth
-
-# Interface Speed (Kbit), Default: 100 Mbps
-INTERFACE_SPEED=102400
-
-INTERFACE_ID=9999
-BITTORRENT_ID=9998
-
-MESSAGE=""
+INIT=/etc/default/rahunas
+RUN=/var/run/rahunas-bandwidth
 
 test -f $INIT || exit 0
 . $INIT
+
+# Interface Speed (kbit)
+INTERFACE_SPEED=${INTERFACE_SPEED:-51200}
+QDISC=htb
+
+MAX_DOWN_SPEED=${INTERFACE_SPEED}
+MAX_UP_SPEED=${INTERFACE_SPEED}
+
+R2Q_DOWN=${R2Q_DOWN:-10}
+R2Q_UP=${R2Q_UP:-10}
+HZ=${HZ:-1000}
+MAX_BURST_PCT=${MAX_BURST_PCT:-70}
+
+get_iface_burst () {
+  speed=$1
+  echo "${speed}/8/${HZ}" | $BC
+}
+
+get_max_burst_kb () {
+  direction=$1
+  if [ "x$direction" = "xdown" ]; then
+    echo "${MAX_DOWN_SPEED}/8/${HZ}*${MAX_BURST_PCT}/100" | $BC
+  else
+    echo "${MAX_UP_SPEED}/8/${HZ}*${MAX_BURST_PCT}/100" | $BC
+  fi
+}
+
+get_max_burst () {
+  direction=$1
+  max_burst_kb=`get_max_burst_kb $direction`
+  echo "$max_burst_kb * 1024" | $BC
+}
+
+get_burst () {
+  speed=$1
+  direction=$2
+  max_burst=`get_max_burst $direction`
+
+  b=`echo "${speed}/8/${HZ}" | $BC`
+
+  if [ $b -lt 2048 ]; then
+    echo 2048
+  elif [ $b -gt $max_burst ]; then
+    echo $max_burst
+  else
+    echo $b
+  fi
+}
+
+INTERFACE_ID="0xffff"
+DEFAULT_ID="0xfffe"
+
+MESSAGE=""
+
 
 test "$RUN_DAEMON" = "yes" || exit 0
 test -f $RAHUNAS_CONFIG || exit 1
@@ -42,38 +89,73 @@ get_config_value () {
 }
 
 BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
-BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
-BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG` 
 
-test "$BANDWIDTH_SHAPE" = "yes" || exit 0 
+test "$BANDWIDTH_SHAPE" = "yes" || exit 0
 
 interface_setting () {
+  if [ "x$QDISC" = "xhfsc" ]; then
+    qdisc_down_opt="hfsc default ${DEFAULT_ID}"
+    qdisc_up_opt="hfsc default ${DEFAULT_ID}"
+    class_down_opt="hfsc sc rate ${MAX_DOWN_SPEED}kbit ul rate ${INTERFACE_SPEED}kbit"
+    class_up_opt="hfsc sc rate ${MAX_UP_SPEED}kbit ul rate ${INTERFACE_SPEED}kbit"
+    class_down_iface_opt=$class_down_opt
+    class_down_default_opt=$class_down_opt
+    class_up_iface_opt=$class_up_opt
+    class_up_default_opt=$class_up_opt
+  else
+    qdisc_down_opt="htb default ${DEFAULT_ID} r2q ${R2Q_DOWN}"
+    qdisc_up_opt="htb default ${DEFAULT_ID} r2q ${R2Q_UP}"
+    class_down_opt="htb rate ${MAX_DOWN_SPEED}kbit ceil ${INTERFACE_SPEED}kbit"
+    class_up_opt="htb rate ${MAX_UP_SPEED}kbit ceil ${INTERFACE_SPEED}kbit"
+    class_down_iface_opt="$class_down_opt burst `get_iface_burst ${MAX_DOWN_SPEED}`Kb"
+    class_down_default_opt="$class_down_opt burst `get_max_burst_kb down`Kb"
+    class_up_iface_opt="$class_up_opt burst `get_iface_burst ${MAX_UP_SPEED}`Kb"
+    class_up_default_opt="$class_up_opt burst `get_max_burst_kb up`Kb"
+  fi
+
   case "$1" in
     start)
       # Interface Downlink
-      $TC qdisc add dev $SHAPING_DOWN_INF root handle 1: htb \
-        default ${INTERFACE_ID} 
-      $TC class add dev $SHAPING_DOWN_INF parent 1: classid 1:${INTERFACE_ID} \
-        htb rate ${INTERFACE_SPEED}Kbit
+      $TC qdisc add dev $SHAPING_DOWN_INF root handle 1: $qdisc_down_opt
+
+      $TC class add dev $SHAPING_DOWN_INF parent 1: \
+        classid 1:${INTERFACE_ID} $class_down_iface_opt
+      $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
+        classid 1:${DEFAULT_ID} $class_down_default_opt
 
       # Interface Uplink
       $IFCONFIG $SHAPING_UP_INF up
-      $TC qdisc add dev $SHAPING_UP_INF root handle 2: htb \
-        default ${INTERFACE_ID} 
-      $TC class add dev $SHAPING_UP_INF parent 2: classid 2:${INTERFACE_ID} \
-        htb rate ${INTERFACE_SPEED}Kbit
+      $TC qdisc add dev $SHAPING_UP_INF root handle 1: $qdisc_up_opt
+
+      $TC class add dev $SHAPING_UP_INF parent 1: \
+        classid 1:${INTERFACE_ID} $class_up_iface_opt
+      $TC class add dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
+        classid 1:${DEFAULT_ID} $class_up_default_opt
 
       # Redirect incoming traffic to IFB
       $TC qdisc add dev $SHAPING_DOWN_INF ingress
-      $TC filter add dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 2 u32 \
+      $TC filter add dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 50 u32 \
         match u32 0 0 flowid 1:${INTERFACE_ID} \
         action mirred egress redirect dev $SHAPING_UP_INF
+
+      # Hash filter
+      # Interface Downlink
+      $TC filter add dev $SHAPING_DOWN_INF parent 1: prio 5 protocol ip u32
+      $TC filter add dev $SHAPING_DOWN_INF parent 1: prio 5 handle 2: \
+        protocol ip u32 divisor 256
+      $TC filter add dev $SHAPING_DOWN_INF parent 1: prio 5 protocol ip u32 \
+        ht 800:: match ip dst 0.0.0.0/0 hashkey mask 0xff000000 at 16 link 2:
+
+      # Interface Uplink
+      $TC filter add dev $SHAPING_UP_INF parent 1: prio 50 protocol ip u32
+      $TC filter add dev $SHAPING_UP_INF parent 1: prio 50 handle 2: \
+        protocol ip u32 divisor 256
+      $TC filter add dev $SHAPING_UP_INF parent 1: prio 50 protocol ip u32 \
+        ht 800:: match ip src 0.0.0.0/0 hashkey mask 0xff000000 at 12 link 2:
       ;;
   stop)
       # Redirect incoming traffic to IFB
-      $TC filter del dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 2 u32 \
-        match u32 0 0 flowid 1:${INTERFACE_ID} \
-        action mirred egress redirect dev $SHAPING_UP_INF
+      $TC filter del dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 50
       $TC qdisc del dev $SHAPING_DOWN_INF ingress
 
       # Interface Downlink
@@ -87,34 +169,9 @@ interface_setting () {
   esac
 }
 
-bittorrent_setting () {
-  case "$1" in
-    start)
-      # BITTORRENT Download throttling
-      $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
-        classid 1:${BITTORRENT_ID} htb rate ${BITTORRENT_DOWNLOAD_MAX}Kbit
-      $TC qdisc add dev $SHAPING_DOWN_INF parent 1:${BITTORRENT_ID} \
-        handle ${BITTORRENT_ID}: sfq perturb 10
-      $TC filter add dev $SHAPING_DOWN_INF parent 1: protocol ip prio 1 \
-        handle 0x3 fw classid 1:${BITTORRENT_ID}
-
-      # BITTORRENT Upload throttling
-      $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
-        classid 2:${BITTORRENT_ID} htb rate ${BITTORRENT_UPLOAD_MAX}Kbit
-      $TC qdisc add dev $SHAPING_UP_INF parent 2:${BITTORRENT_ID} \
-        handle ${BITTORRENT_ID}: sfq perturb 10
-      $TC filter add dev $SHAPING_UP_INF parent 2: protocol ip prio 1 \
-        handle 0x3 fw classid 2:${BITTORRENT_ID}
-      ;;
-    stop)
-      ;;
-  esac
-}
-
 start () {
   if [ ! -e $RUN ]; then
     interface_setting start
-    bittorrent_setting start
     MESSAGE="Start OK"
     touch $RUN
   fi
@@ -123,7 +180,6 @@ start () {
 stop () {
   if [ -e $RUN ]; then
     interface_setting stop
-    bittorrent_setting stop
     MESSAGE="Stop OK"
     rm -f $RUN
   fi
@@ -152,43 +208,164 @@ usage() {
   echo "       $1 del --help"
 }
 
+filter_add() {
+  ID=$1
+  IP=$2
+  TYPE=$3
+
+  if [ "x$TYPE" = "xdownlink" ]; then
+    iface=${SHAPING_DOWN_INF}
+    filter_opt="dst"
+    offset=16
+    prio=5
+  else
+    iface=${SHAPING_UP_INF}
+    filter_opt=src
+    offset=12
+    prio=50
+  fi
+
+  ip1=`echo $IP | cut -d. -f1`
+  ip2=`echo $IP | cut -d. -f2`
+  ip3=`echo $IP | cut -d. -f3`
+  ip4=`echo $IP | cut -d. -f4`
+
+  ht1=`echo "obase=16;$ip1" | $BC | awk '{print tolower($0)}'`
+  ht2=`echo "obase=16;$ip2" | $BC | awk '{print tolower($0)}'`
+  ht3=`echo "obase=16;$ip3" | $BC | awk '{print tolower($0)}'`
+  ht4=`echo "obase=16;$ip4" | $BC | awk '{print tolower($0)}'`
+
+  $TC filter show dev ${iface} | grep -w "fh a${ht1}:" >/dev/null 2>&1
+  if [ $? != 0 ]; then
+    $TC filter add dev ${iface} parent 1: prio $prio handle a${ht1}: \
+      protocol ip u32 divisor 256
+    $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
+      ht 2:${ht1}: match ip $filter_opt 0.0.0.0/0 \
+      hashkey mask 0xff0000 at $offset link a${ht1}:
+  fi
+
+  $TC filter show dev ${iface} | grep -w "fh b${ht2}:" >/dev/null 2>&1
+  if [ $? != 0 ]; then
+    $TC filter add dev ${iface} parent 1: prio $prio handle b${ht2}: \
+      protocol ip u32 divisor 256
+    $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
+      ht a${ht1}:${ht2}: match ip $filter_opt 0.0.0.0/0 \
+      hashkey mask 0xff00 at $offset link b${ht2}:
+  fi
+
+  $TC filter show dev ${iface} | grep -w "fh c${ht3}:" >/dev/null 2>&1
+  if [ $? != 0 ]; then
+    $TC filter add dev ${iface} parent 1: prio $prio handle c${ht3}: \
+      protocol ip u32 divisor 256
+    $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
+      ht b${ht2}:${ht3}: match ip $filter_opt 0.0.0.0/0 \
+      hashkey mask 0xff at $offset link c${ht3}:
+  fi
+
+  $TC filter show dev ${iface} | grep -w "fh c${ht3}:${ht4}:800" >/dev/null 2>&1
+  if [ $? != 0 ]; then
+    $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
+      ht c${ht3}:${ht4}: match ip $filter_opt ${IP}/32 flowid 1:${ID}
+  else
+    $TC filter del dev ${iface} parent 1: prio $prio protocol ip \
+      handle c${ht3}:${ht4}:800 u32
+    $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
+      ht c${ht3}:${ht4}: match ip $filter_opt ${IP}/32 flowid 1:${ID}
+  fi
+}
+
+filter_del() {
+  ID=$1
+  TYPE=$2
+
+  if [ "x$TYPE" = "xdownlink" ]; then
+    iface=$SHAPING_DOWN_INF
+    prio=5
+  else
+    iface=$SHAPING_UP_INF
+    prio=50
+  fi
+
+  handle=`$TC -p filter show dev ${iface} | grep -w "flowid 1:${ID}" | grep "fh " | awk -F"fh " '{print $2}' | awk '{print $1}'`
+  for h in $handle; do
+    $TC filter del dev $iface parent 1: prio $prio protocol ip handle $h u32
+  done
+}
+
 bw_add() {
   ID=$1
+
+  if [ -z "$ID" ]; then
+    MESSAGE=$MSG_NOT_COMPLETED
+    return
+  fi
+
   IP=$2
   DOWNSPEED=$3
   UPSPEED=$4
-  MESSAGE="Add shaping slot id: $ID for $IP with D/U=$DOWNSPEED/$UPSPEED bits/s"
+  MAX_DOWN=`echo "$MAX_DOWN_SPEED*1024" | $BC`
+  MAX_UP=`echo "$MAX_UP_SPEED*1024" | $BC`
+
+  if [ $DOWNSPEED -gt $MAX_DOWN ]; then
+    DOWNSPEED=$MAX_DOWN
+  fi
+
+  if [ $UPSPEED -gt $MAX_UP ]; then
+    UPSPEED=$MAX_UP
+  fi
+
+  DOWN_MBPS=`echo "scale=2; $DOWNSPEED/1048576" | $BC | awk '{printf "%.2f", $0}'`
+  UP_MBPS=`echo "scale=2; $UPSPEED/1048576" | $BC | awk '{printf "%.2f", $0}'`
+  MESSAGE="Add shaping slot id: $ID for $IP with D/U=${DOWN_MBPS}/${UP_MBPS} Mbits/s"
+
+  if [ "x$QDISC" = "xhfsc" ]; then
+    class_down_opt="hfsc sc rate ${DOWNSPEED}bit ul rate ${DOWNSPEED}"
+    class_up_opt="hfsc sc rate ${UPSPEED}bit ul rate ${UPSPEED}"
+  else
+    class_down_opt="htb rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit burst `get_burst ${DOWNSPEED} down`"
+    class_up_opt="htb rate ${UPSPEED}bit ceil ${UPSPEED}bit burst `get_burst ${UPSPEED} up`"
+  fi
 
   # Downlink
   $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
-    classid 1:${ID} htb rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit
-  $TC filter add dev $SHAPING_DOWN_INF parent 1: \
-    protocol ip prio 2 u32 match ip dst ${IP}/32 flowid 1:${ID}
+    classid 1:${ID} $class_down_opt
+  if [ $? != 0 ]; then
+    $TC class replace dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
+      classid 1:${ID} $class_down_opt
+  fi
+
+  filter_add $ID $IP downlink
 
   # Uplink
-  $TC class add dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} \
-    classid 2:${ID} htb rate ${UPSPEED}bit ceil ${UPSPEED}bit
-  $TC filter add dev $SHAPING_UP_INF parent 2: \
-    protocol ip prio 2 u32 match ip src ${IP}/32 flowid 2:${ID}
+  $TC class add dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
+    classid 1:${ID} $class_up_opt
+  if [ $? != 0 ]; then
+    $TC class replace dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
+      classid 1:${ID} $class_up_opt
+  fi
+
+  filter_add $ID $IP uplink
 }
 
 bw_del() {
   ID=$1
+
+  if [ -z "$ID" ]; then
+    MESSAGE=$MSG_NOT_COMPLETED
+    return
+  fi
+
   MESSAGE="Delete shaping slot id: $ID"
 
   # Filter Removal
   # Downlink/Uplink
-  DOWN_HANDLE=`$TC filter show dev $SHAPING_DOWN_INF | grep -w "flowid 1:${ID} " | awk '{print $10}'`
-  UP_HANDLE=`$TC filter show dev $SHAPING_UP_INF | grep -w "flowid 2:${ID} " | awk '{print $10}'`
-  $TC filter del dev $SHAPING_DOWN_INF parent 1: \
-    prio 2 handle ${DOWN_HANDLE} u32
-  $TC filter del dev $SHAPING_UP_INF parent 2: \
-    prio 2 handle ${UP_HANDLE} u32
+  filter_del $ID downlink
+  filter_del $ID uplink
 
   # Class Removal
   # Downlink/Uplink
   $TC class del dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} classid 1:${ID}
-  $TC class del dev $SHAPING_UP_INF parent 2:${INTERFACE_ID} classid 2:${ID}
+  $TC class del dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} classid 1:${ID}
 }
 
 chk_interface () {
@@ -210,17 +387,17 @@ chk_interface () {
   return 0
 }
 
-N=@sysconfdir@/rahunas/bandwidth.sh
+N=${prefix}/sbin/rahunas-bandwidth
 
 case "$1" in
   start)
     if [ -z "$2" ] || [ -z "$3" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="$MSG_NOT_COMPLETED"
     else
       chk_interface $2 $3
       if [ $? -eq 0 ]; then
         RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        start 
+        start
       else
         MESSAGE="$MSG_NOT_COMPLETED"
       fi
@@ -231,12 +408,12 @@ case "$1" in
     ;;
   stop)
     if [ -z "$2" ] || [ -z "$3" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="$MSG_NOT_COMPLETED"
     else
       chk_interface $2 $3
       if [ $? -eq 0 ]; then
         RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        stop 
+        stop
       else
         MESSAGE="$MSG_NOT_COMPLETED"
       fi
@@ -248,13 +425,13 @@ case "$1" in
     ;;
   restart)
     if [ -z "$2" ] || [ -z "$3" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="$MSG_NOT_COMPLETED"
     else
       chk_interface $2 $3
       if [ $? -eq 0 ]; then
         RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        stop 
-        start 
+        stop
+        start
       else
         MESSAGE="$MSG_NOT_COMPLETED"
       fi
@@ -277,12 +454,12 @@ case "$1" in
     fi
 
     if [ -z "$6" ] || [ -z "$7" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="$MSG_NOT_COMPLETED"
     else
       chk_interface $6 $7
       if [ $? -eq 0 ]; then
         RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        bw_add $2 $3 $4 $5 
+        bw_add $2 $3 $4 $5
       else
         MESSAGE="$MSG_NOT_COMPLETED"
       fi
@@ -301,12 +478,12 @@ case "$1" in
       exit 1
     fi
     if [ -z "$3" ] || [ -z "$4" ]; then
-      MESSAGE="$MSG_NOT_COMPLETED"  
+      MESSAGE="$MSG_NOT_COMPLETED"
     else
       chk_interface $3 $4
       if [ $? -eq 0 ]; then
         RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        bw_del $2 
+        bw_del $2
       else
         MESSAGE="$MSG_NOT_COMPLETED"
       fi
@@ -317,6 +494,6 @@ case "$1" in
     usage $N
     exit 3
     ;;
-esac 
+esac
 
 exit 0
