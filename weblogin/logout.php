@@ -190,7 +190,8 @@ $valid_text = !$valid ? "" : "" .
   "   <td>" . ($info['session_timeout'] == 0 ? secs_to_human(time() - $info['session_start']) : secs_to_human($info['session_timeout'] - time())) . "</td>" .
   " </tr>" .
   "" .
-  (strcmp ($info['serviceclass_description'], "(null)") == 0 ? "" :
+  (strcmp ($info['serviceclass_description'], "(null)") == 0 ||
+  empty ($info['serviceclass_description']) ? "" :
   "  <tr>" .
   "   <td align='right'><b>" . _("Class of service") . ":</b></td>" .
   "   <td>" . $info['serviceclass_description'] . "</td>" .
