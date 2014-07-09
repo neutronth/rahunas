@@ -12,3 +12,4 @@ config.sub
 ltmain.sh
 ABOUT-NLS
 config.rpath
+*.mo

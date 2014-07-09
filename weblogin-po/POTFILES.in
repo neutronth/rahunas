@@ -1,5 +1,4 @@
 # List of source files which contain translatable strings.
-weblogin/chpwd.php
 weblogin/index.php
 weblogin/login.php
 weblogin/logout.php
