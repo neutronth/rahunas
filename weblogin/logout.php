@@ -279,8 +279,6 @@ $tpl->setString ("<!-- Title -->", $config["NAS_LOGIN_TITLE"]);
 $tpl->setString ("<!-- Login -->", $loginbox);
 $tpl->setString ("<!-- JavaScript -->", $loginscript);
 $tpl->setString ("<!-- LanguageList -->", $i18n->getLangList("<li>", "</li>"));
-$tpl->setString ("<!-- ChangePassword -->", "<li><a href='/chpwd.php'>" .
-                    _("Change Password") . "</a></li>");
 $tpl->render ();
 
 ob_end_flush();
