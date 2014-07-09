@@ -2,126 +2,142 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>RahuNAS Authentication</title>
 
-<!-- HTML5 shim, for IE6-9 support od HTML elements -->
-<!--[if lt IE 10]>
-<script src="js/html5.js"></script>
-<![endif] -->
-
 <link href="css/bootstrap.min.css" rel="stylesheet">
-<link href="css/rh-s3Slider.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
 <link href="css/rahunas.css" rel="stylesheet">
 
-<script src="js/jquery.min.js"></script>
-<script src="js/bootstrap-dropdown.js"></script>
-<script src="js/s3Slider.js"></script>
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="js/html5shiv.js"></script>
+  <script src="js/respond.min.js"></script>
+<![endif]-->
+
+<style>
+@font-face {
+  font-family: 'Glyphicons Halflings';
+
+  src: url('css/fonts/glyphicons-halflings-regular.eot');
+  src: url('css/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('css/fonts/glyphicons-halflings-regular.woff') format('woff'), url('css/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('css/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+</style>
 
 </head>
 <body>
-<div class="topbar" data-dropdown="dropdown" style="z-index: 99;">
-  <div class="topbar-inner">
-    <div class="container">
-      <h3><a href="login.php"><!-- Title --></a></h3>
-      <ul class="nav">
+<div class="navbar navbar-inverse navbar-fixed-top" role="navivation" data-dropdown="dropdown" style="z-index: 99;">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#rhbootstrap-navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <b><a class="navbar-brand" href="login.php"><!-- Title --></a></b>
+    </div>
+
+    <div class="collapse navbar-collapse" id="rhbootstrap-navbar-collapse">
+      <ul class="nav navbar-nav">
         <li class="dropdown">
-          <a href="#" class="dropdown-toggle">Language</a>
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Language <span class="glyphicon glyphicon-collapse-down" style="font-size: 9pt"></span></a>
           <ul class="dropdown-menu">
             <!-- LanguageList -->
           </ul>
         </li>
-        <!-- ChangePassword --> 
       </ul>
     </div>
   </div>
 </div>
 
-<div class="rh-container-top" id="rh-stripe" style="height: 50px;"></div>
+<div class="rh-container-top" id="rh-stripe" style="height: 57px;"></div>
 
-<div class="container" id="middle-contents" style="height: 370px;">
-  <div class="row" style="height: 100%">
-    <div class="span7" style="display: table">
-      <div id='rahunas_login_container' style="vertical-align: middle">
+<div class="container-fluid" style="z-index:-1;">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-5" style="margin-top: 50px;">
+      <center>
+      <div class="well" style="width: 95%;">
         <!-- Login -->
-      </div>
+      <div>
+      </center>
     </div>
-    <div class="rh-container-right span9" style="height: 100%;">
-
-      <div id="slider">
-        <ul id="sliderContent">
-          <li class="sliderImage">
-            <a href="#"><img src="images/slide-01.jpg" /></a>
-            <span class="top">
-              <strong>RahuNAS</strong><br>
-              <ul>
-                <li>Fast and Reliable</li>
-                <li>Scale well with every size of networks</li>
-              </ul>
-            </span>
-          </li>
-          <li class="sliderImage">
-            <a href="#"><img src="images/slide-02.jpg" /></a>
-            <span class="top">
-              <strong>RahuNAS</strong><br>
-              <ul>
-                <li>Flexible management with VLAN capable</li>
-                <li>Feature rich users management</li>
-              </ul>
-            </span>
-          </li>
-          <li class="sliderImage">
-            <a href="#"><img src="images/slide-03.jpg" /></a>
-            <span class="right">
-              <strong>RahuNAS</strong>
-              <ul>
-                <li>Open source and Continuous development</li>
-              </ul>
-            </span>
-          </li>
-          <div class="clear sliderImage"></div>
-        </ul>
-      </div>
+    <div class="col-md-7 hidden-xs">
 
     </div>
   </div>
 </div>
-<div class="rh-container-bottom" id="rh-stripe" style="height: 10px;"></div>
 
-<div class="rh-container-footer" id="rh-footer" style="height: 30px;">
-<div class="container">
-<!-- Footer -->
+<div id="carousel-rahunas" class="carousel slide hidden-xs hidden-sm" data-ride="carousel" data-interval="10000" style="position: fixed; top: 55px; bottom: 55px; left: 42%; max-width: 58%; height: auto; z-index: -1;" >
+  <!-- Indicators -->
+  <ol class="carousel-indicators" style="bottom: 70px;">
+    <li data-target="#carousel-rahunas" data-slide-to="0" class="active"></li>
+    <li data-target="#carousel-rahunas" data-slide-to="1"></li>
+    <li data-target="#carousel-rahunas" data-slide-to="2"></li>
+  </ol>
+
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+    <div class="item active">
+      <img src="images/slide-01.jpg">
+    </div>
+    <div class="item">
+      <img src="images/slide-02.jpg">
+    </div>
+    <div class="item">
+      <img src="images/slide-03.jpg">
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <a class="left carousel-control" href="#carousel-rahunas" data-slide="prev">
+    <span class="glyphicon glyphicon-chevron-left"></span>
+  </a>
+  <a class="right carousel-control" href="#carousel-rahunas" data-slide="next">
+    <span class="glyphicon glyphicon-chevron-right"></span>
+  </a>
 </div>
-<div class="container">
-Powered By <a href="http://www.rahunas.org"><span class="label success">RahuNAS</span></a>
+
+<div class="rh-container-footer">
+<div class="rh-container-bottom" id="rh-stripe" style="height: 6px;"></div>
+<div class="container-fluid" id="rh-footer">
+  <div class="hidden-xs" style="margin-top: 10px;" id="rh_footer_thai">
+ระบบฯนี้จัดทำขึ้นเพื่อเป็นการปฎิบัติตาม พ.ร.บ. ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์. พ.ศ. ๒๕๕๐ </br>
+และประกาศกระทรวงเทคโนโลยีสารสนเทศและการสื่อสาร เรื่อง หลักเกณฑ์การเก็บรักษาข้อมูลจราจรทางคอมพิวเตอร์ของผู้ให้บริการ พ.ศ.๒๕๕๐ </br>
+ระบบจะบันทึกข้อมูลการใช้งานของท่านเพื่อประโยชน์ตามพระราชบัญญัติฯ
+  </div>
+  <div class="hidden-xs" style="margin-top: 10px;" id="rh_footer_eng">
+The Computer Crime Act B.E. 2550 enforces the existence of this system.</br>
+Your usage information will be recorded on the system in compliance with laws.
+  </div>
+
+  <div style="text-align: right;">
+    Powered By <a href="http://www.rahunas.org"><span class="label label-success">RahuNAS</span></a>
+  </div>
 </div>
 </div>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
 
 <!-- JavaScript -->
 
 <script>
+  $("input").addClass ("form-control");
+  $(":submit").addClass ("btn btn-primary");
 
-  $(document).ready(function() {
-    $(':submit').addClass("btn");
-    $(':submit').addClass("primary");
-    $(':button').addClass("btn");
-    $(':button').addClass("primary");
-
-    $('#slider').s3Slider({
-      timeOut: 10000
-    });
-
-    function footerHeight () {
-      var fh = $(window).height () - $('#middle-contents').height () - 80;
-
-      $('#rh-footer').height (fh);
+  if ($(":submit").val () == "Login" || $(":submit").val () == "Logout")
+    {
+      $("#rh_footer_thai").hide ();
+      $("#rh_footer_eng").show ();
     }
-
-    footerHeight();
-
-    $(window).resize (function () {
-      footerHeight ();
-    });
-  });
+  else
+    {
+      $("#rh_footer_thai").show ();
+      $("#rh_footer_eng").hide ();
+    }
 </script>
 </body>
 </html>
