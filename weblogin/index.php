@@ -1,6 +1,6 @@
 <?php
 /*
-  Copyright (c) 2008-2009, Neutron Soutmun <neo.neutron@gmail.com>
+  Copyright (c) 2008-2014, Neutron Soutmun <neo.neutron@gmail.com>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -35,6 +35,8 @@ require_once 'config.php';
 require_once 'header.php';
 require_once 'networkchk.php';
 
+header ("HTTP/1.1 511 Network Authentication Required");
+
 $ip = $_SERVER['REMOTE_ADDR'];
 $config = get_config_by_network($ip, $config_list);
 $vserver_id = $config["VSERVER_ID"];
@@ -49,6 +51,7 @@ $forward_uri .= "/login.php?sss=" . time();
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta http-equiv="refresh" content="3000; url=<?php echo $forward_uri ?>">
 <title>RahuNAS Authentication</title>
 <style>
 body {
