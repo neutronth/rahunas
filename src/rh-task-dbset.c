@@ -249,8 +249,8 @@ static int startservice ()
 /* Stop service task */
 static int stopservice  ()
 {
-  /* Do nothing */
-  return 0;
+  /* Clear all data in the database */
+  return sql_execute ("DELETE FROM dbset;");
 }
 
 /* Initialize */

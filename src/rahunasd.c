@@ -124,12 +124,12 @@ expired_check(void *data)
       memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
 
-      send_xmlrpc_stopacct(process->vs, id, 
-                           RH_RADIUS_TERM_IDLE_TIMEOUT);
-
-      pthread_mutex_lock (&RHMtxLock);
-      res = rh_task_stopsess(process->vs, &req);
-      pthread_mutex_unlock (&RHMtxLock);
+      if (send_xmlrpc_stopacct(process->vs, id,
+            RH_RADIUS_TERM_IDLE_TIMEOUT) == 0) {
+        pthread_mutex_lock (&RHMtxLock);
+        res = rh_task_stopsess(process->vs, &req);
+        pthread_mutex_unlock (&RHMtxLock);
+      }
     } else if (member->session_timeout != 0 && 
                time_now > member->session_timeout) {
       // Session Timeout (Expired)
@@ -138,12 +138,12 @@ expired_check(void *data)
       memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
 
-      send_xmlrpc_stopacct(process->vs, id, 
-                           RH_RADIUS_TERM_SESSION_TIMEOUT);
-
-      pthread_mutex_lock (&RHMtxLock);
-      res = rh_task_stopsess(process->vs, &req);
-      pthread_mutex_unlock (&RHMtxLock);
+      if (send_xmlrpc_stopacct(process->vs, id,
+            RH_RADIUS_TERM_SESSION_TIMEOUT) == 0) {
+        pthread_mutex_lock (&RHMtxLock);
+        res = rh_task_stopsess(process->vs, &req);
+        pthread_mutex_unlock (&RHMtxLock);
+      }
     }
   }
 }

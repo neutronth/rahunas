@@ -17,34 +17,18 @@ static int
 set_cleanup(void *data)
 {
   struct processing_set *process = (struct processing_set *) data;
-  struct ip_set_list *setlist = (struct ip_set_list *) process->list;
-  size_t offset;
-  struct ip_set_rahu *table = NULL;
-  struct task_req req;
-  unsigned int id;
-  char *ip = NULL;
-  int res  = 0;
-  GList *runner = g_list_first(process->vs->v_map->members);
-  struct rahunas_member *member = NULL;
+  int retry = 3;
 
-  if (process == NULL)
-    return (-1);
+  set_flush (process->vs->vserver_config->vserver_name);
 
-  offset = sizeof(struct ip_set_list) + setlist->header_size;
-  table = (struct ip_set_rahu *)(process->list + offset);
+  while (send_xmlrpc_offacct (process->vs) != 0 && --retry > 0) {
+    sleep (5);
+  }
 
-  while (runner != NULL) {
-    member = (struct rahunas_member *) runner->data;
-    runner = g_list_next(runner);
-
-    id = member->id;
-
-    DP("Found IP: %s in set, try logout", idtoip(process->vs->v_map, id));
-    req.id = id;
-    memcpy(req.mac_address, table[id].ethernet, ETH_ALEN);
-    req.req_opt = RH_RADIUS_TERM_NAS_REBOOT;
-    send_xmlrpc_stopacct(process->vs, id, RH_RADIUS_TERM_NAS_REBOOT);
-    rh_task_stopsess(process->vs, &req);
+  if (retry < 0) {
+    /* TODO: Accounting-Off failed, should be checked on next service start,
+     *       stop-delay should be added.
+     */
   }
 }
 

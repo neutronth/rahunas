@@ -8,5 +8,6 @@
 #include "rh-radius.h"
 
 int send_xmlrpc_stopacct(RHVServer *vs, uint32_t id, int cause);
+int send_xmlrpc_offacct(RHVServer *vs);
 
 #endif // __RH_XMLRPC_CMD_H
