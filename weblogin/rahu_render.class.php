@@ -73,14 +73,79 @@ class RahuRender {
       die ("Could not load template file!");
    
     /* Replace pre-defined dir with template path */
-    $this->buffer = str_replace("images/", $this->tplpath."images/",
-                                $this->buffer);
-    $this->buffer = str_replace("css/", $this->tplpath."css/", $this->buffer);
-    $this->buffer = str_replace("js/", $this->tplpath."js/", $this->buffer);
+    $this->setString ("images/", $this->tplpath . "images/");
+    $this->setString ("css/", $this->tplpath . "css/");
+    $this->setString ("js/", $this->tplpath . "js/");
+
+    $this->setupSlideImages ();
   }
 
   function setString ($pattern, $replace) {
     $this->buffer = str_replace ($pattern, $replace, $this->buffer);
+  }
+
+  function setupSlideImages () {
+    if (strstr ($this->buffer, "<!-- Slide Images Container -->") == false) {
+      return;
+    }
+
+    $images_dir = $this->tplpath . "images/";
+    $images = array ();
+    if (is_dir ($images_dir)) {
+      if ($dh = opendir ($images_dir)) {
+        while (($file = readdir ($dh)) !== false) {
+          $images_path = $images_dir . $file;
+          if (getimagesize ($images_path)) {
+            array_push ($images, $images_path);
+          }
+        }
+      }
+    }
+
+    if (!empty ($images)) {
+      $indicators = "";
+      $slides = "";
+      $indicator_tpl =
+        "<li data-target='#carousel-rahunas' data-slide-to='##id##' " .
+        "##class##></li>";
+      $slide_tpl = "<div class='item##active##'><img src='##image##'></div>";
+      $carousel_tpl =
+        "<ol class='carousel-indicators' style='bottom: 70px;'>" .
+        "  ##indicators##" .
+        "</ol>" .
+        "<div class='carousel-inner'>##slides##</div>" .
+        "<a class='left carousel-control' href='#carousel-rahunas' " .
+          "data-slide='prev'>" .
+        "  <span class='glyphicon glyphicon-chevron-left'></span>" .
+        "</a>" .
+        "<a class='right carousel-control' href='#carousel-rahunas' ".
+          "data-slide='next'>" .
+        "  <span class='glyphicon glyphicon-chevron-right'></span>" .
+        "</a>";
+
+      $i = 0;
+      foreach ($images as $image) {
+        $active = $i == 0 ? " active" : "";
+        $class  = $i == 0 ? "class='active'" : "";
+        $cur_indicator = $indicator_tpl;
+        $cur_slide     = $slide_tpl;
+        $cur_indicator = str_replace ("##id##", $i , $cur_indicator);
+        $cur_indicator = str_replace ("##class##", $class , $cur_indicator);
+        $cur_slide     = str_replace ("##active##", $active, $cur_slide);
+        $cur_slide     = str_replace ("##image##", $image, $cur_slide);
+
+        $indicators .= $cur_indicator;
+        $slides .= $cur_slide;
+
+        $i++;
+      }
+
+      $carousel = str_replace ("##indicators##", $indicators, $carousel_tpl);
+      $carousel = str_replace ("##slides##", $slides, $carousel);
+
+      $this->buffer = str_replace ("<!-- Slide Images Container -->",
+                                   $carousel, $this->buffer);
+    }
   }
 
   function render () {
