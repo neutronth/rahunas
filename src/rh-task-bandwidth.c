@@ -96,72 +96,26 @@ void unmark_reserved_slot_id(uint16_t slot_id)
   slot_flags[page] &= ~(id_flag);
 }
 
-
 int bandwidth_exec(RHVServer *vs, char *const args[])
 {
-  pid_t ws;
-  pid_t pid;
-  int status;
-  int exec_pipe[2];
   char buffer[150];
-  char *endline = NULL;
-  int ret = 0;
-  int fd = 0;
-  
-  memset(buffer, '\0', sizeof(buffer));
+  int  ret = 0;
 
-  if (pipe(exec_pipe) == -1) {
-    logmsg(RH_LOG_ERROR, "Error: pipe()");
-    return -1;
-  }
-  DP("pipe0=%d,pipe1=%d", exec_pipe[0], exec_pipe[1]);
+  ret = rh_cmd_exec(RAHUNAS_BANDWIDTH_WRAPPER, args, NULL, buffer,
+                    sizeof (buffer));
 
-  pid = vfork();
-  dup2(exec_pipe[1], STDOUT_FILENO);
-
-  if (pid == 0) {
-    // Child
-    execv(RAHUNAS_BANDWIDTH_WRAPPER, args);
-  } else if (pid < 0) {
-    // Fork error
-    logmsg(RH_LOG_ERROR, "Error: vfork()"); 
-    ret = -1;
-  } else {
-    // Parent
-    ws = waitpid(pid, &status, 0);
-
-    DP("Bandwidth: Return (%d)", WEXITSTATUS(status));
-
-    // Return message log
-    DP("Read message");
-    read(exec_pipe[0], buffer, sizeof(buffer));
-
-    if (buffer != NULL) {
-      DP("Got message: %s", buffer);
-      endline = strstr(buffer, "\n");
-      if (endline != NULL) 
-        *endline = '\0';
-
-      if (vs != NULL) {
-        logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: %s", 
-          vs->vserver_config->vserver_name, buffer);
-      } else {
-        logmsg(RH_LOG_NORMAL, "[main server] Bandwidth: %s", buffer);
-      }
+  if (ret >= 0) {
+    if (strncmp (buffer, "NOT COMPLETED", 13) == 0) {
+      ret = -2;
     }
 
-    if (WIFEXITED(status)) {
-      ret = WEXITSTATUS(status);
-    } else {
-      ret = -1;
-    } 
+    logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: %s",
+           vs->vserver_config->vserver_name, buffer);
+  } else {
+    logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: error",
+           vs->vserver_config->vserver_name);
   }
 
-  if ((buffer != NULL) && (strncmp (buffer, "NOT COMPLETED", 13) == 0))
-    ret = -2;  // Not complete need to retry
-
-  close(exec_pipe[0]);
-  close(exec_pipe[1]);
   return ret;
 }
 

@@ -198,4 +198,65 @@ const char *idtoip(struct rahunas_map *map, uint32_t id) {
   return inet_ntoa(sess_addr);
 }
 
+int rh_cmd_exec(const char *cmd, char *const args[], char *const envs[],
+                char *result_buffer, int buffer_size)
+{
+  pid_t ws;
+  pid_t pid;
+  int status;
+  int exec_pipe[2];
+  char *endline = NULL;
+  int ret = 0;
+  int fd = 0;
 
+  if (pipe(exec_pipe) == -1) {
+    logmsg(RH_LOG_ERROR, "Error: pipe()");
+    return -1;
+  }
+  DP("pipe0=%d,pipe1=%d", exec_pipe[0], exec_pipe[1]);
+
+  pid = vfork();
+  dup2(exec_pipe[1], STDOUT_FILENO);
+
+  if (pid == 0) {
+    // Child
+    if (envs != NULL) {
+      execve(cmd, args, envs);
+    } else {
+      execv(cmd, args);
+    }
+  } else if (pid < 0) {
+    // Fork error
+    logmsg(RH_LOG_ERROR, "Error: vfork()");
+    ret = -1;
+  } else {
+    // Parent
+    ws = waitpid(pid, &status, 0);
+    DP("Command - %s: Return (%d)", cmd, WEXITSTATUS(status));
+
+    // Return message log
+    DP("Read message");
+    if (result_buffer && buffer_size > 0) {
+      memset (result_buffer, '\0', buffer_size);
+      read(exec_pipe[0], result_buffer, buffer_size);
+
+      if (result_buffer != NULL) {
+        DP("Got message: %s", result_buffer);
+        endline = strstr(result_buffer, "\n");
+        if (endline != NULL)
+          *endline = '\0';
+      }
+    }
+
+    if (WIFEXITED(status)) {
+      ret = WEXITSTATUS(status);
+    } else {
+      ret = -1;
+    }
+  }
+
+  close(exec_pipe[0]);
+  close(exec_pipe[1]);
+
+  return ret;
+}

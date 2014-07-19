@@ -24,4 +24,7 @@ int logmsg(int priority, const char *msg, ...);
 uint32_t iptoid(struct rahunas_map *map, const char *ip);
 const char *idtoip(struct rahunas_map *map, uint32_t id);
 
+int rh_cmd_exec(const char *cmd, char *const args[], char *const envs[],
+                char *result_buffer, int buffer_size);
+
 #endif // __RH_UTILS_H
