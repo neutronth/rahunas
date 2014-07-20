@@ -218,7 +218,11 @@ int do_stopsession(GNetXmlRpcServer *server,
         }
       }
 
-      res = rh_task_stopsess(vs, &req);
+      res = send_xmlrpc_stopacct (vs, id, cause_id);
+      if (res == 0) {
+        res = rh_task_stopsess(vs, &req);
+      }
+
       if (res == 0) {
         *reply_string = g_strdup_printf("Client IP %s was removed!", 
                                           idtoip(vs->v_map, id));

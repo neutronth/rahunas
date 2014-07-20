@@ -101,7 +101,6 @@ $xmlrpc->host = $config["RAHUNAS_HOST"];
 $xmlrpc->port = $config["RAHUNAS_PORT"];
 $valid = false;
 $isinfo = false;
-$isstopacct = false;
 $info = array();
 $retinfo = $xmlrpc->do_getsessioninfo($vserver_id, $ip);
 if (is_array($retinfo)) {
@@ -127,29 +126,11 @@ if (!empty($_POST['do_logout'])) {
     if ($result === true) {
       $valid = false;
       $message = get_message('OK_USER_LOGOUT');
-      $isstopacct = true;
     } else {
       $valid = false;
       $message = get_message('ERR_LOGOUT_FAILED');
       $show_info = true;
     }
-  }
-
-  if ($isstopacct) {
-    // Send account stop to radius
-    $racct = new rahu_radius_acct ($username);
-    $racct->host = $config["RADIUS_HOST"];
-    $racct->port = $config["RADIUS_ACCT_PORT"];
-    $racct->secret = $config["RADIUS_SECRET"];
-    $racct->nas_identifier = $config["NAS_IDENTIFIER"];
-    $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-    $racct->nas_port = $config["VSERVER_ID"];
-    $racct->framed_ip_address  = $ip;
-    $racct->calling_station_id = $mac_address;
-    $racct->terminate_cause = RADIUS_TERM_USER_REQUEST;
-    $racct->session_id    = $session_id;
-    $racct->session_start = $session_start;
-    $racct->acctStop();
   }
 } else {
   $show_info = true;
