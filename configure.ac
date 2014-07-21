@@ -58,6 +58,14 @@ fi
 
 AM_CONDITIONAL(ENABLE_NETSNMP_MODULE,test "x$enable_netsnmp_module" = "xyes")
 
+dnl Disable Squid auth helper build
+AC_ARG_ENABLE(squid-auth-helper,
+              [AC_HELP_STRING([--enable-squid-auth-helper],
+                              [enable squid-auth-helper build])],
+              enable_squid_auth_helper="yes")
+
+AM_CONDITIONAL(ENABLE_SQUID_AUTH_HELPER,test "x$enable_squid_auth_helper" = "xyes")
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
