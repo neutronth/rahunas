@@ -121,12 +121,17 @@ class RahuI18N {
     if (is_array ($qs)) {
       foreach ($qs as $qq) {
         $sep = explode ("=", $qq);
-        $q_key[] = $sep[0];
-        $q_val[] = $sep[1];
+        if (count ($sep) == 2) {
+          $q_key[] = $sep[0];
+          $q_val[] = $sep[1];
+        }
       }
     }
 
-    $qr = array_combine ($q_key, $q_val);
+    $qr = array ();
+    if (!empty ($q_key)) {
+      $qr = array_combine ($q_key, $q_val);
+    }
     return $qr;
   }
 
