@@ -61,10 +61,14 @@ $RequestURL = empty($_GET['request_url']) ?
                 : $_GET['request_url'];
 $LogoutURL .= "?request_url=" . $RequestURL;
 
+$hide_wait = "";
+$message = "";
+
 // Verify if the user already login
 $xmlrpc = new rahu_xmlrpc_client();
 $xmlrpc->host = $config["RAHUNAS_HOST"];
 $xmlrpc->port = $config["RAHUNAS_PORT"];
+
 try {
   $retinfo = $xmlrpc->do_getsessioninfo($vserver_id, $ip);
   if (is_array($retinfo) && !empty($retinfo['session_id'])) {
@@ -118,10 +122,10 @@ if (!$forward) {
           "Username" => $_POST['user'],
           "SessionID" => $racct->session_id,
           "MAC" => returnMacAddress(),
-          "Session-Timeout" => $rauth->attributes['session_timeout'],
-          "Bandwidth-Max-Down" => $rauth->attributes['WISPr-Bandwidth-Max-Down'],
-          "Bandwidth-Max-Up" => $rauth->attributes['WISPr-Bandwidth-Max-Up'],
-          "Class-Of-Service" => $rauth->attributes[$serviceclass_attrib],
+          "Session-Timeout" => $rauth->getAttribute('session_timeout'),
+          "Bandwidth-Max-Down" => $rauth->getAttribute('WISPr-Bandwidth-Max-Down'),
+          "Bandwidth-Max-Up" => $rauth->getAttribute('WISPr-Bandwidth-Max-Up'),
+          "Class-Of-Service" => $rauth->getAttribute($serviceclass_attrib),
         );
         $result = $xmlrpc->do_startsession($vserver_id, $prepareData);
         if (strstr($result,"Client already login")) {

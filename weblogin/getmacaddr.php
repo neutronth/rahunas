@@ -29,6 +29,8 @@ function returnMacAddress() {
     $valueSplitted = split(" ",$value);
 
     foreach ($valueSplitted as $spLine) {
+      $ipFound = false;
+
       if ( preg_match("/\b$remoteIp\b/",$spLine) ) {
         $ipFound = true;
       }
@@ -50,8 +52,6 @@ function returnMacAddress() {
           }
         }
       }
-
-      $ipFound = false;
     }
   }
   

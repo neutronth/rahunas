@@ -95,7 +95,9 @@ class RahuRender {
       if ($dh = opendir ($images_dir)) {
         while (($file = readdir ($dh)) !== false) {
           $images_path = $images_dir . $file;
-          if (getimagesize ($images_path)) {
+          $image_size = @getimagesize ($images_path);
+
+          if ($image_size) {
             array_push ($images, $images_path);
           }
         }

@@ -66,6 +66,11 @@ class rahu_radius_auth {
     $this->LoggedIn = false;
   }
 
+  function getAttribute ($attr) {
+    return array_key_exists ($attr, $this->attributes) ?
+             $this->attributes[$attr] : "";
+  }
+
   function start() {
     global $vendors;
 

@@ -90,25 +90,29 @@ class rahu_xmlrpc_client {
        $ret[7] - download_bytes
        $ret[8] - upload_bytes
     */
-    $ip = $ret[0];
-    $username = $ret[1];
-    $session_id = $ret[2];
-    $session_start = $ret[3];
-    $mac_address = $ret[4];
-    $session_timeout = $ret[5];
-    $serviceclass_description = $ret[6];
-    $download_bytes = $ret[7];
-    $upload_bytes = $ret[8];
 
-    $result = array("ip"=>$ip, 
-                    "username"=>$username, 
-                    "session_id"=>$session_id,
-                    "session_start"=>$session_start,
-                    "mac_address"=>$mac_address,
-                    "session_timeout"=>$session_timeout,
-                    "serviceclass_description"=>$serviceclass_description,
-                    "download_bytes"=>$download_bytes,
-                    "upload_bytes"=>$upload_bytes);
+    if (count ($ret) == 9) {
+      $ip = $ret[0];
+      $username = $ret[1];
+      $session_id = $ret[2];
+      $session_start = $ret[3];
+      $mac_address = $ret[4];
+      $session_timeout = $ret[5];
+      $serviceclass_description = $ret[6];
+      $download_bytes = $ret[7];
+      $upload_bytes = $ret[8];
+
+      $result = array("ip"=>$ip,
+                      "username"=>$username,
+                      "session_id"=>$session_id,
+                      "session_start"=>$session_start,
+                      "mac_address"=>$mac_address,
+                      "session_timeout"=>$session_timeout,
+                      "serviceclass_description"=>$serviceclass_description,
+                      "download_bytes"=>$download_bytes,
+                      "upload_bytes"=>$upload_bytes);
+    }
+
     return $result;
   }
 }

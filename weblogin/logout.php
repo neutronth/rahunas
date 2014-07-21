@@ -43,8 +43,10 @@ require_once 'header.php';
 require_once 'messages.php';
 require_once 'networkchk.php';
 
-
 $refresh_interval = 300;
+$forward = false;
+$message = "";
+$show_info = false;
 
 // Setup I18N
 $i18n = new RahuI18N ($rahu_langsupport);
