@@ -50,6 +50,8 @@ function do_stopacct($method_name, $params, $app_data)
   // parsing[3] - session_start  
   // parsing[4] - mac_address  
   // parsing[5] - cause  
+  // parsing[6] - download_bytes
+  // parsing[7] - upload_bytes
  
   $parsing = explode("|", $params[0]);
   $ip = $parsing[0];
@@ -58,6 +60,8 @@ function do_stopacct($method_name, $params, $app_data)
   $session_start = intval($parsing[3]);
   $mac_address = $parsing[4];
   $cause = intval($parsing[5]);
+  $download_bytes = intval($parsing[6]);
+  $upload_bytes   = intval($parsing[7]);
 
   $config = get_config_by_network($ip, $config_list);
   $vserver_id = $config["VSERVER_ID"];
@@ -74,7 +78,56 @@ function do_stopacct($method_name, $params, $app_data)
   $racct->nas_port = $config["VSERVER_ID"];
   $racct->session_id    = $session_id;
   $racct->session_start = $session_start;
+  $racct->download_bytes = $download_bytes;
+  $racct->upload_bytes   = $upload_bytes;
   if ($racct->acctStop() === true) {
+    $response = "OK";
+  } else {
+    $response = "FAIL";
+  }
+
+  return $response;
+}
+
+function do_update($method_name, $params, $app_data)
+{
+  $config_list =& $GLOBALS["config_list"];
+  $response = "FAIL";
+
+  // parsing[0] - ip
+  // parsing[1] - username
+  // parsing[2] - session_id
+  // parsing[3] - session_start
+  // parsing[4] - mac_address
+  // parsing[5] - download_bytes
+  // parsing[6] - upload_bytes
+
+  $parsing = explode("|", $params[0]);
+  $ip = $parsing[0];
+  $username   = $parsing[1];
+  $session_id = $parsing[2];
+  $session_start = intval($parsing[3]);
+  $mac_address = $parsing[4];
+  $download_bytes = intval($parsing[5]);
+  $upload_bytes   = intval($parsing[6]);
+
+  $config = get_config_by_network($ip, $config_list);
+  $vserver_id = $config["VSERVER_ID"];
+
+  $racct = new rahu_radius_acct ($username);
+  $racct->host = $config["RADIUS_HOST"];
+  $racct->port = $config["RADIUS_ACCT_PORT"];
+  $racct->secret = $config["RADIUS_SECRET"];
+  $racct->nas_identifier = $config["NAS_IDENTIFIER"];
+  $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
+  $racct->framed_ip_address  = $ip;
+  $racct->calling_station_id = $mac_address;
+  $racct->nas_port = $config["VSERVER_ID"];
+  $racct->session_id    = $session_id;
+  $racct->session_start = $session_start;
+  $racct->download_bytes = $download_bytes;
+  $racct->upload_bytes   = $upload_bytes;
+  if ($racct->acctUpdate() === true) {
     $response = "OK";
   } else {
     $response = "FAIL";
@@ -127,6 +180,7 @@ $xmlrpc_server = xmlrpc_server_create();
 
 xmlrpc_server_register_method($xmlrpc_server, "stopacct", "do_stopacct");
 xmlrpc_server_register_method($xmlrpc_server, "offacct", "do_offacct");
+xmlrpc_server_register_method($xmlrpc_server, "update", "do_update");
 
 $request_xml = $HTTP_RAW_POST_DATA;
 

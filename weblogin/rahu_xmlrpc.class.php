@@ -86,7 +86,10 @@ class rahu_xmlrpc_client {
        $ret[3] - session_start
        $ret[4] - mac_address
        $ret[5] - session_timeout
-       $ret[6] - serviceclass_description */
+       $ret[6] - serviceclass_description
+       $ret[7] - download_bytes
+       $ret[8] - upload_bytes
+    */
     $ip = $ret[0];
     $username = $ret[1];
     $session_id = $ret[2];
@@ -94,6 +97,8 @@ class rahu_xmlrpc_client {
     $mac_address = $ret[4];
     $session_timeout = $ret[5];
     $serviceclass_description = $ret[6];
+    $download_bytes = $ret[7];
+    $upload_bytes = $ret[8];
 
     $result = array("ip"=>$ip, 
                     "username"=>$username, 
@@ -101,7 +106,9 @@ class rahu_xmlrpc_client {
                     "session_start"=>$session_start,
                     "mac_address"=>$mac_address,
                     "session_timeout"=>$session_timeout,
-                    "serviceclass_description"=>$serviceclass_description);
+                    "serviceclass_description"=>$serviceclass_description,
+                    "download_bytes"=>$download_bytes,
+                    "upload_bytes"=>$upload_bytes);
     return $result;
   }
 }

@@ -10,6 +10,8 @@
 
 #define LOG_MAIN_FD  -1
 
+#define COLNAME_MATCH(a, b) (strncmp(a, b, strlen(a)) == 0)
+
 void *rh_malloc(size_t size);
 void rh_free(void **data);
 

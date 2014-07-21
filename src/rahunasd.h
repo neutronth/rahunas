@@ -67,9 +67,14 @@ struct rahunas_member {
   char *username;
   char *session_id;
   unsigned char mac_address[ETH_ALEN];
+  uint64_t download_bytes;
+  uint64_t upload_bytes;
+  time_t   last_interimupdate;
+  int      interim_interval;
 };
 
 void rh_free_member(struct rahunas_member *member);
+void rh_data_sync (int vserver_id, struct rahunas_member *member);
 
 static const char *timemsg()
 {

@@ -117,6 +117,7 @@ int register_vserver(RHMainServer *ms, const char *vserver_cfg_file)
     .rh_vserver.nas_default_redirect = NULL,
     .rh_vserver.nas_default_language = NULL,
     .rh_vserver.nas_weblogin_template = NULL,
+    .rh_vserver.interim_interval = INTERIM_INTERVAL
   };
 
   cfg_file = fopen(vserver_cfg_file, "r");

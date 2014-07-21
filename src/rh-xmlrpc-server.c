@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <inttypes.h>
 #include "rahunasd.h"
 #include "rh-server.h"
 #include "rh-xmlrpc-server.h"
@@ -202,6 +203,9 @@ int do_stopsession(GNetXmlRpcServer *server,
 
   if (member_node != NULL) {
     member = (struct rahunas_member *) member_node->data;
+
+    rh_data_sync (vs->vserver_config->vserver_id, member);
+
     if (memcmp(&ethernet, &member->mac_address, 
         ETH_ALEN) == 0) {
       req.id = id;
@@ -304,14 +308,16 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
       goto cleanup;
     }
     
-    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d|%s",
+    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d|%s|%" PRId64 "|%" PRId64,
                                     ip, 
                                     member->username,
                                     member->session_id,
                                     member->session_start,
                                     mac_tostring(member->mac_address),
                                     member->session_timeout,
-                                    member->serviceclass_description);
+                                    member->serviceclass_description,
+                                    member->download_bytes,
+                                    member->upload_bytes);
     goto cleanup;
   }
 

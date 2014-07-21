@@ -39,6 +39,10 @@ require_once 'Auth/RADIUS.php';
 require_once 'Crypt/CHAP.php';
 require_once 'rahu_dictionary.php';
 
+define ("RADIUS_ACCT_INPUT_GIGAWORDS", 52);
+define ("RADIUS_ACCT_OUTPUT_GIGAWORDS", 53);
+define ("RADIUS_GIGAWORD", 4294967296); /* 2^32 */
+
 class rahu_radius_auth {
   var $type;
   var $username;
@@ -272,8 +276,17 @@ class rahu_radius_acct {
       case "Stop":
         $racct->putAttribute(RADIUS_ACCT_TERMINATE_CAUSE, 
                              $this->terminate_cause);
-        break;
+        /* Fall-through */
       case "Update":
+        $racct->putAttribute(RADIUS_ACCT_SESSION_TIME, $racct->session_time);
+        $racct->putAttribute(RADIUS_ACCT_INPUT_GIGAWORDS,
+                             intval($this->download_bytes / RADIUS_GIGAWORD));
+        $racct->putAttribute(RADIUS_ACCT_OUTPUT_GIGAWORDS,
+                             intval($this->upload_bytes / RADIUS_GIGAWORD));
+        $racct->putAttribute(RADIUS_ACCT_INPUT_OCTETS,
+                             $this->download_bytes % RADIUS_GIGAWORD);
+        $racct->putAttribute(RADIUS_ACCT_OUTPUT_OCTETS,
+                             $this->upload_bytes % RADIUS_GIGAWORD);
         break;
       case "Off":
         $racct->putAttribute(RADIUS_ACCT_TERMINATE_CAUSE,

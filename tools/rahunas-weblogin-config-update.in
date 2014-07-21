@@ -26,6 +26,7 @@ MAIN_SERVICECLASS_ATTRIBUTE=`get_config_value main serviceclass_attribute $RAHUN
 
 # DB
 RAHUNAS_DB=@localstatedir@/lib/rahunas/rahunas.db
+RAHUNAS_DB_SCHEMA=@prefix@/share/rahunasd/rahunas-db.sql
 SQLITE3=/usr/bin/sqlite3
 
 generate_config() {
@@ -91,12 +92,12 @@ update_db () {
   NAS_IDENTIFIER=`get_config_value $SETNAME nas_identifier $file`
 
   SQL="REPLACE INTO nas VALUES ('$VSERVER_ID','$NAS_IDENTIFIER')"
-  $SQLITE3 $RAHUNAS_DB "$SQL"
+  $SQLITE3 -init $RAHUNAS_DB_SCHEMA $RAHUNAS_DB "$SQL" >/dev/null 2>&1
 }
 
 clear_nas_db () {
   SQL="DELETE FROM nas"
-  $SQLITE3 $RAHUNAS_DB "$SQL"
+  $SQLITE3 -init $RAHUNAS_DB_SCHEMA $RAHUNAS_DB "$SQL" >/dev/null 2>&1
 }
 
 destfile="@sysconfdir@/rahunas/config.php"

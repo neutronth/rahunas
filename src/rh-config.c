@@ -294,6 +294,8 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_vserver.nas_weblogin_template != NULL)
           free(config->rh_vserver.nas_weblogin_template);
         config->rh_vserver.nas_weblogin_template = strdup(value);
+      } else if (strncmp(sub_key, "interim_interval", 16) == 0) {
+        config->rh_vserver.interim_interval = atoi(value);
       }
       break;
   }

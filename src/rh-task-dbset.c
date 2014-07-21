@@ -15,7 +15,6 @@
 #include "rh-utils.h"
 #include "rh-task-memset.h"
 
-#define COLNAME_MATCH(a, b) (strncmp(a, b, strlen(a)) == 0)
 
 struct dbset_row {
   gchar *session_id;
@@ -83,16 +82,23 @@ sql_execute (const char *sql)
   sqlite3 *connection = NULL;
   char *zErrMsg       = NULL;
   int rc;
+  int retry = 5;
 
   if (!sql)
     return -1;
 
+retry:
   connection = openconn ();
   if (!connection)
     return -1;
 
   rc = sqlite3_exec (connection, sql, sql_execute_cb, 0, &zErrMsg);
   if (rc != SQLITE_OK) {
+    if (rc == SQLITE_BUSY && --retry > 0) {
+      closeconn (connection);
+      goto retry;
+    }
+
     logmsg (RH_LOG_ERROR, "Task DBSET: could not execute sql (%s)", zErrMsg);
     sqlite3_free (zErrMsg);
   }

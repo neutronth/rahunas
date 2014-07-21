@@ -1,0 +1,167 @@
+#!/bin/sh
+# File: rahunas-ipacct
+# Description: The IP accounting wrapper script for RahuNAS
+
+prefix=@prefix@
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:${prefix}/sbin:${prefix}/bin
+exec_prefix=${prefix}
+
+PMACCTD=/usr/sbin/pmacctd
+PMACCT_CONFDIR=/etc/pmacct
+RUNDIR=/var/run
+
+INIT=/etc/default/rahunas
+
+test -f $INIT || exit 0
+. $INIT
+
+test -f $RAHUNAS_CONFIG || exit 1
+
+get_section_name () {
+  file=$1
+
+  test -n "$file" || return
+  test -e "$file" && grep "^.*\= {$" "$file" | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
+}
+
+get_config_value () {
+  section=$1
+  key=$2
+  file=$3
+
+  test -n "$file" || return
+  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key[ ]*=" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+}
+
+##
+#  Global Declaration
+##
+
+PMACCT_CONF=
+PMACCT_PID=
+
+if [ "$ENV_OVERRIDE" != "yes" ]; then
+  # Virtual Server : config
+  VSERVER_ID=
+  DEV_INTERNAL=
+  CLIENTS=
+  SETNAME=
+fi
+
+get_config () {
+  file=$1
+  opt=$2
+
+  if [ "$ENV_OVERRIDE" != "yes" ]; then
+    test -f $file || return 1
+
+    SETNAME=`get_section_name $file`
+
+    # Get configuration
+    VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+    test -n "$VSERVER_ID" || return 2
+
+    DEV_INTERNAL=`get_config_value $SETNAME dev_internal $file`
+    CLIENTS=`get_config_value $SETNAME clients $file`
+  fi
+}
+
+do_get_config () {
+  file=$1
+  opt=$2
+  get_config $file $opt || true
+
+  PMACCT_CONF=$PMACCT_CONFDIR/pmacctd.$VSERVER_ID-$SETNAME.conf
+  PMACCT_PID=$RUNDIR/pmacctd.$VSERVER_ID-$SETNAME.pid
+}
+
+create_pmacct_conf () {
+  cat << EOF > $PMACCT_CONF
+daemonize: true
+pidfile: $PMACCT_PID
+syslog: daemon
+aggregate[inbound]: src_host
+aggregate[outbound]: dst_host
+aggregate_filter[inbound]: src net $CLIENTS
+aggregate_filter[outbound]: dst net $CLIENTS
+pcap_filter: net $CLIENTS
+interface: $DEV_INTERNAL
+plugins: sqlite3[inbound], sqlite3[outbound]
+sql_optimize_clauses: true
+sql_db: /var/lib/rahunas/rahunas.db
+sql_table: acct
+sql_history: 12M
+sql_refresh_time: 5
+promisc: false
+EOF
+}
+
+start_config() {
+  create_pmacct_conf
+  $PMACCTD -f $PMACCT_CONF
+  return 0
+}
+
+start_config_env() {
+  do_get_config "" start
+  start_config
+  return $?
+}
+
+start_config_file() {
+  file=$1
+  do_get_config $file start
+  if [ $? -gt 0 ]; then
+    return 1
+  fi
+
+  start_config
+  return $?
+}
+
+stop_config() {
+  kill `cat $PMACCT_PID`
+  test -f $PMACCT_CONF && rm -f $PMACCT_CONF
+  return 0
+}
+
+stop_config_env() {
+  do_get_config "" stop
+  stop_config
+  return $?
+}
+
+stop_config_file() {
+  file=$1
+  do_get_config $file stop
+  if [ $? -gt 0 ]; then
+    return 1
+  fi
+
+  stop_config
+  return $?
+}
+
+case "$1" in
+  start-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      start_config_env
+    elif [ -f "$2" ]; then
+      start_config_file $2
+    fi
+    ;;
+  stop-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      stop_config_env
+    elif [ -f "$2" ]; then
+      stop_config_file $2
+    fi
+    ;;
+  *)
+    N=${exec_prefix}/sbin/rahunas-ipacct
+    echo "Usage: $N {start-config|stop-config} [configfile]"
+    exit 3
+    ;;
+esac
+
+exit 0

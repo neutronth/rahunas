@@ -15,6 +15,7 @@
 #define IDLE_TIMEOUT 600
 #define POLLING 60 
 #define BANDWIDTH_SHAPE 0
+#define INTERIM_INTERVAL 600
 
 #define XMLSERVICE_HOST "localhost"
 #define XMLSERVICE_PORT 80
@@ -83,6 +84,7 @@ struct rahunas_vserver_config {
   char *nas_default_redirect;
   char *nas_default_language;
   char *nas_weblogin_template;
+  int  interim_interval;
 };
 
 struct rahunas_serviceclass_config {
