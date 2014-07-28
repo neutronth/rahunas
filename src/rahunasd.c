@@ -16,6 +16,7 @@
 #include <syslog.h>
 #include <sqlite3.h>
 #include <inttypes.h>
+#include <execinfo.h>
 
 #include "rahunasd.h"
 #include "rh-server.h"
@@ -75,6 +76,19 @@ void rh_sighandler(int sig)
         kill(pid, SIGHUP);
       } else {
         syslog(LOG_ERR, "Invalid PID");
+      }
+      break;
+    case SIGSEGV:
+      {
+        void *array[10];
+        size_t size;
+
+        size = backtrace (array, 10);
+
+        fprintf (stderr, "Error: signal %d:\n", sig);
+        backtrace_symbols_fd (array, size, STDERR_FILENO);
+
+        exit (1);
       }
       break;
   }
@@ -439,6 +453,7 @@ int main(int argc, char *argv[])
 
   signal(SIGTERM, &rh_sighandler);
   signal(SIGHUP, &rh_sighandler);
+  signal(SIGSEGV, &rh_sighandler);
   signal(SIGINT, SIG_IGN);
   signal(SIGPIPE, SIG_IGN);
 
