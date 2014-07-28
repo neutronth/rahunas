@@ -33,15 +33,20 @@
 
 require_once 'config.php';
 require_once 'rahu_radius.class.php';
-require_once 'networkchk.php';
+require_once 'rahu_authen.class.php';
 
 // Deny all connections that does not come from the localhost
 if ($_SERVER['REMOTE_ADDR'] != "127.0.0.1")
   die();
 
+function rahu_xml_getConfig ($ip) {
+  $client = new RahuClient ($ip);
+  $rahuconfig = new RahuConfig ($client); 
+  return $rahuconfig->getConfig (); 
+}
+
 function do_stopacct($method_name, $params, $app_data)
 {
-  $config_list =& $GLOBALS["config_list"];
   $response = "FAIL";
 
   // parsing[0] - ip
@@ -63,7 +68,7 @@ function do_stopacct($method_name, $params, $app_data)
   $download_bytes = intval($parsing[6]);
   $upload_bytes   = intval($parsing[7]);
 
-  $config = get_config_by_network($ip, $config_list);
+  $config =& rahu_xml_getConfig ($ip);
   $vserver_id = $config["VSERVER_ID"];
 
   $racct = new rahu_radius_acct ($username);
@@ -91,7 +96,6 @@ function do_stopacct($method_name, $params, $app_data)
 
 function do_update($method_name, $params, $app_data)
 {
-  $config_list =& $GLOBALS["config_list"];
   $response = "FAIL";
 
   // parsing[0] - ip
@@ -111,7 +115,7 @@ function do_update($method_name, $params, $app_data)
   $download_bytes = intval($parsing[5]);
   $upload_bytes   = intval($parsing[6]);
 
-  $config = get_config_by_network($ip, $config_list);
+  $config =& rahu_xml_getConfig ($ip);
   $vserver_id = $config["VSERVER_ID"];
 
   $racct = new rahu_radius_acct ($username);

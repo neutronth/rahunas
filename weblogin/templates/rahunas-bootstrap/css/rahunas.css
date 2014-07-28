@@ -69,15 +69,6 @@ body {
   float: right;
 }
 
-#rh_message {  
-  color: #000000; 
-  font-weight: bolder; 
-  padding: 2px; 
-  width: 80%; 
-  text-align: center; 
-  background: #FFFF99; 
-}
-
 #rh_login_text {
   color: #000000; 
   font-weight: bolder; 
