@@ -305,7 +305,7 @@ filter_del() {
 }
 
 bw_add() {
-  ID=$1
+  ID=`echo "obase=16;$1" | $BC | awk '{print tolower($0)}'`
 
   if [ -z "$ID" ]; then
     MESSAGE=$MSG_NOT_COMPLETED
@@ -360,7 +360,7 @@ bw_add() {
 }
 
 bw_del() {
-  ID=$1
+  ID=`echo "obase=16;$1" | $BC | awk '{print tolower($0)}'`
 
   if [ -z "$ID" ]; then
     MESSAGE=$MSG_NOT_COMPLETED
