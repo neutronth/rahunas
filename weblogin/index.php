@@ -43,13 +43,15 @@ $i18n   = new RahuI18N ();
 $i18n->localeSetup ();
 
 $vserver_id  = $config["VSERVER_ID"];
-$forward_tpl = "%s://%s%s/%s";
+$request_url = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+$forward_tpl = "%s://%s%s/%s&request_url=%s";
 $forward_uri = sprintf ($forward_tpl,
                          $config['NAS_LOGIN_PROTO'],
                          $config['NAS_LOGIN_HOST'],
                          !empty($config['NAS_LOGIN_PORT']) ?
                            ":" . $config['NAS_LOGIN_PORT'] : "",
-                         "login.php?sss=" . time());
+                         "login.php?sss=" . time(),
+                         urlencode ($request_url));
 ?>
 <html>
 <head>
