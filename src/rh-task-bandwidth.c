@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 #include "rahunasd.h"
 #include "rh-task.h"
@@ -24,6 +25,7 @@ static uint64_t slot_count = 0;
 
 uint16_t _get_slot_id()
 {
+  uint16_t page_size  = PAGE_SIZE;
   uint16_t slot_id    = 0;
   uint16_t page       = 0;
   uint8_t  id_on_page = 0;
@@ -39,11 +41,11 @@ uint16_t _get_slot_id()
   srandom(random());
 
   while (slot_id == 0) {
-    slot_id = random()/(int)(((unsigned int)RAND_MAX + 1) / (MAX_SLOT_ID + 1));
+    slot_id = random () % (MAX_SLOT_ID + 1);
    
     // Check validity
-    page = slot_id / PAGE_SIZE;
-    id_on_page = slot_id % PAGE_SIZE;
+    page = slot_id / page_size;
+    id_on_page = slot_id % page_size;
    
     if (!(slot_flags[page] & (1 << id_on_page))) {
       // Slot available
@@ -52,9 +54,9 @@ uint16_t _get_slot_id()
 
     // Second try, probe other slot in current page
     uint16_t id    = 0;
-    for (id = 0; id < PAGE_SIZE; id++) {
+    for (id = 0; id < page_size; id++) {
       if (!(slot_flags[page] & (1 << id))) {
-        slot_id = (page * PAGE_SIZE) + id;
+        slot_id = (page * page_size) + id;
         goto done;
       }
     }
@@ -70,11 +72,12 @@ done:
 
 void mark_reserved_slot_id(uint16_t slot_id)
 {
+  uint16_t page_size  = PAGE_SIZE;
   uint16_t page       = 0;
   uint8_t  id_on_page = 0;
 
-  page = slot_id / PAGE_SIZE; 
-  id_on_page = slot_id % PAGE_SIZE;
+  page = slot_id / page_size;
+  id_on_page = slot_id % page_size;
 
   slot_count++;
   slot_flags[page] |= 1 << id_on_page;
@@ -82,12 +85,13 @@ void mark_reserved_slot_id(uint16_t slot_id)
 
 void unmark_reserved_slot_id(uint16_t slot_id)
 {
+  uint16_t page_size  = PAGE_SIZE;
   uint16_t page       = 0;
   uint8_t  id_on_page = 0;
   uint16_t id_flag    = 0;
 
-  page = slot_id / PAGE_SIZE;
-  id_on_page = slot_id % PAGE_SIZE;
+  page = slot_id / page_size;
+  id_on_page = slot_id % page_size;
   id_flag = 1 << id_on_page;
 
   if (slot_count > 0)
@@ -213,7 +217,7 @@ static void init (RHVServer *vs)
     return;
 
   if (vs->vserver_config->init_flag <= VS_INIT) {
-    memset (slot_flags, 0, sizeof (unsigned short) * MAX_SLOT_PAGE);
+    memset (slot_flags, 0, sizeof (uint64_t) * MAX_SLOT_PAGE);
   }
 
   if (vs->vserver_config->init_flag == VS_RELOAD)
@@ -255,7 +259,7 @@ static void cleanup (RHVServer *vs)
 static int startsess (RHVServer *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
-  unsigned short slot_id;
+  uint16_t slot_id;
   unsigned char max_try = 3;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
@@ -285,8 +289,8 @@ static int startsess (RHVServer *vs, struct task_req *req)
   
   while (max_try > 0) { 
     slot_id = _get_slot_id();
-    snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
-    if (bandwidth_add(vs, &bw_req) == 0)
+    snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%" PRIu16, slot_id);
+    if (slot_id > 0 && bandwidth_add(vs, &bw_req) == 0)
       break;
     else {
       max_try--;
@@ -311,7 +315,7 @@ static int startsess (RHVServer *vs, struct task_req *req)
 static int stopsess  (RHVServer *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
-  unsigned short slot_id = 0;
+  uint16_t slot_id = 0;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
   
@@ -325,7 +329,7 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
   if (slot_id < 1)
     return 0;
 
-  snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
+  snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%" PRIu16, slot_id);
 
   if (bandwidth_del(vs, &bw_req) == 0) {
     unmark_reserved_slot_id (member->bandwidth_slot_id);

@@ -59,7 +59,7 @@ struct rahunas_member {
   time_t session_timeout;
   long bandwidth_max_down;
   long bandwidth_max_up;
-  unsigned short bandwidth_slot_id;
+  uint16_t bandwidth_slot_id;
   char *serviceclass_name;
   const char *serviceclass_description;
   uint32_t serviceclass_slot_id;

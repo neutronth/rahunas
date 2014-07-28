@@ -24,7 +24,7 @@ struct dbset_row {
   gchar *mac;
   time_t session_start;
   time_t session_timeout;
-  unsigned short bandwidth_slot_id; 
+  uint16_t bandwidth_slot_id;
   long bandwidth_max_down;
   long bandwidth_max_up;
   gchar *service_class;

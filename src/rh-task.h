@@ -19,7 +19,7 @@ struct task_req {
   unsigned char mac_address[ETH_ALEN];
   time_t session_start;
   time_t session_timeout;
-  unsigned short bandwidth_slot_id; 
+  uint16_t bandwidth_slot_id;
   unsigned long bandwidth_max_down;
   unsigned long bandwidth_max_up;
   const char *serviceclass_name;

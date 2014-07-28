@@ -22,7 +22,7 @@
 extern void rh_task_bandwidth_reg(RHMainServer *ms);
 
 struct bandwidth_req {
-  char slot_id[5];
+  char slot_id[6];
   char ip[16];
   char bandwidth_max_down[15];
   char bandwidth_max_up[15];
