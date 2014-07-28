@@ -97,8 +97,19 @@ EOF
 }
 
 start_config() {
-  create_pmacct_conf
-  $PMACCTD -f $PMACCT_CONF
+  should_run=yes
+  if [ -f $PMACCT_PID ]; then
+    pid=`cat $PMACCT_PID`
+    check=`pidof $PMACCTD | grep -w "$pid"`
+
+    test -n "$check" && should_run=""
+  fi
+
+  if [ "x$should_run" = "xyes" ]; then
+    create_pmacct_conf
+    $PMACCTD -f $PMACCT_CONF
+  fi
+
   return 0
 }
 
@@ -120,7 +131,24 @@ start_config_file() {
 }
 
 stop_config() {
-  kill `cat $PMACCT_PID`
+  test -f $PMACCT_PID || return 0;
+  pid=`cat $PMACCT_PID`
+
+  retry=10
+  while /bin/true; do
+    if [ $retry -lt 1 ]; then
+      kill -9 $pid >/dev/null 2>&1
+      sleep 1
+      break
+    fi
+    kill $pid >/dev/null 2>&1
+    check=`pidof $PMACCTD | grep -w "$pid"`
+
+    test -z "$check" && break
+    retry=$((retry-1))
+    sleep 1
+  done
+  rm -f $PMACCT_PID
   test -f $PMACCT_CONF && rm -f $PMACCT_CONF
   return 0
 }
