@@ -1,15 +1,15 @@
 # Thai translations for rahunas-weblogin package.
 # Copyright (C) 2011 Neutron Soutmun <neutron@rahunas.org>
 # This file is distributed under the same license as the rahunas-weblogin package.
-# Neutron Soutmun <neutron@rahunas.org>, 2011.
+# Neutron Soutmun <neutron@rahunas.org>, 2011, 2014.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2014-07-09 16:09+0000\n"
-"PO-Revision-Date: 2014-07-09 23:10+0700\n"
-"Last-Translator: Neutron Soutmun <neo.neutron@gmail.com>\n"
+"POT-Creation-Date: 2014-07-28 04:09+0000\n"
+"PO-Revision-Date: 2014-07-28 11:21+0700\n"
+"Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
 "Language: th\n"
 "MIME-Version: 1.0\n"
@@ -18,97 +18,17 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Poedit 1.5.4\n"
 
-#: weblogin/index.php:76
+#: weblogin/index.php:85
 msgid "If it is not redirecting within 3 seconds"
 msgstr "หากระบบไม่นำคุณสู่หน้าถัดไปภายใน 3 วินาที"
 
-#: weblogin/index.php:76
+#: weblogin/index.php:85
 msgid "click"
 msgstr "เลือก"
 
-#: weblogin/index.php:76
+#: weblogin/index.php:86
 msgid "Login Page"
 msgstr "หน้าเข้าระบบ"
-
-#: weblogin/login.php:170 weblogin/logout.php:176
-msgid "Username"
-msgstr "ชื่อผู้ใช้"
-
-#: weblogin/login.php:172
-msgid "Password"
-msgstr "รหัสผ่าน"
-
-#: weblogin/login.php:175
-msgid "Login"
-msgstr "เข้าสู่ระบบ"
-
-#: weblogin/logout.php:55
-msgid "day"
-msgstr "วัน"
-
-#: weblogin/logout.php:56
-msgid "days"
-msgstr "วัน"
-
-#: weblogin/logout.php:58
-msgid "hour"
-msgstr "ชั่วโมง"
-
-#: weblogin/logout.php:59
-msgid "hours"
-msgstr "ชั่วโมง"
-
-#: weblogin/logout.php:61
-msgid "minute"
-msgstr "นาที"
-
-#: weblogin/logout.php:62
-msgid "minutes"
-msgstr "นาที"
-
-#: weblogin/logout.php:64
-msgid "second"
-msgstr "วินาที"
-
-#: weblogin/logout.php:65
-msgid "seconds"
-msgstr "วินาที"
-
-#: weblogin/logout.php:180
-msgid "Session Start"
-msgstr "เริ่มวาระ"
-
-#: weblogin/logout.php:184
-msgid "Session End"
-msgstr "สิ้นสุดวาระ"
-
-#: weblogin/logout.php:185
-msgid "Never"
-msgstr "ไม่มีกำหนด"
-
-#: weblogin/logout.php:189
-msgid "Session Time"
-msgstr "เวลาใช้งาน"
-
-#: weblogin/logout.php:189
-msgid "Session Remain Time"
-msgstr "เหลือเวลาในวาระ"
-
-#: weblogin/logout.php:195
-msgid "Class of service"
-msgstr "บริการพิเศษ"
-
-#: weblogin/logout.php:200
-msgid "Request URL"
-msgstr "URL ที่ร้องขอ"
-
-#: weblogin/logout.php:207
-msgid "OK"
-msgstr "ตกลง"
-
-#: weblogin/logout.php:208
-msgid "Logout"
-msgstr "เลิกใช้งาน"
 
 #: weblogin/messages.php:35
 msgid "Error! Could not connect to the server"
@@ -154,14 +74,94 @@ msgstr "สำเร็จ! ผู้ใช้นี้ผ่านการต�
 msgid "Success! User has been logout"
 msgstr "สำเร็จ! ผู้ใช้นี้ ได้เลิกใช้งานแล้ว"
 
-#: weblogin/user.class.php:81
-msgid "Error: Could not get data from database"
-msgstr "ผิดพลาด: ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้"
+#: weblogin/rahu_authen.class.php:394
+msgid "Never"
+msgstr "ไม่มีกำหนด"
 
-#: weblogin/user.class.php:86 weblogin/user.class.php:106
-msgid "Invalid username or password"
-msgstr "ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้อง"
+#: weblogin/rahu_authen.class.php:398
+msgid "Session Time"
+msgstr "เวลาใช้งาน"
 
-#: weblogin/user.class.php:127
-msgid "Error: Could not change password"
-msgstr "ผิดพลาด: ไม่สามารถเปลี่ยนรหัสผ่านได้"
+#: weblogin/rahu_authen.class.php:398
+msgid "Session Remain Time"
+msgstr "เหลือเวลาในวาระ"
+
+#: weblogin/rahu_authen.class.php:407 weblogin/rahu_render.class.php:76
+msgid "Username"
+msgstr "ชื่อผู้ใช้"
+
+#: weblogin/rahu_authen.class.php:411
+msgid "Session Start"
+msgstr "เริ่มวาระ"
+
+#: weblogin/rahu_authen.class.php:412
+msgid "Session End"
+msgstr "สิ้นสุดวาระ"
+
+#: weblogin/rahu_authen.class.php:415
+msgid "Request URL"
+msgstr "URL ที่ร้องขอ"
+
+#: weblogin/rahu_authen.class.php:420
+msgid "day"
+msgstr "วัน"
+
+#: weblogin/rahu_authen.class.php:421
+msgid "days"
+msgstr "วัน"
+
+#: weblogin/rahu_authen.class.php:423
+msgid "hour"
+msgstr "ชั่วโมง"
+
+#: weblogin/rahu_authen.class.php:424
+msgid "hours"
+msgstr "ชั่วโมง"
+
+#: weblogin/rahu_authen.class.php:426
+msgid "minute"
+msgstr "นาที"
+
+#: weblogin/rahu_authen.class.php:427
+msgid "minutes"
+msgstr "นาที"
+
+#: weblogin/rahu_authen.class.php:429
+msgid "second"
+msgstr "วินาที"
+
+#: weblogin/rahu_authen.class.php:430
+msgid "seconds"
+msgstr "วินาที"
+
+#: weblogin/rahu_render.class.php:75
+msgid "Language"
+msgstr "ภาษา"
+
+#: weblogin/rahu_render.class.php:77
+msgid "Password"
+msgstr "รหัสผ่าน"
+
+#: weblogin/rahu_render.class.php:78
+msgid "Login"
+msgstr "เข้าสู่ระบบ"
+
+#: weblogin/rahu_render.class.php:79
+msgid "Logout"
+msgstr "เลิกใช้งาน"
+
+#: weblogin/rahu_render.class.php:80
+msgid "OK"
+msgstr "ตกลง"
+
+#~ msgid "Class of service"
+#~ msgstr "บริการพิเศษ"
+
+#~ msgid "Error: Could not get data from database"
+#~ msgstr "ผิดพลาด: ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้"
+
+#~ msgid "Invalid username or password"
+#~ msgstr "ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้อง"
+
+#~ msgid "Error: Could not change password"
+#~ msgstr "ผิดพลาด: ไม่สามารถเปลี่ยนรหัสผ่านได้"
