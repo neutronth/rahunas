@@ -23,7 +23,7 @@
 static uint64_t slot_flags[MAX_SLOT_PAGE];
 static uint64_t slot_count = 0;
 
-uint16_t _get_slot_id()
+static uint16_t _get_slot_id()
 {
   uint16_t page_size  = PAGE_SIZE;
   uint16_t slot_id    = 0;
@@ -288,7 +288,8 @@ static int startsess (RHVServer *vs, struct task_req *req)
            member->bandwidth_max_up);
   
   while (max_try > 0) { 
-    slot_id = _get_slot_id();
+    slot_id = req->bandwidth_slot_id > 0 ? req->bandwidth_slot_id :
+                _get_slot_id();
     snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%" PRIu16, slot_id);
     if (slot_id > 0 && bandwidth_add(vs, &bw_req) == 0)
       break;
