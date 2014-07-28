@@ -96,6 +96,7 @@ retry:
   if (rc != SQLITE_OK) {
     if (rc == SQLITE_BUSY && --retry > 0) {
       closeconn (connection);
+      sleep (1);
       goto retry;
     }
 

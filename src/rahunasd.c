@@ -118,6 +118,7 @@ retry:
     if (rc == SQLITE_BUSY && --retry > 0) {
       sqlite3_free (zErrMsg);
       sqlite3_close (connection);
+      sleep (1);
       goto retry;
     }
   } else if (nRow > 0) {
