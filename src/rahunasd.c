@@ -429,6 +429,7 @@ int main(int argc, char *argv[])
     .rh_main.dhcp = NULL,
     .rh_main.polling_interval = POLLING,
     .rh_main.bandwidth_shape = BANDWIDTH_SHAPE,
+    .rh_main.ip_accounting = IP_ACCOUNTING,
     .rh_main.serviceclass = 0,
   };
 

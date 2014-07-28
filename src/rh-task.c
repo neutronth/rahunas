@@ -63,7 +63,9 @@ void rh_task_register(RHMainServer *ms)
       rh_task_bandwidth_reg(ms);
 
     rh_task_conntrack_reg(ms);
-    rh_task_ipacct_reg(ms);
+
+    if (ms->main_config->ip_accounting)
+      rh_task_ipacct_reg(ms);
 
     rh_task_dbset_reg(ms);
     task_registered = 1;

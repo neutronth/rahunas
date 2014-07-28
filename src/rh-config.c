@@ -84,6 +84,8 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         config->rh_main.bittorrent_upload_max = atoi(value); 
       } else if (strncmp(sub_key, "polling_interval", 16) == 0) {
         config->rh_main.polling_interval = atoi(value);
+      } else if (strncmp(sub_key, "ip_accounting", 13) == 0) {
+        config->rh_main.ip_accounting = strncmp(value, "yes", 3) == 0 ? 1 : 0;
       }      
       break;
 

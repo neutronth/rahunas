@@ -15,6 +15,7 @@
 #define IDLE_TIMEOUT 600
 #define POLLING 60 
 #define BANDWIDTH_SHAPE 0
+#define IP_ACCOUNTING 0
 #define INTERIM_INTERVAL 600
 
 #define XMLSERVICE_HOST "localhost"
@@ -44,6 +45,7 @@ struct rahunas_main_config {
   int  bittorrent_download_max;
   int  bittorrent_upload_max;
   int  polling_interval;
+  int  ip_accounting;
 };
 
 struct rahunas_vserver_config {
