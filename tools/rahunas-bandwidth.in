@@ -24,10 +24,11 @@ QDISC=htb
 MAX_DOWN_SPEED=${INTERFACE_SPEED}
 MAX_UP_SPEED=${INTERFACE_SPEED}
 
-R2Q_DOWN=${R2Q_DOWN:-10}
+R2Q_DOWN=${R2Q_DOWN:-125}
 R2Q_UP=${R2Q_UP:-10}
 HZ=${HZ:-1000}
 MAX_BURST_PCT=${MAX_BURST_PCT:-70}
+NORMAL_SPEED_PCT=${NORMAL_SPEED_PCT:-50}
 
 get_iface_burst () {
   speed=$1
@@ -63,6 +64,13 @@ get_burst () {
   else
     echo $b
   fi
+}
+
+get_speed_normal () {
+  speed=$1
+  percent=$NORMAL_SPEED_PCT
+
+  echo "${speed}*${percent}/100" | $BC
 }
 
 INTERFACE_ID="0xffff"
@@ -105,12 +113,12 @@ interface_setting () {
   else
     qdisc_down_opt="htb default ${DEFAULT_ID} r2q ${R2Q_DOWN}"
     qdisc_up_opt="htb default ${DEFAULT_ID} r2q ${R2Q_UP}"
-    class_down_opt="htb rate ${MAX_DOWN_SPEED}kbit ceil ${INTERFACE_SPEED}kbit"
-    class_up_opt="htb rate ${MAX_UP_SPEED}kbit ceil ${INTERFACE_SPEED}kbit"
-    class_down_iface_opt="$class_down_opt burst `get_iface_burst ${MAX_DOWN_SPEED}`Kb"
-    class_down_default_opt="$class_down_opt burst `get_max_burst_kb down`Kb"
-    class_up_iface_opt="$class_up_opt burst `get_iface_burst ${MAX_UP_SPEED}`Kb"
-    class_up_default_opt="$class_up_opt burst `get_max_burst_kb up`Kb"
+    class_down_opt="htb rate %skbit ceil ${INTERFACE_SPEED}kbit"
+    class_up_opt="htb rate %skbit ceil ${INTERFACE_SPEED}kbit"
+    class_down_iface_opt=`printf "$class_down_opt burst %sKb" "${MAX_DOWN_SPEED}" "$(get_iface_burst ${MAX_DOWN_SPEED})"`
+    class_down_default_opt=`printf "$class_down_opt burst %sKb" "$(get_speed_normal ${MAX_DOWN_SPEED})" "$(get_max_burst_kb down)"`
+    class_up_iface_opt=`printf "$class_up_opt burst %sKb" "${MAX_UP_SPEED}" "$(get_iface_burst ${MAX_UP_SPEED})"`
+    class_up_default_opt=`printf "$class_up_opt burst %sKb" "$(get_speed_normal ${MAX_UP_SPEED})" "$(get_max_burst_kb up)"`
   fi
 
   case "$1" in
@@ -326,8 +334,8 @@ bw_add() {
     class_down_opt="hfsc sc rate ${DOWNSPEED}bit ul rate ${DOWNSPEED}"
     class_up_opt="hfsc sc rate ${UPSPEED}bit ul rate ${UPSPEED}"
   else
-    class_down_opt="htb rate ${DOWNSPEED}bit ceil ${DOWNSPEED}bit burst `get_burst ${DOWNSPEED} down`"
-    class_up_opt="htb rate ${UPSPEED}bit ceil ${UPSPEED}bit burst `get_burst ${UPSPEED} up`"
+    class_down_opt="htb rate `get_speed_normal ${DOWNSPEED}`bit ceil ${DOWNSPEED}bit burst `get_burst ${DOWNSPEED} down`"
+    class_up_opt="htb rate `get_speed_normal ${UPSPEED}`bit ceil ${UPSPEED}bit burst `get_burst ${UPSPEED} up`"
   fi
 
   # Downlink
