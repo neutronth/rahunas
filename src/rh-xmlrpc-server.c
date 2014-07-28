@@ -94,6 +94,7 @@ int do_startsession(GNetXmlRpcServer *server,
   memcpy(req.mac_address, ethernet, ETH_ALEN);
   req.session_start = 0;
   req.session_timeout = 0;
+  req.bandwidth_slot_id = 0;
 
   if (session_timeout != NULL) {
     if (atol(session_timeout) != 0)
