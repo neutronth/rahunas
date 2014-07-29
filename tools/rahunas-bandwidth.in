@@ -328,6 +328,20 @@ bw_add() {
 
   DOWN_MBPS=`echo "scale=2; $DOWNSPEED/1048576" | $BC | awk '{printf "%.2f", $0}'`
   UP_MBPS=`echo "scale=2; $UPSPEED/1048576" | $BC | awk '{printf "%.2f", $0}'`
+
+  DOWN_VALID=yes
+  UP_VALID=yes
+
+  if [ "$DOWN_MBPS" = "0.00" ]; then
+    DOWN_VALID=
+    DOWN_MBPS="Unlimit"
+  fi
+
+  if [ "$UP_MBPS" = "0.00" ]; then
+    UP_VALID=
+    UP_MBPS="Unlimit"
+  fi
+
   MESSAGE="Add shaping slot id: $ID for $IP with D/U=${DOWN_MBPS}/${UP_MBPS} Mbits/s"
 
   if [ "x$QDISC" = "xhfsc" ]; then
@@ -339,24 +353,28 @@ bw_add() {
   fi
 
   # Downlink
-  $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
-    classid 1:${ID} $class_down_opt
-  if [ $? != 0 ]; then
-    $TC class replace dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
+  if [ "x$DOWN_VALID" = "xyes" ]; then
+    $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
       classid 1:${ID} $class_down_opt
-  fi
+    if [ $? != 0 ]; then
+      $TC class replace dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
+        classid 1:${ID} $class_down_opt
+    fi
 
-  filter_add $ID $IP downlink
+    filter_add $ID $IP downlink
+  fi
 
   # Uplink
-  $TC class add dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
-    classid 1:${ID} $class_up_opt
-  if [ $? != 0 ]; then
-    $TC class replace dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
+  if [ "x$UP_VALID" = "xyes" ]; then
+    $TC class add dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
       classid 1:${ID} $class_up_opt
-  fi
+    if [ $? != 0 ]; then
+      $TC class replace dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
+        classid 1:${ID} $class_up_opt
+    fi
 
-  filter_add $ID $IP uplink
+    filter_add $ID $IP uplink
+  fi
 }
 
 bw_del() {
