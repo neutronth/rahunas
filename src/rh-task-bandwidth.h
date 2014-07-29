@@ -16,7 +16,7 @@
 */
 
 #define MAX_SLOT_ID    10240
-#define PAGE_SIZE      sizeof(uint64_t) * 8
+#define PAGE_SIZE      (sizeof(uint64_t) * 8)
 #define MAX_SLOT_PAGE  (MAX_SLOT_ID/PAGE_SIZE)
 
 extern void rh_task_bandwidth_reg(RHMainServer *ms);

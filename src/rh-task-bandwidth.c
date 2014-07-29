@@ -25,7 +25,6 @@ static uint64_t slot_count = 0;
 
 static uint16_t _get_slot_id()
 {
-  uint16_t page_size  = PAGE_SIZE;
   uint16_t slot_id    = 0;
   uint16_t page       = 0;
   uint8_t  id_on_page = 0;
@@ -44,8 +43,8 @@ static uint16_t _get_slot_id()
     slot_id = random () % (MAX_SLOT_ID + 1);
    
     // Check validity
-    page = slot_id / page_size;
-    id_on_page = slot_id % page_size;
+    page = slot_id / PAGE_SIZE;
+    id_on_page = slot_id % PAGE_SIZE;
    
     if (!(slot_flags[page] & (1 << id_on_page))) {
       // Slot available
@@ -54,9 +53,9 @@ static uint16_t _get_slot_id()
 
     // Second try, probe other slot in current page
     uint16_t id    = 0;
-    for (id = 0; id < page_size; id++) {
+    for (id = 0; id < PAGE_SIZE; id++) {
       if (!(slot_flags[page] & (1 << id))) {
-        slot_id = (page * page_size) + id;
+        slot_id = (page * PAGE_SIZE) + id;
         goto done;
       }
     }
@@ -72,12 +71,11 @@ done:
 
 void mark_reserved_slot_id(uint16_t slot_id)
 {
-  uint16_t page_size  = PAGE_SIZE;
   uint16_t page       = 0;
   uint8_t  id_on_page = 0;
 
-  page = slot_id / page_size;
-  id_on_page = slot_id % page_size;
+  page = slot_id / PAGE_SIZE;
+  id_on_page = slot_id % PAGE_SIZE;
 
   slot_count++;
   slot_flags[page] |= 1 << id_on_page;
@@ -85,13 +83,12 @@ void mark_reserved_slot_id(uint16_t slot_id)
 
 void unmark_reserved_slot_id(uint16_t slot_id)
 {
-  uint16_t page_size  = PAGE_SIZE;
   uint16_t page       = 0;
   uint8_t  id_on_page = 0;
   uint16_t id_flag    = 0;
 
-  page = slot_id / page_size;
-  id_on_page = slot_id % page_size;
+  page = slot_id / PAGE_SIZE;
+  id_on_page = slot_id % PAGE_SIZE;
   id_flag = 1 << id_on_page;
 
   if (slot_count > 0)
