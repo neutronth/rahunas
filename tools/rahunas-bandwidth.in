@@ -199,7 +199,7 @@ stop () {
 
 usage_add() {
   echo "Usage: $1 add ID IP DOWNSPEED UPSPEED DOWN_IF UP_IF"
-  echo "         ID - ID number from 1 to 9900"
+  echo "         ID - ID number from 1 to 10240"
   echo "         IP - IPv4 Address"
   echo "  DOWNSPEED - Download speed (bits/s)"
   echo "    UPSPEED - Upload speed (bits/s)"
@@ -209,7 +209,7 @@ usage_add() {
 
 usage_del() {
   echo "Usage: $1 del ID DOWN_IF UP_IF"
-  echo "         ID - ID number from 1 to 9900"
+  echo "         ID - ID number from 1 to 10240"
   echo "    DOWN_IF - Downstream interface (eth0, eth1, vlan1, ...)"
   echo "      UP_IF - Upstream interface (ifb0, ifb1, ...)"
 }
@@ -247,34 +247,34 @@ filter_add() {
   ht3=`echo "obase=16;$ip3" | $BC | awk '{print tolower($0)}'`
   ht4=`echo "obase=16;$ip4" | $BC | awk '{print tolower($0)}'`
 
-  $TC filter show dev ${iface} | grep -w "fh a${ht1}:" >/dev/null 2>&1
+  $TC -p filter show dev ${iface} | grep -w "${ip1}.0.0.0/8" >/dev/null 2>&1
   if [ $? != 0 ]; then
     $TC filter add dev ${iface} parent 1: prio $prio handle a${ht1}: \
       protocol ip u32 divisor 256
     $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
-      ht 2:${ht1}: match ip $filter_opt 0.0.0.0/0 \
+      ht 2:${ht1}: match ip $filter_opt ${ip1}.0.0.0/8 \
       hashkey mask 0xff0000 at $offset link a${ht1}:
   fi
 
-  $TC filter show dev ${iface} | grep -w "fh b${ht2}:" >/dev/null 2>&1
+  $TC -p filter show dev ${iface} | grep -w "${ip1}.${ip2}.0.0/16" >/dev/null 2>&1
   if [ $? != 0 ]; then
     $TC filter add dev ${iface} parent 1: prio $prio handle b${ht2}: \
       protocol ip u32 divisor 256
     $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
-      ht a${ht1}:${ht2}: match ip $filter_opt 0.0.0.0/0 \
+      ht a${ht1}:${ht2}: match ip $filter_opt ${ip1}.${ip2}.0.0/16 \
       hashkey mask 0xff00 at $offset link b${ht2}:
   fi
 
-  $TC filter show dev ${iface} | grep -w "fh c${ht3}:" >/dev/null 2>&1
+  $TC -p filter show dev ${iface} | grep -w "${ip1}.${ip2}.${ip3}.0/24" >/dev/null 2>&1
   if [ $? != 0 ]; then
     $TC filter add dev ${iface} parent 1: prio $prio handle c${ht3}: \
       protocol ip u32 divisor 256
     $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
-      ht b${ht2}:${ht3}: match ip $filter_opt 0.0.0.0/0 \
+      ht b${ht2}:${ht3}: match ip $filter_opt ${ip1}.${ip2}.${ip3}.0/24 \
       hashkey mask 0xff at $offset link c${ht3}:
   fi
 
-  $TC filter show dev ${iface} | grep -w "fh c${ht3}:${ht4}:800" >/dev/null 2>&1
+  $TC -p filter show dev ${iface} | grep -w "${ip1}.${ip2}.${ip3}.${ip4}/32" >/dev/null 2>&1
   if [ $? != 0 ]; then
     $TC filter add dev ${iface} parent 1: prio $prio protocol ip u32 \
       ht c${ht3}:${ht4}: match ip $filter_opt ${IP}/32 flowid 1:${ID}
@@ -394,8 +394,8 @@ bw_del() {
 
   # Class Removal
   # Downlink/Uplink
-  $TC class del dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} classid 1:${ID}
-  $TC class del dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} classid 1:${ID}
+  $TC class del dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} classid 1:${ID} >/dev/null 2>&1
+  $TC class del dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} classid 1:${ID} >/dev/null 2>&1
 }
 
 chk_interface () {
