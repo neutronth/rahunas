@@ -71,29 +71,58 @@ do_get_config () {
   opt=$2
   get_config $file $opt || true
 
-  PMACCT_CONF=$PMACCT_CONFDIR/pmacctd.$VSERVER_ID-$SETNAME.conf
-  PMACCT_PID=$RUNDIR/pmacctd.$VSERVER_ID-$SETNAME.pid
+  PMACCT_CONF=$PMACCT_CONFDIR/pmacctd.$DEV_INTERNAL.conf
+  PMACCT_PID=$RUNDIR/pmacctd.$DEV_INTERNAL.pid
+  CLIENTLIST_FILE=$RUNDIR/rahunas-ipacct-clientlist.$DEV_INTERNAL
+
+  test -f $CLIENTLIST_FILE || touch $CLIENTLIST_FILE
 }
 
 create_pmacct_conf () {
+  in_agg_filter=
+  out_agg_filter=
+  pcap_filter=
+
+  while read net; do
+    in_agg_filter="${in_agg_filter} src net $net or"
+    out_agg_filter="${out_agg_filter} dst net $net or"
+    pcap_filter="${pcap_filter} net $net or"
+  done < $CLIENTLIST_FILE
+
+  in_agg_filter=`echo ${in_agg_filter} | sed "s/\sor$//g"`
+  out_agg_filter=`echo ${out_agg_filter} | sed "s/\sor$//g"`
+  pcap_filter=`echo ${pcap_filter} | sed "s/\sor$//g"`
+
   cat << EOF > $PMACCT_CONF
 daemonize: true
 pidfile: $PMACCT_PID
 syslog: daemon
 aggregate[inbound]: src_host
 aggregate[outbound]: dst_host
-aggregate_filter[inbound]: src net $CLIENTS
-aggregate_filter[outbound]: dst net $CLIENTS
-pcap_filter: net $CLIENTS
+aggregate_filter[inbound]: ${in_agg_filter}
+aggregate_filter[outbound]: ${out_agg_filter}
+pcap_filter: (${pcap_filter}) and not broadcast
 interface: $DEV_INTERNAL
 plugins: sqlite3[inbound], sqlite3[outbound]
+plugin_buffer_size: 10240
+plugin_pipe_size: 10240000
 sql_optimize_clauses: true
 sql_db: /var/lib/rahunas/rahunas.db
 sql_table: acct
 sql_history: 12M
-sql_refresh_time: 5
+sql_refresh_time: 10
+sql_max_writers: 2
 promisc: false
 EOF
+}
+
+append_clientlist() {
+  grep -w "$CLIENTS" $CLIENTLIST_FILE >/dev/null 2>&1
+  test $? = 0 || echo $CLIENTS >> $CLIENTLIST_FILE
+}
+
+drop_clientlist() {
+  sed -i "\|^${CLIENTS}$|d" $CLIENTLIST_FILE
 }
 
 start_config() {
@@ -103,12 +132,15 @@ start_config() {
     check=`pidof $PMACCTD | grep -w "$pid"`
 
     test -n "$check" && should_run=""
+
+    if [ "x$should_run" = "x" ]; then
+      stop_config norestart
+    fi
   fi
 
-  if [ "x$should_run" = "xyes" ]; then
-    create_pmacct_conf
-    $PMACCTD -f $PMACCT_CONF
-  fi
+  append_clientlist
+  create_pmacct_conf
+  $PMACCTD -f $PMACCT_CONF
 
   return 0
 }
@@ -131,6 +163,9 @@ start_config_file() {
 }
 
 stop_config() {
+  opt=$1
+  drop_clientlist
+
   test -f $PMACCT_PID || return 0;
   pid=`cat $PMACCT_PID`
 
@@ -141,15 +176,25 @@ stop_config() {
       sleep 1
       break
     fi
-    kill $pid >/dev/null 2>&1
-    check=`pidof $PMACCTD | grep -w "$pid"`
+    kill -s INT $pid >/dev/null 2>&1
+    check=`pidof $PMACCTD | sed "s/\s\+/\n/g" | grep -w "$pid"`
 
     test -z "$check" && break
     retry=$((retry-1))
     sleep 1
   done
-  rm -f $PMACCT_PID
-  test -f $PMACCT_CONF && rm -f $PMACCT_CONF
+
+  test=`cat $CLIENTLIST_FILE | wc -l`
+
+  if [ $test -eq 0 ]; then
+    rm -f $PMACCT_PID
+    rm -f $CLIENTLIST_FILE
+    test -f $PMACCT_CONF && rm -f $PMACCT_CONF
+  elif [ "x$opt" != "xnorestart" ]; then
+    create_pmacct_conf
+    $PMACCTD -f $PMACCT_CONF
+  fi
+
   return 0
 }
 
