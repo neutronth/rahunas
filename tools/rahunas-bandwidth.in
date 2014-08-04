@@ -355,7 +355,7 @@ bw_add() {
   # Downlink
   if [ "x$DOWN_VALID" = "xyes" ]; then
     $TC class add dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
-      classid 1:${ID} $class_down_opt
+      classid 1:${ID} $class_down_opt >/dev/null 2>&1
     if [ $? != 0 ]; then
       $TC class replace dev $SHAPING_DOWN_INF parent 1:${INTERFACE_ID} \
         classid 1:${ID} $class_down_opt
@@ -367,7 +367,7 @@ bw_add() {
   # Uplink
   if [ "x$UP_VALID" = "xyes" ]; then
     $TC class add dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
-      classid 1:${ID} $class_up_opt
+      classid 1:${ID} $class_up_opt >/dev/null 2>&1
     if [ $? != 0 ]; then
       $TC class replace dev $SHAPING_UP_INF parent 1:${INTERFACE_ID} \
         classid 1:${ID} $class_up_opt
