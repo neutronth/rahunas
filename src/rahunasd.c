@@ -108,7 +108,6 @@ rh_data_sync (int vserver_id, struct rahunas_member *member)
   int  nRow       = 0;
   int  nColumn    = 0;
   int  i          = 0;
-  int retry       = 5;
   static int dl_pos = 0;
   static int ul_pos = 0;
 
@@ -117,7 +116,6 @@ rh_data_sync (int vserver_id, struct rahunas_member *member)
            vserver_id, member->session_id);
   DP("SQL: %s", sql);
 
-retry:
   rc = sqlite3_open (RAHUNAS_DB, &connection);
   if (rc) {
     logmsg (RH_LOG_ERROR, "Task DBSET: could not open database, %s",
@@ -126,16 +124,11 @@ retry:
     return;
   }
 
+  sqlite3_busy_timeout (connection, RH_SQLITE_BUSY_TIMEOUT_DEFAULT);
+
   rc = sqlite3_get_table (connection, sql, &azResult, &nRow, &nColumn,
                           &zErrMsg);
-  if (rc != SQLITE_OK) {
-    if (rc == SQLITE_BUSY && --retry > 0) {
-      sqlite3_free (zErrMsg);
-      sqlite3_close (connection);
-      sleep (1);
-      goto retry;
-    }
-  } else if (nRow > 0) {
+  if (rc == SQLITE_OK && nRow > 0) {
     /* Fetch row data */
     if (dl_pos == 0 || ul_pos == 0) {
       for (i = 0; i < nColumn; i++) {

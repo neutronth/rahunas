@@ -80,7 +80,6 @@ reset_accounting (const char *ip) {
   sqlite3 *connection = NULL;
   char *zErrMsg       = NULL;
   int rc = 0;
-  int retry = 5;
 
   if (ip) {
     snprintf (sql, sizeof (sql) - 1, "DELETE FROM acct WHERE ip_src='%s' OR "
@@ -89,7 +88,6 @@ reset_accounting (const char *ip) {
     snprintf (sql, sizeof (sql) - 1, "DELETE FROM acct");
   }
 
-retry:
   rc = sqlite3_open (RAHUNAS_DB, &connection);
   if (rc) {
     logmsg (RH_LOG_ERROR, "Task DBSET: could not open database, %s",
@@ -98,14 +96,10 @@ retry:
     return -1;
   }
 
+  sqlite3_busy_timeout (connection, RH_SQLITE_BUSY_TIMEOUT_DEFAULT);
+
   rc = sqlite3_exec (connection, sql, sql_execute_cb, 0, &zErrMsg);
   if (rc != SQLITE_OK) {
-    if (rc == SQLITE_BUSY && --retry > 0) {
-      sqlite3_close (connection);
-      sleep (1);
-      goto retry;
-    }
-
     logmsg (RH_LOG_ERROR, "Task DBSET: could not execute sql (%s)", zErrMsg);
     sqlite3_free (zErrMsg);
   }

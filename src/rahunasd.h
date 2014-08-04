@@ -22,6 +22,7 @@
 #define MAX_MEMBERS 0x00FFFF
 
 #define DEFAULT_MAC "00:00:00:00:00:00"
+#define RH_SQLITE_BUSY_TIMEOUT_DEFAULT  10000  /* 10 seconds */
 
 extern const char *termstring; 
 extern RHMainServer rh_main_server_instance;
