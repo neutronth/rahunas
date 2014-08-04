@@ -142,7 +142,7 @@ interface_setting () {
 
       # Redirect incoming traffic to IFB
       $TC qdisc add dev $SHAPING_DOWN_INF ingress
-      $TC filter add dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 50 u32 \
+      $TC filter add dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 10 u32 \
         match u32 0 0 flowid 1:${INTERFACE_ID} \
         action mirred egress redirect dev $SHAPING_UP_INF
 
@@ -155,15 +155,15 @@ interface_setting () {
         ht 800:: match ip dst 0.0.0.0/0 hashkey mask 0xff000000 at 16 link 2:
 
       # Interface Uplink
-      $TC filter add dev $SHAPING_UP_INF parent 1: prio 50 protocol ip u32
-      $TC filter add dev $SHAPING_UP_INF parent 1: prio 50 handle 2: \
+      $TC filter add dev $SHAPING_UP_INF parent 1: prio 10 protocol ip u32
+      $TC filter add dev $SHAPING_UP_INF parent 1: prio 10 handle 2: \
         protocol ip u32 divisor 256
-      $TC filter add dev $SHAPING_UP_INF parent 1: prio 50 protocol ip u32 \
+      $TC filter add dev $SHAPING_UP_INF parent 1: prio 10 protocol ip u32 \
         ht 800:: match ip src 0.0.0.0/0 hashkey mask 0xff000000 at 12 link 2:
       ;;
   stop)
       # Redirect incoming traffic to IFB
-      $TC filter del dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 50
+      $TC filter del dev $SHAPING_DOWN_INF parent ffff: protocol ip prio 10
       $TC qdisc del dev $SHAPING_DOWN_INF ingress
 
       # Interface Downlink
@@ -234,7 +234,7 @@ filter_add() {
     iface=${SHAPING_UP_INF}
     filter_opt=src
     offset=12
-    prio=50
+    prio=10
   fi
 
   ip1=`echo $IP | cut -d. -f1`
@@ -295,7 +295,7 @@ filter_del() {
     prio=5
   else
     iface=$SHAPING_UP_INF
-    prio=50
+    prio=10
   fi
 
   handle=`$TC -p filter show dev ${iface} | grep -w "flowid 1:${ID}" | grep "fh " | awk -F"fh " '{print $2}' | awk '{print $1}'`
