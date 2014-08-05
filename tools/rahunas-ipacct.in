@@ -107,7 +107,7 @@ plugins: sqlite3[inbound], sqlite3[outbound]
 plugin_buffer_size: 10240
 plugin_pipe_size: 10240000
 sql_optimize_clauses: true
-sql_db: /var/lib/rahunas/rahunas.db
+sql_db: /var/lib/rahunas/db/rahunas.db
 sql_table: acct
 sql_history: 12M
 sql_refresh_time: 10
