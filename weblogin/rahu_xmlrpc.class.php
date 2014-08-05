@@ -89,9 +89,11 @@ class rahu_xmlrpc_client {
        $ret[6] - serviceclass_description
        $ret[7] - download_bytes
        $ret[8] - upload_bytes
+       $ret[9] - download_speed
+       $ret[10] - upload_speed
     */
 
-    if (count ($ret) == 9) {
+    if (count ($ret) == 11) {
       $ip = $ret[0];
       $username = $ret[1];
       $session_id = $ret[2];
@@ -101,6 +103,8 @@ class rahu_xmlrpc_client {
       $serviceclass_description = $ret[6];
       $download_bytes = $ret[7];
       $upload_bytes = $ret[8];
+      $download_speed   = $ret[9];
+      $upload_speed     = $ret[10];
 
       $result = array("ip"=>$ip,
                       "username"=>$username,
@@ -110,7 +114,9 @@ class rahu_xmlrpc_client {
                       "session_timeout"=>$session_timeout,
                       "serviceclass_description"=>$serviceclass_description,
                       "download_bytes"=>$download_bytes,
-                      "upload_bytes"=>$upload_bytes);
+                      "upload_bytes"=>$upload_bytes,
+                      "download_speed"=>$download_speed,
+                      "upload_speed"=>$upload_speed);
     }
 
     return $result;

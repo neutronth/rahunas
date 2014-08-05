@@ -309,7 +309,8 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
       goto cleanup;
     }
     
-    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d|%s|%" PRId64 "|%" PRId64,
+    *reply_string = g_strdup_printf("%s|%s|%s|%d|%s|%d|%s|%" PRId64 "|%" PRId64
+                                    "|%lu|%lu",
                                     ip, 
                                     member->username,
                                     member->session_id,
@@ -318,7 +319,9 @@ int do_getsessioninfo(GNetXmlRpcServer *server,
                                     member->session_timeout,
                                     member->serviceclass_description,
                                     member->download_bytes,
-                                    member->upload_bytes);
+                                    member->upload_bytes,
+                                    member->bandwidth_max_down,
+                                    member->bandwidth_max_up);
     goto cleanup;
   }
 

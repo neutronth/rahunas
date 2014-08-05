@@ -3,31 +3,31 @@
   Copyright (c) 2011-2014, Neutron Soutmun <neutron@rahunas.org>
   All rights reserved.
 
-  Redistribution and use in source and binary forms, with or without 
-  modification, are permitted provided that the following conditions 
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
   are met:
 
-  1. Redistributions of source code must retain the above copyright 
+  1. Redistributions of source code must retain the above copyright
      notice, this list of conditions and the following disclaimer.
-  2. Redistributions in binary form must reproduce the above copyright 
-     notice, this list of conditions and the following disclaimer in the 
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
-  3. The names of the authors may not be used to endorse or promote products 
+  3. The names of the authors may not be used to endorse or promote products
      derived from this software without specific prior written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
   PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
-  OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+  OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE.
 
-  This code cannot simply be copied and put under the GNU Public License or 
+  This code cannot simply be copied and put under the GNU Public License or
     any other GPL-like (LGPL, GPL2) License.
 */
 require_once 'Net/IPv4.php';
@@ -61,47 +61,47 @@ class RahuClient {
     // This code is under the GNU Public Licence
     // Written by michael_stankiewicz {don't spam} at yahoo {no spam} dot com
     // Tested only on linux, please report bugs
-  
+
     // WARNING: the commands 'which' and 'arp' should be executable
     // by the apache user; on most linux boxes the default configuration
     // should work fine
-  
+
     // Get the arp executable path
     $location = "/usr/sbin/arp";
-  
+
     // Get the remote ip address (the ip address of the client, the browser)
     $remoteIp = $_SERVER['REMOTE_ADDR'];
     $remoteIp = str_replace(".", "\\.", $remoteIp);
-  
+
     // Execute the arp command and store the output in $arpTable
     $arpTable = shell_exec("$location -n");
-  
+
     // Split the output so every line is an entry of the $arpSplitted array
     $arpSplitted = split("\n",$arpTable);
-  
-  
+
+
     // Cicle the array to find the match with the remote ip address
     foreach ($arpSplitted as $value) {
       // Split every arp line, this is done in case the format of the arp
       // command output is a bit different than expected
       $valueSplitted = split(" ",$value);
-  
+
       foreach ($valueSplitted as $spLine) {
         $ipFound = false;
-  
+
         if ( preg_match("/\b$remoteIp\b/",$spLine) ) {
           $ipFound = true;
         }
-  
+
         // The ip address has been found, now rescan all the string
         // to get the mac address
-  
+
         if ($ipFound) {
           // Rescan all the string, in case the mac address, in the string
-          // returned by arp, comes before the ip address 
+          // returned by arp, comes before the ip address
           // (you know, Murphy's laws)
           reset($valueSplitted);
-  
+
           foreach ($valueSplitted as $spLine) {
             if (preg_match("/[0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-]".
                            "[0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-]".
@@ -112,7 +112,7 @@ class RahuClient {
         }
       }
     }
-    
+
     return false;
   }
 }
@@ -210,7 +210,7 @@ abstract class RahuAuthen {
       $tpl->setMessage ($this->message, $this->failed ? "danger" : "success");
       $tpl->setState ('message');
       $this->redirecting = true;
-      
+
       if (empty ($this->redirect_url)) {
         $this->redirect_url = $_SERVER["REQUEST_URI"];
       }
@@ -281,14 +281,14 @@ class RahuAuthenLogin extends RahuAuthen {
   protected function onSubmit () {
     if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
       $_POST['user'] = trim($_POST['user']);
-  
+
       $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'],
                                      $this->config['RADIUS_ENCRYPT']);
       $rauth->host = $this->config["RADIUS_HOST"];
       $rauth->port = $this->config["RADIUS_AUTH_PORT"];
       $rauth->secret = $this->config["RADIUS_SECRET"];
       $rauth->start();
-  
+
       if ($rauth->isError()) {
         $this->message = get_message('ERR_CONNECT_RADIUS');
         $this->failed  = true;
@@ -305,11 +305,11 @@ class RahuAuthenLogin extends RahuAuthen {
         $racct->framed_ip_address  = $this->client->getIP ();
         $racct->calling_station_id = $this->client->getMAC ();
         $racct->gen_session_id();
-  
+
         $serviceclass_attrib = defined('SERVICECLASS_ATTRIBUTE') ?
                                SERVICECLASS_ATTRIBUTE :
                                "WISPr-Billing-Class-Of-Service";
-  
+
         try {
           $prepareData = array (
             "IP" => $this->client->getIP (),
@@ -329,7 +329,7 @@ class RahuAuthenLogin extends RahuAuthen {
             $called_station_id = $split[1];
             if (!empty ($called_station_id))
               $racct->called_station_id = $called_station_id;
-  
+
             $racct->acctStart();
             $this->authenticated = true;
           } else if (strstr($result, "Invalid IP Address")) {
@@ -389,33 +389,66 @@ class RahuAuthenLogout extends RahuAuthen {
       header("Refresh: " . $this->refresh_interval . "; url=" . $_SERVER['REQUEST_URI']);
     }
 
-    $session_start = strftime('%e %B %Y %H:%M:%S',
-                       $this->sessioninfo['session_start']);
-    $session_end = $this->sessioninfo['session_timeout'] == 0 ? _("Never") :
-                     strftime('%e %B %Y %H:%M:%S',
-                              $this->sessioninfo['session_timeout']);
-    $session_timeout_label = $this->sessioninfo['session_timeout'] == 0 ?
+    $session_start   = $this->sessioninfo['session_start'];
+    $session_start   = $this->formatDateTime($session_start);
+    $session_timeout = $this->sessioninfo['session_timeout'];
+    $session_end     = $session_timeout == 0 ? _("Never") :
+                       $this->formatDateTime($session_timeout);
+
+    $session_timeout_label = $session_timeout == 0 ?
                                _("Session Time") :_("Session Remain Time");
-    $session_timeout_remain = $this->sessioninfo['session_timeout'] == 0 ?
-      $this->secs_to_human(time() - $this->sessioninfo['session_start']) :
-      $this->secs_to_human($this->sessioninfo['session_timeout'] - time());
+    $session_timeout_remain = $session_timeout == 0 ?
+      $this->formatSeconds(time() - $this->sessioninfo['session_start']) :
+      $this->formatSeconds($this->sessioninfo['session_timeout'] - time());
 
     $request_url = @urldecode ($_GET['request_url']);
-    $request_url_text = strlen($request_url) < 20 ? $request_url : substr($request_url, 0, 20) . " ...";
-    $request_url_link = "<a href='$request_url' target='_blank'>$request_url_text</a>";
+    $request_url_text = strlen($request_url) < 20 ?
+                          $request_url : substr($request_url, 0, 20) . " ...";
+    $request_url_link = sprintf ("<a href='%s' target='_blank'>%s</a>",
+                                 $request_url, $request_url_text);
 
-    array_push ($this->userinfo, array (_("Username") =>
-                $this->sessioninfo["username"]));
+    $download_speed = intval ($this->sessioninfo["download_speed"]);
+    $upload_speed = intval ($this->sessioninfo["upload_speed"]);
 
+    if ($download_speed > 0) {
+      $download_speed = $this->formatBytes ($download_speed) . "bps";
+    } else {
+      $download_speed = _("Unlimit");
+    }
+
+    if ($upload_speed > 0) {
+      $upload_speed = $this->formatBytes ($upload_speed) . "bps";
+    } else {
+      $upload_speed = _("Unlimit");
+    }
+
+    $speed_text = sprintf ("%s / %s", $download_speed, $upload_speed);
+
+    $download_bytes = intval ($this->sessioninfo["download_bytes"]);
+    $upload_bytes   = intval ($this->sessioninfo["upload_bytes"]);
+    if ($download_bytes > 0 || $upload_bytes > 0) {
+      $data_transfer_text = sprintf ("%sB / %sB",
+                                     $this->formatBytes ($download_bytes),
+                                     $this->formatBytes ($upload_bytes));
+    }
+
+    array_push ($this->userinfo,
+                array (_("Username") => $this->sessioninfo["username"]));
+    array_push ($this->userinfo, array (_("Speed") => $speed_text));
+
+    if ($download_bytes > 0 || $upload_bytes > 0) {
+      array_push ($this->userinfo, array (_("Data") => $data_transfer_text));
+    }
 
     array_push ($this->userinfo, array (_("Session Start") => $session_start));
     array_push ($this->userinfo, array (_("Session End") => $session_end));
-    array_push ($this->userinfo, array ($session_timeout_label =>
-                                        $session_timeout_remain));
-    array_push ($this->userinfo, array (_("Request URL") => $request_url_link));
+    array_push ($this->userinfo,
+                array ($session_timeout_label => $session_timeout_remain));
+    array_push ($this->userinfo,
+                array (_("Request URL") => $request_url_link));
   }
 
-  private function secs_to_human($secs) {
+  private function formatSeconds($secs) {
     $units = array (
       "day"     => array ("unit" => _("day"),
                           "plural_unit" => _("days"),
@@ -444,6 +477,21 @@ class RahuAuthenLogout extends RahuAuthen {
     }
 
     return substr ($s, 0, -2);
+  }
+
+  private function formatBytes ($size, $precision = 2) {
+    $base = log($size) / log(1024);
+    $suffixes = array('', 'k', 'M', 'G', 'T');
+
+    $ret_size = round(pow(1024, $base - floor($base)), $precision);
+    $precision = floor ($ret_size) == $ret_size ? 0 : $precision;
+
+    return number_format ($ret_size, $precision) .  " " .
+           $suffixes[floor($base)];
+  }
+
+  private function formatDateTime ($datetime) {
+    return strftime('%e %B %EY %H:%M:%S', $datetime);
   }
 
   protected function onSubmit () {
