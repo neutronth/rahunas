@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas 0.2.6\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2014-07-28 04:09+0000\n"
+"POT-Creation-Date: 2014-08-05 03:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,15 +17,15 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: weblogin/index.php:85
+#: weblogin/index.php:87
 msgid "If it is not redirecting within 3 seconds"
 msgstr ""
 
-#: weblogin/index.php:85
+#: weblogin/index.php:87
 msgid "click"
 msgstr ""
 
-#: weblogin/index.php:86
+#: weblogin/index.php:88
 msgid "Login Page"
 msgstr ""
 
@@ -73,63 +73,75 @@ msgstr ""
 msgid "Success! User has been logout"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:394
+#: weblogin/rahu_authen.class.php:395
 msgid "Never"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:398
+#: weblogin/rahu_authen.class.php:399
 msgid "Session Time"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:398
+#: weblogin/rahu_authen.class.php:399
 msgid "Session Remain Time"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:407 weblogin/rahu_render.class.php:76
+#: weblogin/rahu_authen.class.php:416 weblogin/rahu_authen.class.php:422
+msgid "Unlimit"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:436 weblogin/rahu_render.class.php:76
 msgid "Username"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:411
+#: weblogin/rahu_authen.class.php:437
+msgid "Speed"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:440
+msgid "Data"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:443
 msgid "Session Start"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:412
+#: weblogin/rahu_authen.class.php:444
 msgid "Session End"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:415
+#: weblogin/rahu_authen.class.php:448
 msgid "Request URL"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:420
+#: weblogin/rahu_authen.class.php:453
 msgid "day"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:421
+#: weblogin/rahu_authen.class.php:454
 msgid "days"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:423
+#: weblogin/rahu_authen.class.php:456
 msgid "hour"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:424
+#: weblogin/rahu_authen.class.php:457
 msgid "hours"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:426
+#: weblogin/rahu_authen.class.php:459
 msgid "minute"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:427
+#: weblogin/rahu_authen.class.php:460
 msgid "minutes"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:429
+#: weblogin/rahu_authen.class.php:462
 msgid "second"
 msgstr ""
 
-#: weblogin/rahu_authen.class.php:430
+#: weblogin/rahu_authen.class.php:463
 msgid "seconds"
 msgstr ""
 
