@@ -532,6 +532,11 @@ int main(int argc, char *argv[])
                                        do_getsessioninfo, 
                                        rh_main_server);
 
+  gnet_xmlrpc_server_register_command (server,
+                                       "roaming",
+                                       do_roaming,
+                                       rh_main_server);
+
   DP("Polling interval = %d", rh_main_server->main_config->polling_interval);
 
   g_timeout_add_seconds (rh_main_server->main_config->polling_interval, 

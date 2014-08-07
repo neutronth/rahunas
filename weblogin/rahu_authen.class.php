@@ -223,6 +223,28 @@ abstract class RahuAuthen {
     $tpl->render ();
   }
 
+  protected function setUserIdentCookie ($params = array ()) {
+    if (empty ($params)) {
+      $time = time () - 600;
+      $params["vserver_id"] = "";
+      $params["user_ip"] = "";
+      $params["session_id"] = "";
+      $params["session_timeout"] = "";
+      $params["t"] = "";
+    } else {
+      $time = time ();
+      $time += $params['session_timeout'] == 0 ? 24 * 3600 :
+               $params['session_timeout'] - 300;
+      $params["vserver_id"] = $this->config["VSERVER_ID"];
+      $params["user_ip"] = $this->client->getIP ();
+    }
+
+    foreach ($params as $key => $value) {
+      setcookie ("rh_" . $key, $value, $time, "/",
+                 $this->config["NAS_LOGIN_HOST"], true);
+    }
+  }
+
   private function verifySession () {
     $this->xmlrpc = new rahu_xmlrpc_client ();
     $this->xmlrpc->host = $this->config["RAHUNAS_HOST"];
@@ -252,6 +274,8 @@ abstract class RahuAuthen {
 }
 
 class RahuAuthenLogin extends RahuAuthen {
+  private $roaming = false;
+
   public function start () {
     $this->state = "login";
     parent::start ();
@@ -276,6 +300,77 @@ class RahuAuthenLogin extends RahuAuthen {
   }
 
   protected function onUnAuthenticated () {
+    /* Verify SecureToken - only for cross network roaming */
+    if (isset ($_COOKIE["rh_t"]) &&
+          $_COOKIE["rh_vserver_id"] != $this->config["VSERVER_ID"]) {
+      $retinfo = $this->xmlrpc->do_roaming ($_COOKIE["rh_vserver_id"],
+                                            $_COOKIE["rh_session_id"],
+                                            $_COOKIE["rh_user_ip"],
+                                            $_COOKIE["rh_t"],
+                                            $this->client->getIP (),
+                                            $this->client->getMAC ());
+
+      if ($retinfo !== false) {
+        $this->message = get_message('ROAMING');
+        $this->roaming = true;
+        $racct = new rahu_radius_acct ($retinfo['username']);
+        $racct->host = $this->config["RADIUS_HOST"];
+        $racct->port = $this->config["RADIUS_ACCT_PORT"];
+        $racct->secret = $this->config["RADIUS_SECRET"];
+        $racct->nas_identifier = $this->config["NAS_IDENTIFIER"];
+        $racct->nas_ip_address = $this->config["NAS_IP_ADDRESS"];
+        $racct->nas_port = $this->config["VSERVER_ID"];
+        $racct->framed_ip_address  = $this->client->getIP ();
+        $racct->calling_station_id = $this->client->getMAC ();
+        $racct->gen_session_id();
+
+        try {
+          $prepareData = array (
+            "IP" => $this->client->getIP (),
+            "Username" => $retinfo['username'],
+            "SessionID" => $racct->session_id,
+            "MAC" => $this->client->getMAC (),
+            "Session-Timeout" => $retinfo['session_timeout'],
+            "Bandwidth-Max-Down" => $retinfo['bandwidth_max_down'],
+            "Bandwidth-Max-Up" => $retinfo['bandwidth_max_up'],
+            "Class-Of-Service" => $retinfo['serviceclass_name'],
+            "SecureToken" => $this->genSecureToken (),
+          );
+          $result = $this->xmlrpc->do_startsession($this->config['VSERVER_ID'], $prepareData);
+          if (strstr($result,"Client already login")) {
+            $this->message = get_message('ERR_ALREADY_LOGIN');
+          } else if (strstr($result, "Greeting")) {
+            $split = explode ("Mapping ", $result);
+            $called_station_id = $split[1];
+            if (!empty ($called_station_id))
+              $racct->called_station_id = $called_station_id;
+
+            $racct->acctStart();
+            $this->authenticated = true;
+
+            $user_ident = array("session_id" => $prepareData["SessionID"],
+                                "t" => $prepareData["SecureToken"],
+                                "session_timeout" =>$prepareData["Session-Timeout"]);
+
+            $this->setUserIdentCookie ($user_ident);
+          } else if (strstr($result, "Invalid IP Address")) {
+            $this->message = get_message('ERR_INVALID_IP');
+          }
+        } catch (XML_RPC2_FaultException $e) {
+          $this->message = get_message('ERR_CONNECT_SERVER');
+          $this->failed  = true;
+          $this->message_delay = 10;
+        } catch (Exception $e) {
+          $this->message = get_message('ERR_CONNECT_SERVER');
+          $this->failed  = true;
+          $this->message_delay = 10;
+        }
+      }
+    }
+
+    if ($this->roaming) {
+      $this->onAuthenticated ();
+    }
   }
 
   protected function onSubmit () {
@@ -320,6 +415,7 @@ class RahuAuthenLogin extends RahuAuthen {
             "Bandwidth-Max-Down" => $rauth->getAttribute('WISPr-Bandwidth-Max-Down'),
             "Bandwidth-Max-Up" => $rauth->getAttribute('WISPr-Bandwidth-Max-Up'),
             "Class-Of-Service" => $rauth->getAttribute($serviceclass_attrib),
+            "SecureToken" => $this->genSecureToken (),
           );
           $result = $this->xmlrpc->do_startsession($this->config['VSERVER_ID'], $prepareData);
           if (strstr($result,"Client already login")) {
@@ -332,6 +428,12 @@ class RahuAuthenLogin extends RahuAuthen {
 
             $racct->acctStart();
             $this->authenticated = true;
+
+            $user_ident = array("session_id" => $prepareData["SessionID"],
+                                "t" => $prepareData["SecureToken"],
+                                "session_timeout" =>$prepareData["Session-Timeout"]);
+
+            $this->setUserIdentCookie ($user_ident);
           } else if (strstr($result, "Invalid IP Address")) {
             $this->message = get_message('ERR_INVALID_IP');
           }
@@ -357,6 +459,10 @@ class RahuAuthenLogin extends RahuAuthen {
         }
       }
     }
+  }
+
+  private function genSecureToken ($seed = '0xdeadbeafdeadbeaf') {
+    return hash ("sha256", uniqid ($seed . mt_rand (), true));
   }
 }
 
@@ -501,6 +607,7 @@ class RahuAuthenLogout extends RahuAuthen {
                                                 RADIUS_TERM_USER_REQUEST);
         if ($result === true) {
           $this->message = get_message('OK_USER_LOGOUT');
+          $this->setUserIdentCookie (array ());
           $this->authenticated = false;
         } else {
           $this->message = get_message('ERR_LOGOUT_FAILED');

@@ -72,6 +72,7 @@ struct rahunas_member {
   uint64_t upload_bytes;
   time_t   last_interimupdate;
   int      interim_interval;
+  char     secure_token[65];
 };
 
 void rh_free_member(struct rahunas_member *member);

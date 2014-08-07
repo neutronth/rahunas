@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS dbset (
   upload_bytes BIGINT DEFAULT 0,
   download_speed INT DEFAULT 0,
   upload_speed INT DEFAULT 0,
+  secure_token STRING,
   PRIMARY KEY (vserver_id,ip,mac)
 );
 

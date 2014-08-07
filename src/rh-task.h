@@ -24,6 +24,7 @@ struct task_req {
   unsigned long bandwidth_max_up;
   const char *serviceclass_name;
   uint32_t serviceclass_slot_id;
+  char     secure_token[65];
   unsigned short req_opt;
 };
 

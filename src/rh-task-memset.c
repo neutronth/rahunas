@@ -185,6 +185,10 @@ static int startsess (RHVServer *vs, struct task_req *req)
          sizeof(time_t));
   member->bandwidth_max_down = req->bandwidth_max_down;
   member->bandwidth_max_up = req->bandwidth_max_up;
+
+  memset (member->secure_token, '\0', sizeof (member->secure_token));
+  strncpy (member->secure_token, req->secure_token,
+           sizeof (member->secure_token) - 1);
  
   DP("Session-Timeout %d", req->session_timeout);
   DP("Bandwidth - Down: %lu, Up: %lu", req->bandwidth_max_down, 
