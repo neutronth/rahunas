@@ -1,0 +1,46 @@
+<?php
+define('SERVICECLASS_ATTRIBUTE', 'WISPr-Billing-Class-Of-Service');
+$config_list['10.21.0.0/24'] = array(
+	"VSERVER_ID" => "98",
+	"RADIUS_HOST" => "localhost",
+	"RADIUS_SECRET" => "testing123",
+	"RADIUS_ENCRYPT" => "PAP",
+	"RADIUS_AUTH_PORT" => 0,
+	"RADIUS_ACCT_PORT" => 0,
+	"RAHUNAS_HOST" => "localhost",
+	"RAHUNAS_PORT" => "8123",
+	"NAS_IDENTIFIER" => "RahuNAS-default",
+	"NAS_IP_ADDRESS" => "10.20.0.1",
+	"NAS_LOGIN_HOST" => "10.20.0.1",
+	"NAS_LOGIN_PORT" => "443",
+	"NAS_LOGIN_PROTO" => "https",
+	"NAS_PORT" => 99,
+	"NAS_LOGIN_TITLE" => "RahuNAS Network",
+	"DEFAULT_REDIRECT_URL" => "http://www.rahunas.org",
+	"DEFAULT_LANGUAGE" => "Thai",
+	"UAM_TEMPLATE" => "rahunas-bootstrap",
+	"UAM_SIMPLE_TEMPLATE" => "rahunas",
+);
+
+$config_list['10.20.0.0/24'] = array(
+	"VSERVER_ID" => "99",
+	"RADIUS_HOST" => "localhost",
+	"RADIUS_SECRET" => "testing123",
+	"RADIUS_ENCRYPT" => "PAP",
+	"RADIUS_AUTH_PORT" => 0,
+	"RADIUS_ACCT_PORT" => 0,
+	"RAHUNAS_HOST" => "localhost",
+	"RAHUNAS_PORT" => "8123",
+	"NAS_IDENTIFIER" => "RahuNAS-default",
+	"NAS_IP_ADDRESS" => "10.20.0.1",
+	"NAS_LOGIN_HOST" => "10.20.0.1",
+	"NAS_LOGIN_PORT" => "443",
+	"NAS_LOGIN_PROTO" => "https",
+	"NAS_PORT" => 99,
+	"NAS_LOGIN_TITLE" => "RahuNAS Network",
+	"DEFAULT_REDIRECT_URL" => "http://www.rahunas.org",
+	"DEFAULT_LANGUAGE" => "Thai",
+	"UAM_TEMPLATE" => "rahunas-bootstrap",
+	"UAM_SIMPLE_TEMPLATE" => "rahunas",
+);
+

@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+{if $redirect['flag'] == true}
+<meta http-equiv="refresh" content="{$redirect['delay']}; url={$redirect['url']}">
+{/if}
+<title>RahuNAS Authentication</title>
+<link href="{$template_path}/css/bootstrap.min.css" rel="stylesheet">
+<link href="{$template_path}/css/bootstrap-theme.min.css" rel="stylesheet">
+<link href="{$template_path}/css/rahunas-plain.css" rel="stylesheet">
+</head>
+<body>
+<div class="rh-topbar">
+  <div class='rh-title'>{$brand_title}</div>
+  <div class='rh-language'>
+    <ul>Language:
+      {foreach $languages as $language => $link}
+        <li><a href="{$link}">{$language}</a></li>
+      {/foreach}
+    </ul>
+  </div>
+</div>
+<div class='rh-container'>
+  <div class='rh-login-container'>
+    {if $state == 'message'}
+    <div class="alert alert-{$message['type']} h4" role="alert" id="rh_message">{$message['text']}</div>
+    <div><img src="loading.gif"></div>
+    {elseif $state == 'logout'}
+    <div class="well" style="width: 95%;">
+      <form name="logout" action="{$smarty.server.REQUEST_URI}" method="post">
+      <div class="form-group">
+        <input type="button" name="do_ok" class="btn btn-success" value="{$label_button_ok}" onclick="window.open('{$user_request_url}');">
+        <input type="submit" name="do_logout" class="btn btn-primary" value="{$label_button_logout}" id="rh_logout_button">
+      </div>
+      {foreach $user_info as $row}
+        {foreach $row as $label => $value}
+        <div>
+          <label class='control-label'>{$label}</label>
+          <div>{$value}</div>
+        </div>
+        {/foreach}
+      {/foreach}
+      </form>
+    </div>
+    {else} {* state 'login' *}
+    <div class="well" style="width: 95%;">
+      <form name="login" action="{$smarty.server.REQUEST_URI}" method="post">
+      <fieldset>
+      <div class="form-group">
+        <label for="user" class="control-label">{$label_form_username}</label>
+        <input type="text" class="form-control" name="user" id="user">
+      </div>
+      <div class="form-group">
+        <label for="passwd" class="control-label">{$label_form_password}</label>
+        <input type="password" class="form-control" name="passwd">
+      </div>
+      </fieldset>
+      <input type="submit" class="btn btn-primary" value="{$label_button_login}" id="rh_login_button">
+      </form>
+    </div>
+    {/if}
+  </div>
+</div>
+
+<div class="rh-footer">
+  {if $current_language == 'Thai'}
+  <div style="margin-top: 10px;" id="rh_footer_thai">
+ระบบฯนี้จัดทำขึ้นเพื่อเป็นการปฎิบัติตาม พ.ร.บ. ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์. พ.ศ. ๒๕๕๐ </br>
+และประกาศกระทรวงเทคโนโลยีสารสนเทศและการสื่อสาร เรื่อง หลักเกณฑ์การเก็บรักษาข้อมูลจราจรทางคอมพิวเตอร์ของผู้ให้บริการ พ.ศ.๒๕๕๐ </br>
+ระบบจะบันทึกข้อมูลการใช้งานของท่านเพื่อประโยชน์ตามพระราชบัญญัติฯ
+  </div>
+  {else}
+  <div style="margin-top: 10px;" id="rh_footer_eng">
+The Computer Crime Act B.E. 2550 enforces the existence of this system.</br>
+Your usage information will be recorded on the system in compliance with laws.
+  </div>
+  {/if}
+  <div style="text-align: right;">
+    Powered By <a href="http://www.rahunas.org"><span class="label label-success">RahuNAS</span></a>
+  </div>
+</div>
+
+<!-- JavaScript -->
+</body>
+</html>

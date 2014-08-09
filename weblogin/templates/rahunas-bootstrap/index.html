@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{if $redirect['flag'] == true}
+<meta http-equiv="refresh" content="{$redirect['delay']}; url={$redirect['url']}">
+{/if}
+
+<title>RahuNAS Authentication</title>
+
+<link href="{$template_path}/css/bootstrap.min.css" rel="stylesheet">
+<link href="{$template_path}/css/bootstrap-theme.min.css" rel="stylesheet">
+<link href="{$template_path}/css/rahunas.css" rel="stylesheet">
+<link href="{$template_path}/libs/jasny-bootstrap/css/jasny-bootstrap.min.css" rel="stylesheet">
+
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="{$template_path}/js/html5shiv.js"></script>
+  <script src="{$template_path}/js/respond.min.js"></script>
+<![endif]-->
+
+<style>
+@font-face {
+  font-family: 'Glyphicons Halflings';
+
+  src: url('{$template_path}/css/fonts/glyphicons-halflings-regular.eot');
+  src: url('{$template_path}/css/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('{$template_path}/css/fonts/glyphicons-halflings-regular.woff') format('woff'), url('{$template_path}/css/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('{$template_path}/css/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+</style>
+
+</head>
+<body>
+<div class="navbar navbar-inverse navbar-fixed-top" role="navivation" data-dropdown="dropdown" style="z-index: 99;">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#rhbootstrap-navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <b><a class="navbar-brand" href="{$smarty.server.REQUEST_URI}">{$brand_title}</a></b>
+    </div>
+
+    <div class="collapse navbar-collapse" id="rhbootstrap-navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">{$label_language} <span class="glyphicon glyphicon-collapse-down" style="font-size: 9pt"></span></a>
+          <ul class="dropdown-menu">
+            {foreach $languages as $language => $link}
+              <li><a href="{$link}">{$language}</a></li>
+            {/foreach}
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="rh-container-top" id="rh-stripe" style="height: 57px;"></div>
+
+<div class="container-fluid" style="z-index:-1;">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-5" style="margin-top: 50px;">
+      <center>
+      {if $state == 'message'}
+      <div class="alert alert-{$message['type']} alert-fixed-top h4" role="alert" id="rh_message">{$message['text']}</div>
+      <div><img src="loading.gif"></div>
+      {elseif $state == 'logout'}
+      <div class="well" style="width: 95%;">
+        <form name="logout" role="form" class="form-horizontal" action="{$smarty.server.REQUEST_URI}" method="post">
+        <div class="form-group">
+          <div class="col-xs-6">
+            <button type="button" name="do_ok" class="form-control btn btn-success" onclick="window.open('{$user_request_url}');">
+              <span class="glyphicon glyphicon-ok"></span>
+              <span class="hidden-xs"> {$label_button_ok}</span>
+            </button>
+          </div>
+          <div class="col-xs-6">
+            <button type="submit" name="do_logout" value="logout" class="form-control btn btn-primary" id="rh_logout_button">
+              <span class="glyphicon glyphicon-remove"></span>
+              <span class="hidden-xs"> {$label_button_logout}</span>
+            </button>
+          </div>
+        </div>
+        {foreach $user_info as $row}
+          {foreach $row as $label => $value}
+          <div class='row'>
+            <label class='col-sm-4 control-label'>{$label}</label>
+            <div class='col-sm-8 form-control-static'>{$value}</div>
+          </div>
+          {/foreach}
+        {/foreach}
+        </form>
+      </div>
+      {else} {* state 'login' *}
+      <div class="well" style="width: 95%;">
+        <form name="login" role="form" class="form-horizontal" action="{$smarty.server.REQUEST_URI}" method="post">
+        <fieldset>
+        <div class="form-group">
+          <label for="user" class="col-sm-4 control-label">{$label_form_username}</label>
+          <div class="col-sm-8">
+            <input type="text" class="form-control" name="user" id="user">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="passwd" class="col-sm-4 control-label">{$label_form_password}</label>
+          <div class="col-sm-8">
+            <input type="password" class="form-control" name="passwd">
+          </div>
+        </div>
+        </fieldset>
+        <div class="form-group">
+          <div class="col-sm-offset-4 col-sm-8">
+            <input type="submit" class="form-control btn btn-primary" value="{$label_button_login}" id="rh_login_button">
+          </div>
+        </div>
+        </form>
+      </div>
+      {/if}
+      </center>
+    </div>
+    <div class="col-md-7 hidden-xs">
+      <div id="carousel-rahunas" class="carousel slide hidden-xs hidden-sm" data-ride="carousel" data-interval="10000" style="position: fixed; top: 55px; bottom: 55px; left: 42%; max-width: 58%; height: auto; z-index: -1;" >
+        <ol class='carousel-indicators' style='bottom: 70px;'>
+        {for $i=0 to count($slide_images)-1}
+          <li data-target='#carousel-rahunas' {if $i == 0}class="active"{/if} data-slide-to='{$i}'></li>
+        {/for}
+        </ol>
+        <div class='carousel-inner'>
+        {$i=0}
+        {foreach $slide_images as $image}
+        <div class='item {if $i == 0}active{/if}'><img src='{$image}'></div>
+        {$i=$i+1}
+        {/foreach}
+        </div>
+        <a class='left carousel-control' href='#carousel-rahunas' data-slide='prev'>
+          <span class='glyphicon glyphicon-chevron-left'></span>
+        </a>
+        <a class='right carousel-control' href='#carousel-rahunas' data-slide='next'>
+          <span class='glyphicon glyphicon-chevron-right'></span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="rh-container-footer">
+<div class="rh-container-bottom" id="rh-stripe" style="height: 6px;"></div>
+<div class="container-fluid" id="rh-footer">
+  {if $current_language == 'Thai'}
+  <div class="hidden-xs" style="margin-top: 10px;" id="rh_footer_thai">
+ระบบฯนี้จัดทำขึ้นเพื่อเป็นการปฎิบัติตาม พ.ร.บ. ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์. พ.ศ. ๒๕๕๐ </br>
+และประกาศกระทรวงเทคโนโลยีสารสนเทศและการสื่อสาร เรื่อง หลักเกณฑ์การเก็บรักษาข้อมูลจราจรทางคอมพิวเตอร์ของผู้ให้บริการ พ.ศ.๒๕๕๐ </br>
+ระบบจะบันทึกข้อมูลการใช้งานของท่านเพื่อประโยชน์ตามพระราชบัญญัติฯ
+  </div>
+  {else}
+  <div class="hidden-xs" style="margin-top: 10px;" id="rh_footer_eng">
+The Computer Crime Act B.E. 2550 enforces the existence of this system.</br>
+Your usage information will be recorded on the system in compliance with laws.
+  </div>
+  {/if}
+
+  <div style="text-align: right;">
+    Powered By <a href="http://www.rahunas.org"><span class="label label-success">RahuNAS</span></a>
+  </div>
+</div>
+</div>
+
+<script src="{$template_path}/js/jquery.min.js"></script>
+<script src="{$template_path}/js/bootstrap.min.js"></script>
+<script src="{$template_path}/libs/jasny-bootrap/js/jasny-bootstrap.min.js"></script>
+
+<script>
+$(function () {
+  setTimeout (function () {
+    $("input[name='user']").focus ();
+  }, 200);
+});
+</script>
+</body>
+</html>
