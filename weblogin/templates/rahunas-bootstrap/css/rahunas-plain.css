@@ -1,0 +1,116 @@
+html,body {
+  height: 100%;
+}
+
+.rh-container {
+  text-align: center;
+  min-height: 100%;
+  height: auto !important;
+  height: 100%;
+  margin: -45px auto -115px;
+}
+
+.rh-topbar {
+  width: 100%;
+  background: #222222;
+  height: 40px;
+  border-bottom: 5px solid #0099ff;
+}
+
+.rh-title {
+  position: relative;
+  display: inline;
+  float: left;
+  text-align: left;
+  padding-left: 10px;
+  color: #aaaaaa;
+  font-size: 16pt;
+  font-weight: bolder;
+  padding-top: 5px;
+}
+
+.rh-language {
+  position: relative;
+  display: inline;
+  float: right;
+  padding-top: 7px;
+}
+
+.rh-language ul {
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #aaaaaa;
+  padding-right: 10px;
+}
+
+.rh-language li {
+  display: inline;
+  padding-left: 10px;
+}
+
+.rh-login-container {
+  position: relative;
+  width: 35%;
+  color: #222222;
+  text-align: center;
+  padding-top: 65px;
+}
+
+.rh-footer {
+  color: #aaaaaa;
+  height: 110px;
+  padding-left: 10px;
+  padding-right: 10px;
+  background: #222222;
+  font-size: 10pt;
+  border-top: 5px solid #0099ff;
+}
+
+#rh_waiting {  
+  position: absolute; 
+  top: 100px;
+  left: 210px;
+  float: right;
+}
+
+#rh_message {  
+  color: #000000; 
+  font-weight: bolder; 
+  padding: 2px; 
+  width: 400px; 
+  text-align: center; 
+  background: #FFFF99; 
+}
+
+#rh_login_text {
+  color: #000000; 
+  font-weight: bolder; 
+  text-align: right;
+  width: 100px;
+}
+
+input {
+  height: 30px;
+  color: #222222;
+  font-weight: bolder;
+  font-size: 20pt;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: 34px;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.42857143;
+  color: #555;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #999999;
+}
+
+.form-control:focus {
+  border-color: #66afe9;
+  outline: 0;
+}

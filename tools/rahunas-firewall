@@ -1,0 +1,976 @@
+#!/bin/sh
+# The firewall script to provides the ability to capture the web request from 
+# the clients and redirect them to the login page to get the authorization to 
+# access the network.
+
+prefix=/usr
+sysconfdir=/etc
+localstatedir=/var
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:${prefix}/sbin:${prefix}/bin
+exec_prefix=${prefix}
+
+IPTABLES=/sbin/iptables
+IPSET=/usr/sbin/ipset
+IFCONFIG=/sbin/ifconfig
+FARPD=/usr/sbin/farpd
+
+NAME="rahunas"
+INIT=${sysconfdir}/default/rahunas
+RUN=${localstatedir}/run/rahunas-firewall
+RUNDIR=${localstatedir}/run/rahunas-set
+VSERVER_LIST=${localstatedir}/run/rahunas-vserver
+MAIN_EXT_IFACE_LIST=${localstatedir}/run/rahunas_ext_iface_list
+MAIN_EXT_IFACE_HOLD=${localstatedir}/run/rahunas_ext_iface_hold
+SERVICECLASS_STATE=${localstatedir}/run/rahunas-serviceclass
+FARPD_STATE=${localstatedir}/run/rahunas-farpd
+
+test -f $MAIN_EXT_IFACE_LIST || touch $MAIN_EXT_IFACE_LIST
+test -f $MAIN_EXT_IFACE_HOLD || touch $MAIN_EXT_IFACE_HOLD
+
+RUN_DAEMON=no
+
+test -f $INIT || exit 0 
+. $INIT
+
+test -f $RAHUNAS_CONFIG || exit 1
+test -f $VSERVER_LIST || touch $VSERVER_LIST
+test -d $RUNDIR || mkdir -p $RUNDIR
+
+get_section_name () {
+  file=$1
+
+  test -n "$file" || return
+  test -e "$file" && grep "^.*\= {$" "$file" | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
+}
+
+get_config_value () {
+  section=$1
+  key=$2
+  file=$3
+
+  test -n "$file" || return
+  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key[ ]*=" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+}
+
+##
+#  Global Declaration
+##
+
+# Main
+MAIN_CONF_DIR=`get_config_value main conf_dir $RAHUNAS_CONFIG`
+MAIN_SERVICECLASS_CONF_DIR=`get_config_value main serviceclass_conf_dir $RAHUNAS_CONFIG`
+MAIN_SERVICECLASS=`get_config_value main serviceclass $RAHUNAS_CONFIG`
+MAIN_BANDWIDTH_SHAPE=`get_config_value main bandwidth_shape $RAHUNAS_CONFIG`
+MAIN_BITTORRENT_DOWNLOAD_MAX=`get_config_value main bittorrent_download_max $RAHUNAS_CONFIG`
+MAIN_BITTORRENT_UPLOAD_MAX=`get_config_value main bittorrent_upload_max $RAHUNAS_CONFIG`
+MAIN_DHCP=`get_config_value main dhcp $RAHUNAS_CONFIG`
+
+MAIN_EXT_IFACE_FIREWALL=`get_config_value main external_iface_firewall $RAHUNAS_CONFIG`
+MAIN_EXT_IFACE_PORTS_ALLOW=`get_config_value main external_iface_ports_allow $RAHUNAS_CONFIG`
+MAIN_EXT_IFACE_PING_ACCEPT=`get_config_value main external_iface_ping_accept $RAHUNAS_CONFIG`
+
+if [ "$ENV_OVERRIDE" != "yes" ]; then
+  # Virtual Server : config
+  VSERVER_ID=
+  DEV_EXTERNAL=
+  DEV_INTERNAL=
+  BRIDGE=
+  MASQUERADE=
+  IGNORE_MAC=
+  VSERVER_IP=
+  CLIENTS=
+  EXCLUDED=
+  DNS=
+  SSH=
+  PROXY=
+  PROXY_HOST=
+  PROXY_PORT=
+  BITTORRENT=
+  BITTORRENT_ALLOW=
+  VSERVER_PORTS_ALLOW=
+  VSERVER_PORTS_INTERCEPT=
+  SETNAME=
+fi
+
+DEV_EXTERNAL_LIST=
+
+BANDWIDTH_SHAPE=
+BITTORRENT_DOWNLOAD_MAX=
+BITTORRENT_UPLOAD_MAX=
+
+
+# Virtual Server : set and chains
+CHAIN_INPUT=
+CHAIN_INPUT_AUTH=
+CHAIN_FORWARD=
+CHAIN_FORWARD_AUTH=
+CHAIN_MANGLE_PREROUTING=
+CHAIN_MANGLE_FORWARD=
+CHAIN_MANGLE_POSTROUTING=
+CHAIN_NAT_PREROUTING=
+CHAIN_NAT_POSTROUTING=
+CHAIN_NAT_AUTHEN=
+CHAIN_P2P_DETECT=
+CHAIN_P2P_RECHECK=
+CHAIN_P2P_CHECK=
+P2P_SET=
+P2P_ALLOW_SET=
+DEV_IN_PARAM=
+DEV_OUT_PARAM=
+
+CHAIN_RH_RAW_PREROUTING=${NAME}_raw_pre
+CHAIN_RH_RAWPOST_POSTROUTING=${NAME}_raw_post
+
+get_config () {
+  file=$1
+  opt=$2
+
+  if [ "$ENV_OVERRIDE" != "yes" ]; then
+    test -f $file || return 1
+  
+    SETNAME=`get_section_name $file`
+  
+    # Get configuration
+    VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+    test -n "$VSERVER_ID" || return 2
+  
+    if [ "$opt" = "start" ]; then
+      hash="$VSERVER_ID:$SETNAME"
+      test1=`grep -w "$hash" $VSERVER_LIST` || true
+      test2=`grep -w "$SETNAME" $VSERVER_LIST` || true
+    
+      test -n "$test1" -o -n "$test2" && return 3 
+  
+      echo "$hash:$file" >> $VSERVER_LIST
+    fi
+  
+    DEV_EXTERNAL=`get_config_value $SETNAME dev_external $file`
+    DEV_INTERNAL=`get_config_value $SETNAME dev_internal $file`
+    BRIDGE=`get_config_value $SETNAME bridge $file`
+    MASQUERADE=`get_config_value $SETNAME masquerade $file`
+    IGNORE_MAC=`get_config_value $SETNAME ignore_mac $file`
+    VSERVER_IP=`get_config_value $SETNAME vserver_ip $file`
+    CLIENTS=`get_config_value $SETNAME clients $file`
+    EXCLUDED=`get_config_value $SETNAME excluded $file`
+    DNS=`get_config_value $SETNAME dns $file`
+    SSH=`get_config_value $SETNAME ssh $file`
+    PROXY=`get_config_value $SETNAME proxy $file`
+    PROXY_HOST=`get_config_value $SETNAME proxy_host $file`
+    PROXY_PORT=`get_config_value $SETNAME proxy_port $file`
+    BITTORRENT=`get_config_value $SETNAME bittorrent $file`
+    BITTORRENT_ALLOW=`get_config_value $SETNAME bittorrent_allow $file`
+    VSERVER_PORTS_ALLOW=`get_config_value $SETNAME vserver_ports_allow $file`
+    VSERVER_PORTS_INTERCEPT=`get_config_value $SETNAME vserver_ports_intercept $file`
+  fi
+ 
+  BANDWIDTH_SHAPE=$MAIN_BANDWIDTH_SHAPE
+  BITTORRENT_DOWNLOAD_MAX=$MAIN_BITTORRENT_DOWNLOAD_MAX
+  BITTORRENT_UPLOAD_MAX=$MAIN_BITTORRENT_UPLOAD_MAX
+
+  # Bridge config
+  if [ "$BRIDGE" = "yes" ]; then
+    DEV_IN_PARAM="-m physdev --physdev-in"
+    DEV_OUT_PARAM="-m physdev --physdev-out"
+  else
+    DEV_IN_PARAM="-i"
+    DEV_OUT_PARAM="-o"
+  fi
+  
+  # Chains declaration
+  CHAIN_INPUT="${SETNAME}_in"
+  CHAIN_INPUT_AUTH="${SETNAME}_in_auth"
+  CHAIN_FORWARD="${SETNAME}_fwd"
+  CHAIN_FORWARD_AUTH="${SETNAME}_fwd_auth"
+  CHAIN_MANGLE_PREROUTING="${SETNAME}_mg_pre"
+  CHAIN_MANGLE_FORWARD="${SETNAME}_mg_fwd"
+  CHAIN_MANGLE_POSTROUTING="${SETNAME}_mg_post"
+  CHAIN_NAT_PREROUTING="${SETNAME}_nat_pre"
+  CHAIN_NAT_POSTROUTING="${SETNAME}_nat_post"
+  CHAIN_NAT_AUTHEN="${SETNAME}_nat_authen"
+  
+  # P2P checking chains declaration
+  CHAIN_P2P_DETECT="${SETNAME}_p2p_detect"
+  CHAIN_P2P_RECHECK="${SETNAME}_p2p_rechk"
+  CHAIN_P2P_CHECK="${SETNAME}_p2p_chk"
+  P2P_SET="${SETNAME}_p2p"
+  P2P_ALLOW_SET="${SETNAME}_p2p_allow"
+}
+
+##
+# Extracting the external device list
+##
+dev_external_list () {
+  LIST=`echo $DEV_EXTERNAL | sed 's/,/ /g'`
+  for dev in $LIST; do
+    echo -n "$dev "  
+  done
+  echo ""
+}
+
+##
+# Detecting the parsing IP is the local
+##
+is_ip_local () {
+  IP=$1
+  $IFCONFIG | grep "inet addr" | grep -w "$IP" > /dev/null
+  if [ $? = 0 ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+##
+# Add set
+##
+add_set () {
+  ipset_opt=""
+  ipset_ignoremac=""
+  
+  ipset_opt="--network $CLIENTS"
+  
+  if [ "$IGNORE_MAC" = "yes" ]; then
+    ipset_ignoremac="--ignoremac"
+  fi
+  
+  $IPSET -N $SETNAME rahunas $ipset_opt $ipset_ignoremac 
+
+  if [ "$BITTORRENT" = "throttle" ]; then
+    $IPSET -N $P2P_SET iphash
+  fi
+
+  if [ -n "$BITTORRENT_ALLOW" ]; then
+    $IPSET -N $P2P_ALLOW_SET iphash 
+    for ip in $BITTORRENT_ALLOW
+    do
+      $IPSET -A $P2P_ALLOW_SET $ip
+    done
+  fi
+}
+
+##
+# Cleanup set
+##
+cleanup_set () {
+  $IPSET -F $SETNAME
+  $IPSET -X $SETNAME
+
+  if [ "$BITTORRENT" = "throttle" ]; then
+    $IPSET -F $P2P_SET
+    $IPSET -X $P2P_SET 
+  fi
+
+  if [ -n "$BITTORRENT_ALLOW" ]; then
+    $IPSET -F $P2P_ALLOW_SET
+    $IPSET -X $P2P_ALLOW_SET 
+  fi
+}
+
+##
+# Navigation rules
+##
+navigation_rules () {
+  opt=$1
+  if [ "$opt" = "start" ]; then
+    action="-I"
+  elif [ "$opt" = "stop" ]; then
+    action="-D"
+  fi
+
+  # INPUT from external (External Firewall) and Service Class
+  if [ "$opt" = "start" ]; then
+    echo "${DEV_EXTERNAL}-${SETNAME}" >> $MAIN_EXT_IFACE_HOLD
+
+    for dev in $DEV_EXTERNAL_LIST; do
+      # Filter duplicated external interfaces
+      if ! cat $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
+        echo "$dev" >> $MAIN_EXT_IFACE_LIST
+
+        $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+
+        if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+          # RAW - Service class
+          $IPTABLES -t raw $action ${CHAIN_RH_RAW_PREROUTING} -i $dev \
+            -m set --set rahunas_serviceclass dst \
+            -j RAHURAWDNAT --bind-set rahunas_serviceclass
+
+          $IPTABLES -t rawpost $action ${CHAIN_RH_RAWPOST_POSTROUTING} -o $dev\
+            -m set --set rahunas_serviceclass src \
+            -j RAHURAWSNAT --bind-set rahunas_serviceclass
+        fi
+      fi
+    done
+  else #stop
+    sed -i "/\b${DEV_EXTERNAL}-${SETNAME}\b/d" $MAIN_EXT_IFACE_HOLD
+
+    if ! grep -w "${DEV_EXTERNAL}" $MAIN_EXT_IFACE_HOLD >/dev/null; then
+      dev=${DEV_EXTERNAL}
+      sed -i "/\b$dev\b/d" $MAIN_EXT_IFACE_LIST
+
+      $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
+
+      # RAW - Service class
+      $IPTABLES -t raw $action ${CHAIN_RH_RAW_PREROUTING} -i $dev \
+        -m set --set rahunas_serviceclass dst \
+        -j RAHURAWDNAT --bind-set rahunas_serviceclass >/dev/null 2>&1 || true
+
+      $IPTABLES -t rawpost $action ${CHAIN_RH_RAWPOST_POSTROUTING} -o $dev\
+        -m set --set rahunas_serviceclass src \
+        -j RAHURAWSNAT --bind-set rahunas_serviceclass >/dev/null 2>&1 || true
+
+    fi
+  fi
+
+  # INPUT
+  $IPTABLES $action INPUT \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_INPUT
+  $IPTABLES $action INPUT -m connmark --mark 2/2 \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_INPUT_AUTH
+
+  # FORWARD
+  $IPTABLES $action FORWARD \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_FORWARD
+  $IPTABLES $action FORWARD \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_FORWARD
+
+  # In some situation the connections could not established before
+  # the FORWARD rules allow the clients, thus the connections never mark.
+  # Just allow them passthrough the rules if the connections do not mark but
+  # the clients are in the set (allow them).
+  $IPTABLES $action FORWARD -m set --set $SETNAME dst -j $CHAIN_FORWARD_AUTH
+  $IPTABLES $action FORWARD -m set --set $SETNAME src -j $CHAIN_FORWARD_AUTH
+
+  $IPTABLES $action FORWARD -m connmark --mark 2/2 \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_FORWARD_AUTH
+  $IPTABLES $action FORWARD -m connmark --mark 2/2 \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_FORWARD_AUTH
+
+  # MANGLE
+  $IPTABLES -t mangle $action PREROUTING \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_MANGLE_PREROUTING
+  
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t mangle $action PREROUTING \
+      $DEV_IN_PARAM $dev -d $CLIENTS \
+      -j $CHAIN_MANGLE_PREROUTING
+  done
+
+  $IPTABLES -t mangle $action FORWARD \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_MANGLE_FORWARD
+  $IPTABLES -t mangle $action FORWARD \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_MANGLE_FORWARD
+
+  $IPTABLES -t mangle $action POSTROUTING \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_MANGLE_POSTROUTING
+
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t mangle $action POSTROUTING \
+      $DEV_OUT_PARAM $dev -s $CLIENTS \
+      -j $CHAIN_MANGLE_POSTROUTING
+  done
+
+  # NAT
+  $IPTABLES -t nat $action PREROUTING \
+    $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
+    -j $CHAIN_NAT_PREROUTING
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t nat $action PREROUTING \
+      $DEV_IN_PARAM $dev -d $CLIENTS \
+      -j $CHAIN_NAT_PREROUTING
+  done
+
+  $IPTABLES -t nat $action POSTROUTING \
+    $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
+    -j $CHAIN_NAT_POSTROUTING
+  for dev in $DEV_EXTERNAL_LIST; do
+    $IPTABLES -t nat $action POSTROUTING \
+      $DEV_OUT_PARAM $dev -s $CLIENTS \
+      -j $CHAIN_NAT_POSTROUTING
+  done
+
+
+}
+
+
+##
+# Cleanup old rules
+##
+cleanup () {
+
+  navigation_rules stop  
+
+  $IPTABLES -F $CHAIN_INPUT_AUTH
+  $IPTABLES -X $CHAIN_INPUT_AUTH
+
+  $IPTABLES -F $CHAIN_INPUT
+  $IPTABLES -X $CHAIN_INPUT
+  
+  $IPTABLES -F $CHAIN_FORWARD_AUTH
+  $IPTABLES -X $CHAIN_FORWARD_AUTH
+
+  $IPTABLES -F $CHAIN_FORWARD
+  $IPTABLES -X $CHAIN_FORWARD
+  
+  $IPTABLES -t mangle -F $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -X $CHAIN_MANGLE_PREROUTING
+
+  $IPTABLES -t mangle -F $CHAIN_MANGLE_POSTROUTING
+  $IPTABLES -t mangle -X $CHAIN_MANGLE_POSTROUTING
+  
+  $IPTABLES -t nat -F $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat -X $CHAIN_NAT_PREROUTING
+  
+  $IPTABLES -t mangle -F $CHAIN_MANGLE_FORWARD
+  $IPTABLES -t mangle -X $CHAIN_MANGLE_FORWARD
+
+  $IPTABLES -t nat -F $CHAIN_NAT_POSTROUTING
+  $IPTABLES -t nat -X $CHAIN_NAT_POSTROUTING
+  
+  $IPTABLES -t nat -F $CHAIN_NAT_AUTHEN
+  $IPTABLES -t nat -X $CHAIN_NAT_AUTHEN
+
+  if [ "$BITTORRENT" = "throttle" ]; then
+    $IPTABLES -t mangle -F $CHAIN_P2P_CHECK
+    $IPTABLES -t mangle -X $CHAIN_P2P_CHECK
+
+    $IPTABLES -t mangle -F $CHAIN_P2P_RECHECK
+    $IPTABLES -t mangle -X $CHAIN_P2P_RECHECK
+
+    $IPTABLES -t mangle -F $CHAIN_P2P_DETECT
+    $IPTABLES -t mangle -X $CHAIN_P2P_DETECT
+  fi
+}
+
+##
+# Define new chains
+##
+new_chains () {
+  $IPTABLES -N $CHAIN_INPUT_AUTH
+  $IPTABLES -N $CHAIN_INPUT
+  $IPTABLES -N $CHAIN_FORWARD_AUTH
+  $IPTABLES -N $CHAIN_FORWARD
+  $IPTABLES -t mangle -N $CHAIN_MANGLE_PREROUTING
+  $IPTABLES -t mangle -N $CHAIN_MANGLE_FORWARD
+  $IPTABLES -t mangle -N $CHAIN_MANGLE_POSTROUTING
+  $IPTABLES -t nat -N $CHAIN_NAT_PREROUTING
+  $IPTABLES -t nat -N $CHAIN_NAT_POSTROUTING
+  $IPTABLES -t nat -N $CHAIN_NAT_AUTHEN
+
+  if [ "$BITTORRENT" = "throttle" ]; then
+    $IPTABLES -t mangle -N $CHAIN_P2P_CHECK
+    $IPTABLES -t mangle -N $CHAIN_P2P_RECHECK
+    $IPTABLES -t mangle -N $CHAIN_P2P_DETECT
+  fi
+}
+
+##
+# Policy
+##
+policy () {
+  $IPTABLES -P INPUT DROP
+  $IPTABLES -P OUTPUT ACCEPT
+  $IPTABLES -P FORWARD DROP 
+
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+
+  # DHCP Settings
+
+  if [ "$MAIN_DHCP" = "yes" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "no" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "forward" ]; then
+    $IPTABLES -A INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -A FORWARD -p udp --dport 67:68 -j ACCEPT
+  fi
+
+  $IPTABLES -N ${NAME}_ext_fw
+
+  if [ "x$MAIN_EXT_IFACE_FIREWALL" = "xyes" ]; then
+    # Accept all connections that made by server itself
+    $IPTABLES -A ${NAME}_ext_fw -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    # Accept DNS reply
+    $IPTABLES -A ${NAME}_ext_fw -p udp --sport 53 \
+      -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    if [ -n "$MAIN_EXT_IFACE_PORTS_ALLOW" ]; then
+      $IPTABLES -A ${NAME}_ext_fw -p tcp \
+        -m multiport --dports ${MAIN_EXT_IFACE_PORTS_ALLOW} -j ACCEPT
+    fi
+
+    if [ "x$MAIN_EXT_IFACE_PING_ACCEPT" = "xyes" ]; then
+      # Accept echo-request from outside
+      $IPTABLES -A ${NAME}_ext_fw -p icmp --icmp-type 8 \
+        -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+    fi
+
+    # Accept echo-reply from outside
+    $IPTABLES -A ${NAME}_ext_fw -p icmp --icmp-type 0 \
+      -m state --state ESTABLISHED,RELATED -j ACCEPT
+  else
+    if [ "x$MAIN_EXT_IFACE_FIREWALL" = "xaccept" -o "x$MAIN_EXT_IFACE_FIREWALL" = "x" ]; then
+      $IPTABLES -A ${NAME}_ext_fw -j ACCEPT
+    fi
+  fi
+
+  $IPTABLES -A ${NAME}_ext_fw -j RETURN
+
+  if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    $IPTABLES -t raw -N ${CHAIN_RH_RAW_PREROUTING}
+    $IPTABLES -t rawpost -N ${CHAIN_RH_RAWPOST_POSTROUTING}
+  fi
+}
+
+cleanup_policy () {
+  # Assume before the script running the default policy are all ACCEPT
+  $IPTABLES -P INPUT ACCEPT
+  $IPTABLES -P OUTPUT ACCEPT
+  $IPTABLES -P FORWARD ACCEPT 
+
+  $IPTABLES -D INPUT -i lo -j ACCEPT
+
+  # DHCP Settings
+
+  if [ "$MAIN_DHCP" = "yes" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j ACCEPT 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "no" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j DROP
+  elif [ "$MAIN_DHCP" = "forward" ]; then
+    $IPTABLES -D INPUT -p udp --dport 67:68 -j DROP 
+    $IPTABLES -D FORWARD -p udp --dport 67:68 -j ACCEPT
+  fi
+
+  $IPTABLES -F ${NAME}_ext_fw
+  $IPTABLES -X ${NAME}_ext_fw
+
+  $IPTABLES -t raw -F ${CHAIN_RH_RAW_PREROUTING} >/dev/null 2>&1 || true
+  $IPTABLES -t raw -X ${CHAIN_RH_RAW_PREROUTING} >/dev/null 2>&1 || true
+  $IPTABLES -t rawpost -F ${CHAIN_RH_RAWPOST_POSTROUTING} >/dev/null 2>&1 || true
+  $IPTABLES -t rawpost -X ${CHAIN_RH_RAWPOST_POSTROUTING} >/dev/null 2>&1 || true
+}
+
+rules () {
+
+  navigation_rules start
+  
+  ##
+  # Allow all traffic for established and related connections
+  ##
+  
+  $IPTABLES -A $CHAIN_INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+  $IPTABLES -A $CHAIN_FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+  
+  $IPTABLES -A $CHAIN_INPUT -i lo -j ACCEPT
+  
+  ##
+  # Allow incoming to our DNS server
+  ##
+  if [ "$DNS" = "yes" -o "$DNS" = "intercept" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
+
+    if [ "$DNS" = "intercept" ]; then
+      $IPTABLES -t nat $DEV_IN_PARAM $DEV_INTERNAL \
+        -A $CHAIN_NAT_PREROUTING -p udp --dport domain \
+        ! -d $VSERVER_IP -j REDIRECT --to-port 53
+    fi
+  elif [ "$DNS" = "no" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j DROP
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
+  elif [ "$DNS" = "forward" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
+  fi 
+
+  ##
+  # Allow incoming to allowed ports with rate limit setting
+  ##
+
+  # Ignore rate limit checking for the requester that initiate from localhost
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -s 127.0.0.1 \
+    -d $VSERVER_IP --dports $VSERVER_PORTS_ALLOW -j ACCEPT 
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
+    -m recent --rcheck --seconds 6 --name incoming_throttle -j DROP
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
+    -m hashlimit --hashlimit 20/sec \
+    --hashlimit-mode srcip --hashlimit-burst 30 \
+    --hashlimit-htable-expire 4000 --hashlimit-name incoming \
+    -j ACCEPT
+
+  $IPTABLES -A $CHAIN_INPUT -p tcp -m multiport -d $VSERVER_IP \
+    --dports $VSERVER_PORTS_ALLOW \
+    -m recent --set --name incoming_throttle -j DROP
+  
+  ##
+  # Allow incoming to our SSH server for remote maintenance access
+  ##
+  if [ "$SSH" = "yes" ]; then
+    $IPTABLES -A $CHAIN_INPUT -p tcp -d $VSERVER_IP --dport ssh -j ACCEPT
+  fi
+
+  ##
+  # Allow rate limited ICMP 
+  ##
+  $IPTABLES -A $CHAIN_INPUT -p icmp -m limit --limit 5/second \
+    -d $VSERVER_IP -j ACCEPT
+
+
+
+  ##
+  # Bittorrent Blocking (layer7 module in kernel is needed)
+  # Note: 
+  #   bittorrent-announce is customized pattern, warning if not exists.
+  ##
+  if [ "$BITTORRENT" = "yes" ] || [ -n "$BITTORRENT_ALLOW" ]; then
+    if [ -n "$BITTORRENT_ALLOW" ]; then
+      BITTORRENT_ALLOW_OPTIONS="-m set ! --set $P2P_ALLOW_SET"
+
+      # Source host
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce $BITTORRENT_ALLOW_OPTIONS src -j DROP
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent $BITTORRENT_ALLOW_OPTIONS src -j DROP
+    fi
+  elif [ "$BITTORRENT" = "block" ]; then
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent-announce -j DROP
+      $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m layer7 --l7proto bittorrent -j DROP
+  fi
+  
+  ##
+  # Mark the connections that have been authorized
+  ##
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME dst -j CONNMARK --set-mark 2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME src -j CONNMARK --set-mark 2 
+
+  ##
+  # P2P Throttle
+  ##
+  if [ "$BITTORRENT" = "throttle" ]; then
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m connmark --mark 2/2 -j $CHAIN_P2P_CHECK
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m set --set $P2P_SET src -j MARK --set-mark 3
+    $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -m set --set $P2P_SET dst -j MARK --set-mark 3
+
+
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -m layer7 --l7proto bittorrent -j $CHAIN_P2P_DETECT
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -m layer7 --l7proto bittorrent-announce -j $CHAIN_P2P_DETECT
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -m set --set $P2P_SET src -j $CHAIN_P2P_RECHECK
+    $IPTABLES -t mangle -A $CHAIN_P2P_CHECK -j RETURN
+
+
+    $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -m recent --name $P2P_SET --update --seconds 600 -j RETURN
+    $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -j SET --add-set $P2P_SET src
+    $IPTABLES -t mangle -A $CHAIN_P2P_DETECT -m recent --name $P2P_SET --set -j RETURN
+
+    $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -m recent --name $P2P_SET --rcheck --seconds 600 -j RETURN
+    $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -j SET --del-set $P2P_SET src
+    $IPTABLES -t mangle -A $CHAIN_P2P_RECHECK -m recent --name $P2P_SET --remove -j RETURN 
+  fi
+   
+  ##
+  # Accept Forwarding for the authorized clients
+  ##
+  $IPTABLES -A $CHAIN_FORWARD_AUTH -j ACCEPT
+
+  ##
+  # Bypass the service class clients (do not do conntrack NAT)
+  ##
+  if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
+      -m set --set rahunas_serviceclass src -j ACCEPT
+    $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING \
+      -m set --set rahunas_serviceclass dst -j ACCEPT
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING \
+      -m set --set rahunas_serviceclass src -j ACCEPT
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING \
+      -m set --set rahunas_serviceclass dst -j ACCEPT
+  fi
+
+  ##
+  # SQUID Cache-Proxy
+  ##
+  if [ "$PROXY" = "yes" ] || [ "$PROXY" = "transparent" ]; then
+    if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]; then
+      $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp --dport $PROXY_PORT -j ACCEPT
+    else
+      # PROXY_HOST specify, check if it local
+      is_ip_local $PROXY_HOST
+      PROXY_LOCAL=$?
+      if [ $PROXY_LOCAL = 1 ]; then
+        $IPTABLES -A $CHAIN_INPUT_AUTH -p tcp -d $PROXY_HOST \
+          --dport $PROXY_PORT -j ACCEPT
+      fi
+    fi
+
+    if [ "$PROXY" = "transparent" ]; then
+      # Do not redirect the excluded src/dst to proxy
+      $IPTABLES -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+        -m connmark --mark 6/6 -j ACCEPT
+
+      if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]
+      then
+        $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+          ! -d $VSERVER_IP \
+          -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
+      else
+        $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+          ! -d $VSERVER_IP \
+          -m connmark --mark 2/2 \
+          -j DNAT --to-destination $PROXY_HOST:$PROXY_PORT
+      fi
+    fi
+  fi
+  
+  ##
+  # Redirect unauthorized clients to login page (with rate limited throttling)
+  ##
+  
+  $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
+    --dports $VSERVER_PORTS_INTERCEPT ! -d $VSERVER_IP \
+    -m connmark ! --mark 2/2 \
+    -j $CHAIN_NAT_AUTHEN
+  
+  $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp \
+    -j DNAT --to-destination $VSERVER_IP:80
+
+  ##
+  # MASQUERADE
+  ##
+  if [ "$MASQUERADE" = "yes" ]; then
+    $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j MASQUERADE
+  fi
+
+  ##
+  # Excluded IP
+  ##
+  for excluded in $EXCLUDED;
+  do
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded \
+      -j CONNMARK --set-mark 6
+    $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded \
+      -j CONNMARK --set-mark 6
+  done 
+
+  ##
+  # Return to main chains
+  ##
+  $IPTABLES -A $CHAIN_INPUT_AUTH -j RETURN
+  $IPTABLES -A $CHAIN_INPUT -j RETURN
+  $IPTABLES -A $CHAIN_FORWARD_AUTH -j RETURN
+  $IPTABLES -A $CHAIN_FORWARD -j RETURN
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -j RETURN
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_FORWARD -j RETURN
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_POSTROUTING -j RETURN
+  $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -j RETURN
+  $IPTABLES -t nat -A $CHAIN_NAT_POSTROUTING -j RETURN
+}
+
+##
+# Service class set
+##
+serviceclass_set () {
+  opt=$1
+  if [ "$opt" = "start" ]; then
+    $IPSET -N rahunas_serviceclass rahunas_ipiphash
+  elif [ "$opt" = "cleanup" ]; then
+    $IPSET -F rahunas_serviceclass
+    $IPSET -X rahunas_serviceclass
+  fi
+}
+
+##
+# Service class - fake-arpd setup
+##
+serviceclass_fakearpd () {
+  opt=$1
+  first=1
+  if [ "$opt" = "start" ]; then
+    for conf in $MAIN_SERVICECLASS_CONF_DIR/*.conf
+    do
+      enable=`get_config_value service_class fake_arpd $conf`
+
+      if [ "$enable" = "yes" ]; then
+        fakearpd_iface=`get_config_value service_class fake_arpd_iface $conf`
+        network=`get_config_value service_class network $conf`
+
+        if [ -n "$fakearpd_iface" ] && [ -n "$network" ]; then
+          if [ $first -eq 1 ]; then
+            echo
+            first=0
+          fi
+
+          echo -n "RahuNAS Fake ARP starting: "
+          $FARPD -i $fakearpd_iface $network
+          touch $FARPD_STATE
+        fi
+      fi
+    done
+  elif [ "$opt" = "stop" ] && [ -f $FARPD_STATE ]; then
+    killall -9 $FARPD > /dev/null 2>&1 &
+    rm -f $FARPD_STATE
+  fi
+}
+
+do_get_config () {
+  file=$1
+  opt=$2
+  get_config $file $opt || true
+
+  # Extract the external device into list
+  DEV_EXTERNAL_LIST=`dev_external_list`
+
+  if [ $? -eq 1 ]; then
+    echo "Error: Could not parsing $file, file does not exists"
+    return 1
+  elif [ $? -eq 2 ]; then
+    echo "Error: Could not parsing $file, config file is malformed"
+    return 2
+  elif [ $? -eq 3 ]; then
+    if [ "$opt" != "stop" ]; then
+      echo "Error: Could not parsing $file, network's name is duplicated!"
+      return 3
+    fi
+  fi
+}
+
+start () {
+  test "$RUN_DAEMON" = "yes" || return 0
+  test ! -f $RUN || return 0
+
+  if [ ! -d $MAIN_CONF_DIR ]; then
+    echo "Error: The config directory $MAIN_CONF_DIR does not exists"
+    exit 1
+  fi
+
+  policy 
+
+  if [ "$MAIN_SERVICECLASS" = "yes" ]; then
+    touch $SERVICECLASS_STATE
+    serviceclass_set start
+    serviceclass_fakearpd start
+  fi
+
+  touch $RUN
+}
+
+stop () {
+  test -f $RUN || return 0
+
+  cleanup_policy
+
+  if [ -f $SERVICECLASS_STATE ]; then
+    serviceclass_set cleanup
+    serviceclass_fakearpd stop
+    rm -f $SERVICECLASS_STATE
+  fi
+
+  killall farpd >/dev/null 2>&1
+
+  rm -f $RUN
+  echo "" > $VSERVER_LIST
+}
+
+restart() {
+  stop
+  start
+}
+
+start_config() {
+  test ! -f $RUNDIR/$SETNAME || return 0
+  test "$KEEP_SET" = "yes" || add_set
+  new_chains
+  rules
+  touch $RUNDIR/$SETNAME
+  return 0
+}
+
+start_config_env() {
+  do_get_config "" start
+  start_config
+  return $?
+}
+
+start_config_file() {
+  file=$1
+  do_get_config $file start
+  if [ $? -gt 0 ]; then
+    return 1
+  fi 
+  
+  start_config
+  return $?
+}
+
+stop_config() {
+  test -f $RUNDIR/$SETNAME || return 0
+  cleanup
+  test "$KEEP_SET" = "yes" || cleanup_set
+  rm -f $RUNDIR/$SETNAME
+  return 0
+}
+
+stop_config_env() {
+  do_get_config "" stop
+  stop_config
+  return $?
+}
+
+stop_config_file() {
+  file=$1
+  do_get_config $file stop
+  if [ $? -gt 0 ]; then
+    return 1
+  fi 
+
+  stop_config
+  return $?
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    restart
+    ;;
+  start-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      start_config_env
+    elif [ -f "$2" ]; then
+      start_config_file $2
+    fi
+    ;;
+  stop-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      stop_config_env
+    elif [ -f "$2" ]; then
+      stop_config_file $2
+    fi
+    ;;
+  *)
+    N=${prefix}/sbin/rahunas-firewall
+    echo "Usage: $N {start|stop|restart}"
+    exit 3
+    ;;
+esac 
+
+exit 0

@@ -1,0 +1,39 @@
+#!/bin/sh
+# File: rahunas-conntrack
+# Description: The conntrack tool wrapper script for RahuNAS
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:@prefix@/sbin:@prefix@/bin
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+CONNTRACK=/usr/sbin/conntrack
+DELAY=1
+
+MESSAGE=""
+MSG_NOT_COMPLETED="NOT COMPLETED"
+
+usage() {
+  echo "Usage: $1 cut client_ip"
+}
+
+conncut() {
+  CLIENT_IP=$1
+  su -c "sleep ${DELAY}; $CONNTRACK -D -s $CLIENT_IP > /dev/null 2>&1; $CONNTRACK -D -d $CLIENT_IP > /dev/null 2>&1" &
+}
+
+N=$prefix/sbin/rahunas-conntrack
+
+case "$1" in
+  cut)
+    conncut $2
+    MESSAGE="$2 flushed"
+
+    echo $MESSAGE
+    ;;
+  *)
+    usage $N
+    exit 3
+    ;;
+esac
+
+exit 0

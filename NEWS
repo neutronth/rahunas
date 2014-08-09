@@ -1,0 +1,121 @@
+RahuNAS
+
+0.3.0 (2014-08-07)
+=====
+[rahunasd]
+- Add IP accounting, the download/upload bytes for each users are collected.
+- Cross network roaming support.
+- Improve bandwidth management
+- Fix the users login not cleanup properly on service shutdown/restart
+
+[weblogin]
+- Renovate the core PHP code
+- Renovate the template which result is fully customizable
+- Detect browser with "browscap" and render the full or plain template
+  depending on the browsers' capability.
+
+0.2.1 (2012-08-20)
+=====
+[rahunasd]
+- Several bugs fixed.
+- Switch to sqlite3 native API. (libgda is no needed anymore)
+- Adjust sqlite3 database schema.
+- Add netsnmp-module. (experimental)
+- Add new "rahunas-bootstrap" weblogin template.
+- "squid-auth-helper" is now muti-threaded.
+- Call "conntrack" tool to cut all timeout/logout user's connections.
+
+[weblogin]
+- Prevent double submission and drop the PHP session (no needed)
+- Show remain time instead of session time.
+- "Password Has Expired" now show informative message to user instead of
+  general error message.
+
+0.2.0 (2011-06-21)
+=====
+- New minor version (support Debian GNU/Linux Squeeze+).
+- Support libgda-4.
+- Support ipset >= 4.2
+- No backward compatible with Lenny, if lenny is required use the 0.1.x branch
+  instead.
+
+0.1.7 (2009-09-19)
+=====
+- Critical bug fix, the firewall script does not actually add or 
+  remove _ext_fw, cause the start and stop script failed.
+
+0.1.6 (2009-09-19)
+=====
+- Bugs fix.
+- New squid external authentication helper wrote in C
+  (supercede for the PHP scripts that is memory hungry)
+- Add common firewall for external interfaces.
+
+0.1.4 (2009-06-09)
+=====
+- Bug fix and the major change of the IFB (Intermediate Functional Block) as the
+  replacement of IMQ (Intermediate Queueing Device) that more problem with the
+  SMP system.
+
+  * IFB is the replacement of IMQ. (IMQ now deprecated, not support anymore)
+  * Prevent double login.
+  * Reloading config files supported.
+  * HTTP login supported. (early only HTTPS supported)
+  * Bug fix.
+
+0.1.3 (Never Release)
+=====
+  * Only in the internal development test.
+
+0.1.2 (2009-03-31)
+=====
+- Bug fix and add virtual server to support multiple network (VLAN, 
+  multiple ethernet) and support scripts to do the traffic shape and
+  Bittorrent blocking or throttling:
+
+  * Multiple network support using virtual server concepts.
+    - Clients with different IP can access to particular virtual server.
+    - Each virtual server is independent.
+    - Capable to add more virtual server as much as the you want, if the
+      memory of the system is available.
+  * Traffic shape and Bittorrent blocking or throttling scripts.
+    - Traffic shape using TC and synchronize with RahuNAS for each client.
+      (Per client shaping)
+    - Capable to block the bittorrent, allow someone to access 
+      or throttling with the specific download and upload rate. 
+      (Require layer7 kernel module)
+  * Bug fix.
+    - Replace static memory allocation by dynamic memory allocation, 
+      the static allocation cause the error when more virtual servers are 
+      registered. The dynamic memory allocation reduce the memory requirement 
+      for the same size of clients set.
+    - Fix the memory allocation for the ipset polling which does not free
+      unneccessary data.
+
+0.1.1 (2008-12-09)
+=====
+- First release of the ready to use Network Access Server which provides:
+
+  * The server that can handle the users login session with 
+    [/] idle timeout and session timeout checking.
+    [/] setup the bandwidth shaping for downloading and uploading each user.
+    [/] integrated with the SQLite for the users session backup.
+    [/] more reliability of the network handling with the good concept of
+        ipset (http://ipset.netfilter.org). 
+    [/] do the normal IP packets traversal with the most capability that the
+        Linux kernel could do, no need any tunneling interfaces like other 
+        projects do.
+    [/] IPv4 with MAC address support. (IPv6 not support now)
+
+  * Do the AAA (Authentication, Authorization and Accouting) with RADIUS.
+    Tested with FreeRADIUS as well.
+
+  * The multilingual web login page (English, Thai) which included the 
+    login, logout and also user's login session information page.
+
+  * Pre-configure example to do the simple Network Access Server.
+
+0.1.0 (2008-08-19)
+=====
+- Initial (internal test) release
+- Simple implemention of the ipset command wrapper

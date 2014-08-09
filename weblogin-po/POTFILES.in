@@ -1,0 +1,5 @@
+# List of source files which contain translatable strings.
+weblogin/index.php
+weblogin/messages.php
+weblogin/rahu_authen.class.php
+weblogin/rahu_render.class.php
