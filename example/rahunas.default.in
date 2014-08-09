@@ -1,8 +1,0 @@
-# This file controls the behaviour of the rahunas init script.  It
-# will be parsed as a shell script.
-
-# Set to "yes" to have the init script start rahunas.
-RUN_DAEMON=no
-
-# RahuNAS config file
-RAHUNAS_CONFIG=@sysconfdir@/rahunas/rahunas.conf
