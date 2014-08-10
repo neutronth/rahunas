@@ -1,6 +1,6 @@
-rahunas (0.3.0-1~1.gbp68db42) UNRELEASED; urgency=low
+rahunas (0.3.0-1~2.gbp17a283) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @68db421c3d68bca8fc95f59f09c215235c5b1d50 **
+  ** SNAPSHOT build @17a283dbd9840c17c37d66ba3a2505c4e7c69d4e **
 
   * Imported Upstream version 0.3.0
   * Switch to debhelper 9
@@ -31,8 +31,30 @@ rahunas (0.3.0-1~1.gbp68db42) UNRELEASED; urgency=low
         /usr/share/rahunas/data.
     * debian/rahunas-weblogin.postinst:
       - Change owner of /var/lib/rahunas/weblogin/data to www-data.
+  * Add new package "rahunas-netsnmp-module"
+    * debian/control:
+      - Add rahunas-netsnmp-module package.
+      - Add libsnmp-dev to Build-deps as it required by netsnmp-module build.
+    * debian/rahunas.postinst:
+      - Add group "rahunas"
+      - Set permission to writable by group rahunas as it require by
+        netsnmp-module to work properly.
+    * debian/rahunas.postrm:
+      - Remove group "rahunas" on purge.
+    * debian/rules:
+      - Add enable-netsnmp-module to build configuration.
+    * debian/RAHUNAS-MIB:
+      - The MIB file of RahuNAS, added to install with the package
+    * debian/patches/fix-netsnmp-module-db-path.patch:
+      - Add patch to fix the db path which has been moved to /var/lib/rahunas/db
+  * Add $remote_fs to Required-{Start,Stop} init script
+  * Update copyright file
+    * debian/copyright:
+      - Switch to copyright format version 1.0.
+      - Update copyright years.
+      - Add copyright for source files.
 
- -- Neutron Soutmun <neo.neutron@gmail.com>  Sun, 10 Aug 2014 14:21:41 +0700
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sun, 10 Aug 2014 20:18:51 +0700
 
 rahunas (0.2.5-1squeeze1) stable; urgency=low
 
