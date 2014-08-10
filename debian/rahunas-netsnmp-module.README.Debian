@@ -1,0 +1,29 @@
+RahuNAS Net-SNMP module
+=======================
+
+Add module to net-snmp daemon configuration file
+
+/etc/snmp/snmpd.conf
+=== 8< ===
+dlmod rahunas /usr/lib/libnetsnmp_rahunas.so
+=== 8< ===
+
+Change the group to run the snmpd to "rahunas"
+/etc/default/snmpd
+=== 8< ===
+SNMPDOPTS='... -g rahunas ...'
+=== 8< ===
+
+# adduser snmp rahnas
+# service snmpd restart
+
+Verify the setup, should have at least one user logged in.
+
+$ MIBS=+RAHUNAS-MIB snmpwalk -v2c -c public localhost rahunas
+
+RAHUNAS-MIB::rahunasAuthenLoginUsername."b09ab22aa449736e" = STRING: "test"
+RAHUNAS-MIB::rahunasAuthenLoginIpAddress."b09ab22aa449736e" = STRING: "10.1.0.  11"
+RAHUNAS-MIB::rahunasAuthenLoginSessionStart."b09ab22aa449736e" = INTEGER: 1407660599
+
+Cheers,
+Neutron Soutmun

@@ -1,0 +1,3 @@
+debian/RAHUNAS-MIB  usr/share/mibs/netsnmp
+usr/lib/libnetsnmp_rahunas.so*
+usr/sbin/rh-checkrad

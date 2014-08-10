@@ -14,6 +14,9 @@ test -d /etc/rahunas/rahunas.d || mkdir -p /etc/rahunas/rahunas.d
 
 ucf /usr/share/doc/rahunas/rahunas.conf /etc/rahunas/rahunas.conf
 
+addgroup rahunas || true
+chmod g+rws /var/lib/rahunas/db
+
 case "$1" in
   install)
     ;;
