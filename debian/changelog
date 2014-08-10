@@ -1,6 +1,4 @@
-rahunas (0.3.0-1~2.gbp17a283) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @17a283dbd9840c17c37d66ba3a2505c4e7c69d4e **
+rahunas (0.3.0-1) experimental; urgency=low
 
   * Imported Upstream version 0.3.0
   * Switch to debhelper 9
@@ -53,6 +51,11 @@ rahunas (0.3.0-1~2.gbp17a283) UNRELEASED; urgency=low
       - Switch to copyright format version 1.0.
       - Update copyright years.
       - Add copyright for source files.
+  * Update watch file, add cryptographic upstream tarball signature verification
+    * debian/watch:
+      - Update upstream tarball release location.
+    * debian/upstream/signing-key.asc:
+      - Add cryptographic upstream tarball signature verification.
 
  -- Neutron Soutmun <neo.neutron@gmail.com>  Sun, 10 Aug 2014 20:18:51 +0700
 
