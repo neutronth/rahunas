@@ -2,8 +2,8 @@
 
 ### BEGIN INIT INFO
 # Provides:          rahunas
-# Required-Start:    $syslog
-# Required-Stop:     $syslog
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
 # Should-Start:      $local_fs $network
 # Should-Stop:       $local_fs $network
 # Default-Start:     2 3 4 5
