@@ -1,4 +1,8 @@
+data/rahunas-db.sql usr/share/rahunasd
 usr/share/locale/th/LC_MESSAGES/*.mo
+weblogin/.htaccess usr/share/rahunas
 weblogin/*.gif    usr/share/rahunas
 weblogin/*.php    usr/share/rahunas
+weblogin/data/browscap-cache     var/lib/rahunas/weblogin/data
+weblogin/libs     usr/share/rahunas
 weblogin/templates/  etc/rahunas
