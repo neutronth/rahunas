@@ -506,6 +506,9 @@ policy () {
     $IPTABLES -A ${NAME}_ext_fw -p udp --sport 53 \
       -m state --state ESTABLISHED,RELATED -j ACCEPT
 
+    $IPTABLES -A ${NAME}_ext_fw -p tcp --sport 53 \
+      -m state --state ESTABLISHED,RELATED -j ACCEPT
+
     if [ -n "$MAIN_EXT_IFACE_PORTS_ALLOW" ]; then
       $IPTABLES -A ${NAME}_ext_fw -p tcp \
         -m multiport --dports ${MAIN_EXT_IFACE_PORTS_ALLOW} -j ACCEPT
@@ -583,18 +586,28 @@ rules () {
   if [ "$DNS" = "yes" -o "$DNS" = "intercept" ]; then
     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
+    $IPTABLES -A $CHAIN_INPUT -p tcp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p tcp --dport domain -j DROP
 
     if [ "$DNS" = "intercept" ]; then
       $IPTABLES -t nat $DEV_IN_PARAM $DEV_INTERNAL \
         -A $CHAIN_NAT_PREROUTING -p udp --dport domain \
         ! -d $VSERVER_IP -j REDIRECT --to-port 53
+
+      $IPTABLES -t nat $DEV_IN_PARAM $DEV_INTERNAL \
+        -A $CHAIN_NAT_PREROUTING -p tcp --dport domain \
+        ! -d $VSERVER_IP -j REDIRECT --to-port 53
     fi
   elif [ "$DNS" = "no" ]; then
     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j DROP
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_INPUT -p tcp --dport domain -j DROP
+    $IPTABLES -A $CHAIN_FORWARD -p tcp --dport domain -j ACCEPT
   elif [ "$DNS" = "forward" ]; then
     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_INPUT -p tcp --dport domain -j ACCEPT
+    $IPTABLES -A $CHAIN_FORWARD -p tcp --dport domain -j ACCEPT
   fi 
 
   ##
