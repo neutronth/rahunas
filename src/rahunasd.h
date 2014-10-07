@@ -46,6 +46,11 @@ enum RH_LOG {
 #define DP(format, args...)
 #endif
 
+enum saved_bandwidth_setting {
+  SAVED_DEFAULT = 0,
+  SAVED_CURRENT = 1
+};
+
 struct rahunas_map {
   GList *members;
   in_addr_t first_ip;
@@ -54,10 +59,13 @@ struct rahunas_map {
 };
 
 struct rahunas_member {
+  struct vserver *vs;
   uint32_t id; 
   unsigned short expired;
   time_t session_start;
   time_t session_timeout;
+  long saved_bandwidth_max_down[2];
+  long saved_bandwidth_max_up[2];
   long bandwidth_max_down;
   long bandwidth_max_up;
   uint16_t bandwidth_slot_id;
@@ -73,6 +81,8 @@ struct rahunas_member {
   time_t   last_interimupdate;
   int      interim_interval;
   char     secure_token[65];
+  void    *luastate;
+  time_t   last_update;
 };
 
 void rh_free_member(struct rahunas_member *member);

@@ -143,7 +143,9 @@ static int startsess (RHVServer *vs, struct task_req *req)
     member = (struct rahunas_member *)member_node->data;
   }
 
+  member->vs = vs;
   member->id = id; 
+  member->last_update = 0;
 
   if (member->username && member->username != termstring)
     free(member->username);
@@ -185,6 +187,10 @@ static int startsess (RHVServer *vs, struct task_req *req)
          sizeof(time_t));
   member->bandwidth_max_down = req->bandwidth_max_down;
   member->bandwidth_max_up = req->bandwidth_max_up;
+  member->saved_bandwidth_max_down[SAVED_DEFAULT] = member->bandwidth_max_down;
+  member->saved_bandwidth_max_up[SAVED_DEFAULT] = member->bandwidth_max_up;
+  member->saved_bandwidth_max_down[SAVED_CURRENT] = member->bandwidth_max_down;
+  member->saved_bandwidth_max_up[SAVED_CURRENT] = member->bandwidth_max_up;
 
   memset (member->secure_token, '\0', sizeof (member->secure_token));
   strncpy (member->secure_token, req->secure_token,
@@ -231,6 +237,9 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
     case RH_RADIUS_TERM_NAS_REBOOT :
       strncpy(cause, "nas reboot", sizeof (cause));
       break;
+    case RH_RADIUS_TERM_NAS_REQUEST :
+      strncpy(cause, "nas request", sizeof (cause));
+      break;
     case RH_RADIUS_TERM_ADMIN_RESET :
       strncpy(cause, "admin reset", sizeof (cause));
       break;
@@ -254,6 +263,13 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
 
   vs->v_map->members = g_list_delete_link(vs->v_map->members, member_node);
 
+  return 0;
+}
+
+/* Update session task */
+static int updatesess (RHVServer *vs, struct task_req *req)
+{
+  /* Do nothing */
   return 0;
 }
 
@@ -290,6 +306,7 @@ static struct task task_memset = {
   .stopservice = &stopservice,
   .startsess = &startsess,
   .stopsess = &stopsess,
+  .updatesess = &updatesess,
   .commitstartsess = &commitstartsess,
   .commitstopsess = &commitstopsess,
   .rollbackstartsess = &rollbackstartsess,

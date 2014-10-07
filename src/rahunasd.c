@@ -230,6 +230,11 @@ expired_check(void *data)
             RH_RADIUS_TERM_SESSION_TIMEOUT) == 0) {
         res = rh_task_stopsess(process->vs, &req);
       }
+    } else {
+      /* Update session */
+      req.id = id;
+      memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
+      res = rh_task_updatesess (process->vs, &req);
     }
 
     pthread_mutex_unlock (&RHMtxLock);

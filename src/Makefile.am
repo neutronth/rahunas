@@ -7,6 +7,7 @@ IPSET_VERSION:=4.2
 AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
   $(LIBSQLITE3_CFLAGS) \
+  $(LIBLUAJIT_CFLAGS) \
   -I$(top_srcdir)/src/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
@@ -19,6 +20,7 @@ AM_CFLAGS = \
   -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\" \
   -DRAHUNAS_CONNTRACK_WRAPPER=\"$(sbindir)/rahunas-conntrack\" \
   -DRAHUNAS_IPACCT_WRAPPER=\"$(sbindir)/rahunas-ipacct\" \
+  -DRAHUNAS_LUA_SCRIPT=\"$(sysconfdir)/rahunas/scripts.d/rahunas.lua\" \
   -D_GNU_SOURCE
 
 rahunasd_SOURCES = \
@@ -57,6 +59,8 @@ rahunasd_SOURCES = \
   rh-task-serviceclass.h \
   rh-task-ipacct.c \
   rh-task-ipacct.h \
+  rh-task-luahook.c \
+  rh-task-luahook.h \
   rh-radius.h \
   rh-config.c \
   rh-config.h \
@@ -67,4 +71,5 @@ rahunasd_LDADD =  \
   $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
   $(top_builddir)/lcfg/liblcfg.a \
   $(LIBGNET_LIBS) \
-  $(LIBSQLITE3_LIBS)
+  $(LIBSQLITE3_LIBS) \
+  $(LIBLUAJIT_LIBS)

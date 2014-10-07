@@ -12,6 +12,7 @@
 #include "rh-task-dbset.h"
 #include "rh-task-bandwidth.h"
 #include "rh-task-conntrack.h"
+#include "rh-task-luahook.h"
 
 void task_register(RHMainServer *ms, struct task *task)
 {
@@ -68,6 +69,7 @@ void rh_task_register(RHMainServer *ms)
       rh_task_ipacct_reg(ms);
 
     rh_task_dbset_reg(ms);
+    rh_task_luahook_reg(ms);
     task_registered = 1;
   }
 }
@@ -171,6 +173,40 @@ int  rh_task_stopsess(RHVServer *vs, struct task_req *req)
 
   return 0;
 }
+
+int  rh_task_updatesess(RHVServer *vs, struct task_req *req)
+{
+  RHMainServer *ms = &rh_main_server_instance;
+  GList *runner = g_list_first(ms->task_list);
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
+  time_t now;
+
+  struct task *ltask = NULL;
+
+  member_node = member_get_node_by_id(vs, req->id);
+  if (member_node == NULL)
+    return 0;
+
+  member = (struct rahunas_member *) member_node->data;
+
+  time (&now);
+  if (now - member->last_update < 30) {
+    DP("Update session skipped");
+    return 0;
+  }
+
+  DP("Update session called");
+
+  while (runner != NULL) {
+    ltask = (struct task *)runner->data;
+    (*ltask->updatesess)(vs, req);
+    runner = g_list_next(runner);
+  }
+
+  return 0;
+}
+
 
 int  rh_task_commitstartsess(RHVServer *vs, struct task_req *req)
 {
