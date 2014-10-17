@@ -1,0 +1,13 @@
+if IP_SET
+
+config IP_SET_RAHUNAS
+	tristate "hash:rahunas set support"
+	depends on IP_SET
+	help
+	  This option adds the hash:rahunas set type support, by which one
+	  can store arbitrary IPv4 or IPv6 addresses and mac address
+	  in a set.
+
+	  To compile it as a module, choose M here.  If unsure, say N.
+
+endif # IP_SET
