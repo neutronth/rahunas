@@ -311,9 +311,7 @@ rh_queue_notify_msg(const char *setname, const struct sockaddr *sa,
 }
 
 #define IPSET_TYPE_REV_MIN  0
-/*        1    Counters support */
-/*        2    Comments support */
-#define IPSET_TYPE_REV_MAX  3 /* Forceadd support */
+#define IPSET_TYPE_REV_MAX  0
 
 #define IPSET_FLAG_IGNOREMAC      IPSET_FLAG_NOMATCH
 
@@ -445,7 +443,10 @@ rahunas4_uadt(struct ip_set *set, struct nlattr *tb[],
          !ip_set_optattr_netorder(tb, IPSET_ATTR_CADT_FLAGS) ||
          !ip_set_optattr_netorder(tb, IPSET_ATTR_TIMEOUT) ||
          !ip_set_optattr_netorder(tb, IPSET_ATTR_PACKETS) ||
-         !ip_set_optattr_netorder(tb, IPSET_ATTR_BYTES)))
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_BYTES)   ||
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_SKBMARK) ||
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_SKBPRIO) ||
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_SKBQUEUE)))
     return -IPSET_ERR_PROTOCOL;
 
   if (tb[IPSET_ATTR_LINENO])
@@ -623,7 +624,10 @@ rahunas6_uadt(struct ip_set *set, struct nlattr *tb[],
          !ip_set_optattr_netorder(tb, IPSET_ATTR_CADT_FLAGS) ||
          !ip_set_optattr_netorder(tb, IPSET_ATTR_TIMEOUT) ||
          !ip_set_optattr_netorder(tb, IPSET_ATTR_PACKETS) ||
-         !ip_set_optattr_netorder(tb, IPSET_ATTR_BYTES)))
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_BYTES)   ||
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_SKBMARK) ||
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_SKBPRIO) ||
+         !ip_set_optattr_netorder(tb, IPSET_ATTR_SKBQUEUE)))
     return -IPSET_ERR_PROTOCOL;
 
   if (tb[IPSET_ATTR_LINENO])
@@ -682,6 +686,9 @@ static struct ip_set_type rahunas_type __read_mostly = {
     [IPSET_ATTR_BYTES]   = { .type = NLA_U64 },
     [IPSET_ATTR_PACKETS] = { .type = NLA_U64 },
     [IPSET_ATTR_COMMENT] = { .type = NLA_NUL_STRING },
+    [IPSET_ATTR_SKBMARK] = { .type = NLA_U64 },
+    [IPSET_ATTR_SKBPRIO] = { .type = NLA_U32 },
+    [IPSET_ATTR_SKBQUEUE] = { .type = NLA_U16 },
   },
   .me = THIS_MODULE,
 };
