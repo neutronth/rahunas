@@ -10,6 +10,10 @@ AC_INIT([rahunas], rh_major.rh_minor.rh_micro, [neutron@rahunas.org])
 AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([foreign subdir-objects tar-pax])
 
+LT_INIT
+AC_CONFIG_MACRO_DIR([m4])
+AM_PROG_LIBTOOL
+
 dnl Shortcut: Linux supported alone
 case "$host" in
 *-*-linux* | *-*-uclinux*) ;;
@@ -82,6 +86,9 @@ AC_ARG_WITH([maxsets],
 AM_CONDITIONAL(WITH_MAXSETS, test "$MAXSETS" != "")
 AC_SUBST(MAXSETS)
 
+dnl Checks for libraries
+PKG_CHECK_MODULES([libipset], [libipset >= 6.23])
+
 # Checks for programs.
 AC_PROG_CC
 
@@ -97,5 +104,8 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([
+	Makefile
+	ipset/lib/Makefile
+])
 AC_OUTPUT

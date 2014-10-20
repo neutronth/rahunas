@@ -13,3 +13,5 @@ kernel/net/netfilter/ipset/module*
 kernel/net/netfilter/ipset/*.mod.*
 kernel/net/netfilter/ipset/*.ko
 kernel/net/netfilter/ipset/*.o
+ltmain.sh
+depcomp
