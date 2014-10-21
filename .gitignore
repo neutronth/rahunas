@@ -15,3 +15,4 @@ kernel/net/netfilter/ipset/*.ko
 kernel/net/netfilter/ipset/*.o
 ltmain.sh
 depcomp
+test-driver

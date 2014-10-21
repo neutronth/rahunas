@@ -91,6 +91,7 @@ PKG_CHECK_MODULES([libipset], [libipset >= 6.23])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 
 # Checks for libraries.
 
@@ -107,5 +108,6 @@ AC_CHECK_FUNCS([memset])
 AC_CONFIG_FILES([
 	Makefile
 	ipset/lib/Makefile
+	tests/Makefile
 ])
 AC_OUTPUT
