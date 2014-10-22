@@ -55,12 +55,7 @@ public:
   ClientIP& getClientIP () { return info.ip; }
 
   shared_ptr<ClientExtensions> getExtensions () { return info.ext; }
-  bool startExtensions () {
-    if (!getExtensions ())
-      info.ext.reset (new ClientExtensions ());
-
-    return getExtensions () != nullptr;
-  }
+  bool startExtensions ();
   bool isExtensions () { return getExtensions () != nullptr; }
 
 private:
@@ -77,6 +72,15 @@ Client::Client () : authenticated (false)
 inline
 Client::~Client ()
 {
+}
+
+inline
+bool Client::startExtensions ()
+{
+  if (!getExtensions ())
+    info.ext.reset (new ClientExtensions ());
+
+  return getExtensions () != nullptr;
 }
 
 #endif // _RH_CLIENT_H
