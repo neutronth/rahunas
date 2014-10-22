@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = ipset/lib tests
+SUBDIRS = ipset/lib src tests
 
 if ! WITH_KBUILDDIR
 KBUILD_OUTPUT=/lib/modules/`uname -r`/build

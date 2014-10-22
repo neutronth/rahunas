@@ -18,11 +18,33 @@
 
 *************************************************************************/
 
-#include <gtest/gtest.h>
+#include <arpa/inet.h>
 
-int main (int argc, char **argv)
+#include "ClientIP.h"
+
+string
+ClientIP::getIP ()
 {
-  ::testing::InitGoogleTest (&argc, argv);
+  char ipstr[INET6_ADDRSTRLEN];
 
-  return RUN_ALL_TESTS ();
+  const char *ret = nullptr;
+
+  if (family == AF_INET)
+    ret = inet_ntop (family, &ip, ipstr, INET6_ADDRSTRLEN);
+  else
+    ret = inet_ntop (family, &ip6, ipstr, INET6_ADDRSTRLEN);
+
+  return ret ? string (ipstr) :
+               family == AF_INET ? string ("0.0.0.0") : string ("::");
+}
+
+bool
+ClientIP::setIP (string ip, enum support_family f)
+{
+  family = f;
+
+  if (inet_pton (family, ip.c_str (), &ip6) > 0)
+    return true;
+
+  return false;
 }

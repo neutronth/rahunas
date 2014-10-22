@@ -108,6 +108,7 @@ AC_CHECK_FUNCS([memset])
 AC_CONFIG_FILES([
 	Makefile
 	ipset/lib/Makefile
+	src/Makefile
 	tests/Makefile
 ])
 AC_OUTPUT

@@ -18,11 +18,42 @@
 
 *************************************************************************/
 
-#include <gtest/gtest.h>
+#ifndef _RH_CLIENT_IP_H
+#define _RH_CLIENT_IP_H
 
-int main (int argc, char **argv)
+#include <string>
+#include <cstring>
+#include <netinet/in.h>
+
+using std::string;
+
+class ClientIP {
+public:
+  enum support_family {
+    IPv4 = AF_INET,
+    IPv6 = AF_INET6
+  };
+
+public:
+  ClientIP ();
+
+  unsigned short getVersion () { return family == AF_INET6 ? 6 : 4; };
+  string         getIP ();
+  bool           setIP (string ip, enum support_family f);
+
+private:
+  enum support_family family;
+
+  union {
+    struct in_addr  ip;
+    struct in6_addr ip6;
+  };
+};
+
+inline
+ClientIP::ClientIP () : family (IPv4)
 {
-  ::testing::InitGoogleTest (&argc, argv);
-
-  return RUN_ALL_TESTS ();
+  memset (&ip6, 0, sizeof (ip6));
 }
+
+#endif // _RH_CLIENT_IP_H

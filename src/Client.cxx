@@ -18,11 +18,26 @@
 
 *************************************************************************/
 
-#include <gtest/gtest.h>
+#include <sstream>
+#include <boost/uuid/uuid_io.hpp>
+#include <iostream>
 
-int main (int argc, char **argv)
+#include "Client.h"
+
+using std::stringstream;
+
+string
+Client::getId ()
 {
-  ::testing::InitGoogleTest (&argc, argv);
+  stringstream ss;
+  ss << info.id;
 
-  return RUN_ALL_TESTS ();
+  return ss.str ();
+}
+
+void
+Client::setId (string id)
+{
+  stringstream ss (id);
+  ss >> info.id;
 }

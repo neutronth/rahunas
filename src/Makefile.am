@@ -1,0 +1,10 @@
+AM_CXXFLAGS = -std=c++11
+
+noinst_LIBRARIES = librahunas.a
+
+librahunas_a_SOURCES = \
+	Client.h \
+	Client.cxx \
+	ClientIP.h \
+	ClientIP.cxx \
+	ClientExntensions.h
