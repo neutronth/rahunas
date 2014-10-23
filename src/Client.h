@@ -62,7 +62,7 @@ private:
 };
 
 inline
-Client::Client () : authenticated (false)
+Client::Client ()
 {
   info.id = boost::uuids::random_generator()();
 }
