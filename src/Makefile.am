@@ -1,4 +1,4 @@
-AM_CXXFLAGS = -std=c++11
+AM_CXXFLAGS = -std=c++14
 
 noinst_LIBRARIES = librahunas.a
 
@@ -7,4 +7,6 @@ librahunas_a_SOURCES = \
 	Client.cxx \
 	ClientIP.h \
 	ClientIP.cxx \
-	ClientExntensions.h
+	ClientExntensions.h \
+	Session.h \
+	Session.cxx

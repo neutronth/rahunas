@@ -18,67 +18,51 @@
 
 *************************************************************************/
 
-#ifndef _RH_CLIENT_H
-#define _RH_CLIENT_H
+#ifndef _RH_SESSION_H
+#define _RH_SESSION_H
 
 #include <string>
+#include <memory>
+#include <vector>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-#include <memory>
 
-#include "ClientIP.h"
-#include "ClientExtensions.h"
+#include "Client.h"
 
 using std::string;
+using std::vector;
 using std::shared_ptr;
 using namespace boost::uuids;
 
-typedef struct ClientInfo ClientInfo;
-
-struct ClientInfo {
-  uuid     id;
-  string   username;
-  ClientIP ip;
-  shared_ptr<ClientExtensions> ext;
-};
-
-class Client {
+class Session {
 public:
-  Client ();
-  ~Client ();
+  Session ();
+
+  bool isAuthenticated ()   { return authenticated; }
+  void markAuthenticated () { authenticated = true; }
 
   string getId ();
-  void   setId (string id);
+  void   setId (string s_id);
 
-  string&   getUsername () { return info.username; }
-  ClientIP& getClientIP () { return info.ip; }
+  unsigned int clientCount () { return clients.size (); }
 
-  shared_ptr<ClientExtensions> getExtensions () { return info.ext; }
-  bool startExtensions ();
-  bool isExtensions () { return getExtensions () != nullptr; }
+  shared_ptr<Client> clientAdd  (string ip, enum ClientIP::support_family f);
+  shared_ptr<Client> clientMove (string ip, string to_ip,
+                                 enum ClientIP::support_family f);
+  shared_ptr<Client> clientFind (string ip);
+
 
 private:
-  ClientInfo info;
+  bool authenticated;
+  uuid id;
+  vector<shared_ptr<Client>> clients;
 };
 
 inline
-Client::Client () : authenticated (false)
+Session::Session () :
+  authenticated (false)
 {
-  info.id = boost::uuids::random_generator()();
+  id = boost::uuids::random_generator()();
 }
 
-inline
-Client::~Client ()
-{
-}
-
-inline
-bool Client::startExtensions ()
-{
-  if (!getExtensions ())
-    info.ext.reset (new ClientExtensions ());
-
-  return getExtensions () != nullptr;
-}
-
-#endif // _RH_CLIENT_H
+#endif // _RH_SESSION_H

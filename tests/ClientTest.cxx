@@ -26,11 +26,6 @@ public:
  Client client;
 };
 
-TEST_F(ClientTest, CreatedWithUnauthenticatedStatus)
-{
-  EXPECT_FALSE(client.isAuthenticated ());
-}
-
 TEST_F(ClientTest, CreatedWithNotEmptyClientId)
 {
   EXPECT_TRUE(!client.getId ().empty ());
