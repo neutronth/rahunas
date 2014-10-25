@@ -10,7 +10,8 @@ noinst_PROGRAMS = rhtest
 
 rhtest_SOURCES = \
 	main.cxx \
-	ClientTest.cxx \
-	SessionTest.cxx
+	ClientIPCommonTest.cxx \
+	ClientIPv4Test.cxx \
+	ClientIPv6Test.cxx
 
 rhtest_LDADD  = gtest.a $(top_builddir)/src/librahunas.a

@@ -17,34 +17,32 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 *************************************************************************/
+#ifndef _RH_CLIENT_FACTORY_H
+#define _RH_CLIENT_FACTORY_H
 
-#include <arpa/inet.h>
+#include "Client.h"
+#include "ClientIPv4.h"
+#include "ClientIPv6.h"
 
-#include "ClientIP.h"
+class ClientFactory {
+public:
+  static shared_ptr<Client> getClient (enum Client::support_family f,
+                                       string setup_ip)
+  {
+    shared_ptr<Client> c;
+    switch (f)
+      {
+        case Client::IPv4:
+        default:
+          c = make_shared<ClientIPv4> (setup_ip);
+          break;
+        case Client::IPv6:
+          c = make_shared<ClientIPv6> (setup_ip);
+          break;
+      }
 
-string
-ClientIP::getIP ()
-{
-  char ipstr[INET6_ADDRSTRLEN];
+    return c->isValid () ? c : nullptr;
+  }
+};
 
-  const char *ret = nullptr;
-
-  if (family == AF_INET)
-    ret = inet_ntop (family, &ip, ipstr, INET6_ADDRSTRLEN);
-  else
-    ret = inet_ntop (family, &ip6, ipstr, INET6_ADDRSTRLEN);
-
-  return ret ? string (ipstr) :
-               family == AF_INET ? string ("0.0.0.0") : string ("::");
-}
-
-bool
-ClientIP::setIP (string ip, enum support_family f)
-{
-  family = f;
-
-  if (inet_pton (family, ip.c_str (), &ip6) > 0)
-    return true;
-
-  return false;
-}
+#endif // _RH_CLIENT_FACTORY_H

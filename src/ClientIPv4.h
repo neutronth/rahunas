@@ -18,26 +18,38 @@
 
 *************************************************************************/
 
-#include <sstream>
-#include <boost/uuid/uuid_io.hpp>
-#include <iostream>
+#ifndef _RH_CLIENT_IPV4_H
+#define _RH_CLIENT_IPV4_H
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include "Client.h"
 
-using std::stringstream;
+class ClientIPv4 : public Client {
+public:
+  ClientIPv4 (string setup_ip);
+  virtual ~ClientIPv4 ();
 
-string
-Client::getId ()
+  virtual unsigned short getIPFamily () { return family; }
+  virtual string         getIP ();
+
+private:
+  enum Client::support_family family;
+  struct in_addr ip;
+};
+
+inline
+ClientIPv4::ClientIPv4 (string setup_ip)
+  : family (Client::IPv4)
 {
-  stringstream ss;
-  ss << info.id;
-
-  return ss.str ();
+  if (inet_pton (family, setup_ip.c_str (), &ip) > 0)
+    valid = true;
 }
 
-void
-Client::setId (string id)
+inline
+ClientIPv4::~ClientIPv4 ()
 {
-  stringstream ss (id);
-  ss >> info.id;
 }
+
+#endif // _RH_CLIENT_IPV4_H

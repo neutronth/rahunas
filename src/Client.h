@@ -22,49 +22,55 @@
 #define _RH_CLIENT_H
 
 #include <string>
+#include <sstream>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <memory>
+#include <netinet/in.h>
 
-#include "ClientIP.h"
 #include "ClientExtensions.h"
 
 using std::string;
+using std::stringstream;
 using std::shared_ptr;
+using std::make_shared;
 using namespace boost::uuids;
-
-typedef struct ClientInfo ClientInfo;
-
-struct ClientInfo {
-  uuid     id;
-  string   username;
-  ClientIP ip;
-  shared_ptr<ClientExtensions> ext;
-};
 
 class Client {
 public:
+  enum support_family {
+    IPv4 = AF_INET,
+    IPv6 = AF_INET6
+  };
+
+public:
   Client ();
-  ~Client ();
+  virtual ~Client ();
 
   string getId ();
   void   setId (string id);
 
-  string&   getUsername () { return info.username; }
-  ClientIP& getClientIP () { return info.ip; }
+  virtual unsigned short getIPFamily () = 0;
+  virtual string         getIP () = 0;
 
-  shared_ptr<ClientExtensions> getExtensions () { return info.ext; }
+  shared_ptr<ClientExtensions> getExtensions () { return ext; }
   bool startExtensions ();
   bool isExtensions () { return getExtensions () != nullptr; }
 
-private:
-  ClientInfo info;
+  bool isValid () { return valid; }
+
+protected:
+  bool valid;
+  uuid id;
+  shared_ptr<ClientExtensions> ext;
 };
 
 inline
 Client::Client ()
+  : valid (false)
 {
-  info.id = boost::uuids::random_generator()();
+  id = boost::uuids::random_generator()();
 }
 
 inline
@@ -76,9 +82,26 @@ inline
 bool Client::startExtensions ()
 {
   if (!getExtensions ())
-    info.ext.reset (new ClientExtensions ());
+    ext.reset (new ClientExtensions ());
 
   return getExtensions () != nullptr;
 }
+
+inline
+string Client::getId ()
+{
+  stringstream ss;
+  ss << id;
+
+  return ss.str ();
+}
+
+inline
+void Client::setId (string s_id)
+{
+  stringstream ss (s_id);
+  ss >> id;
+}
+
 
 #endif // _RH_CLIENT_H

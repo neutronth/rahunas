@@ -23,6 +23,8 @@
 
 #include <string>
 
+using std::string;
+
 class ClientExtensions {
 public:
   ClientExtensions ();

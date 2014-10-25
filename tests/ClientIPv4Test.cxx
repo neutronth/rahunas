@@ -18,42 +18,42 @@
 
 *************************************************************************/
 
-#ifndef _RH_CLIENT_IP_H
-#define _RH_CLIENT_IP_H
+#include <gtest/gtest.h>
+#include <memory>
+#include "../src/Client.h"
+#include "../src/ClientFactory.h"
 
-#include <string>
-#include <cstring>
-#include <netinet/in.h>
+using std::shared_ptr;
 
-using std::string;
-
-class ClientIP {
+class ClientIPv4Test : public ::testing::Test {
 public:
-  enum support_family {
-    IPv4 = AF_INET,
-    IPv6 = AF_INET6
-  };
-
+  void SetUp () {
+    client = ClientFactory::getClient (Client::IPv4, "192.168.1.100");
+  }
 public:
-  ClientIP ();
-
-  unsigned short getVersion () { return family == AF_INET6 ? 6 : 4; };
-  string         getIP ();
-  bool           setIP (string ip, enum support_family f);
-
-private:
-  enum support_family family;
-
-  union {
-    struct in_addr  ip;
-    struct in6_addr ip6;
-  };
+  shared_ptr<Client> client;
 };
 
-inline
-ClientIP::ClientIP () : family (IPv4)
+class ClientInvalidIPv4Test : public ::testing::Test {
+public:
+  void SetUp () {
+    client = ClientFactory::getClient (Client::IPv4, "192.168.1.300");
+  }
+public:
+  shared_ptr<Client> client;
+};
+
+TEST_F(ClientIPv4Test, CreatedAndValid)
 {
-  memset (&ip6, 0, sizeof (ip6));
+  EXPECT_TRUE(client->isValid ());
 }
 
-#endif // _RH_CLIENT_IP_H
+TEST_F(ClientIPv4Test, CreatedAndIPIsCorrect)
+{
+  EXPECT_EQ(client->getIP (), "192.168.1.100");
+}
+
+TEST_F(ClientInvalidIPv4Test, CreatedAndInvalidNoPtrReturn)
+{
+  EXPECT_EQ(client, nullptr);
+}
