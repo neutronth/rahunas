@@ -19,9 +19,11 @@
 *************************************************************************/
 
 #include <sstream>
+#include <memory>
 #include <boost/uuid/uuid_io.hpp>
 
 #include "Session.h"
+#include "ClientFactory.h"
 
 using std::stringstream;
 
@@ -42,7 +44,7 @@ Session::setId (string s_id)
 }
 
 shared_ptr<Client>
-Session::clientAdd (string ip, enum ClientIP::support_family f)
+Session::clientAdd (enum Client::support_family f, string ip)
 {
   shared_ptr<Client> c;
   c = clientFind (ip);
@@ -50,23 +52,12 @@ Session::clientAdd (string ip, enum ClientIP::support_family f)
   if (c)
     return c;
 
-  c.reset(new Client ());
-  if (!c->getClientIP ().setIP (ip, f))
+  c = ClientFactory::getClient (f, ip);
+
+  if (!c)
     return nullptr;
 
   clients.push_back (c);
-
-  return c;
-}
-
-shared_ptr<Client>
-Session::clientMove (string ip, string to_ip, enum ClientIP::support_family f)
-{
-  shared_ptr<Client> c;
-  c = clientFind (ip);
-
-  if (c)
-    c->getClientIP().setIP (to_ip, f);
 
   return c;
 }
@@ -76,9 +67,24 @@ Session::clientFind (string ip)
 {
   for (shared_ptr<Client> c : clients)
     {
-      if (c->getClientIP ().getIP () == ip)
+      if (c->getIP () == ip)
         return c;
     }
 
   return nullptr;
+}
+
+bool
+Session::clientRemove (string ip)
+{
+  for (auto it = clients.begin (); it != clients.end (); ++it)
+    {
+      if ((*it)->getIP () == ip)
+        {
+          clients.erase (it);
+          return true;;
+        }
+    }
+
+  return false;
 }

@@ -9,4 +9,6 @@ librahunas_a_SOURCES = \
 	ClientIPv6.h \
 	ClientIPv6.cxx \
 	ClientFactory.h \
-	ClientExntensions.h
+	ClientExntensions.h \
+	Session.h \
+	Session.cxx

@@ -46,11 +46,9 @@ public:
 
   unsigned int clientCount () { return clients.size (); }
 
-  shared_ptr<Client> clientAdd  (string ip, enum ClientIP::support_family f);
-  shared_ptr<Client> clientMove (string ip, string to_ip,
-                                 enum ClientIP::support_family f);
-  shared_ptr<Client> clientFind (string ip);
-
+  shared_ptr<Client> clientAdd    (enum Client::support_family f, string ip);
+  shared_ptr<Client> clientFind   (string ip);
+  bool               clientRemove (string ip);
 
 private:
   bool authenticated;

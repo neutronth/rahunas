@@ -57,7 +57,7 @@ TEST_F(SessionTest, CreatedWithNoClients)
 
 TEST_F(SessionTest, CreatedAndAddIPv4Client)
 {
-  shared_ptr<Client> c = session.clientAdd ("192.168.1.100", ClientIP::IPv4);
+  shared_ptr<Client> c = session.clientAdd (Client::IPv4, "192.168.1.100");
 
   ASSERT_TRUE (c != nullptr);
 
@@ -66,7 +66,7 @@ TEST_F(SessionTest, CreatedAndAddIPv4Client)
 
 TEST_F(SessionTest, CreatedAndAddIPv6Client)
 {
-  shared_ptr<Client> c = session.clientAdd ("2001::1", ClientIP::IPv6);
+  shared_ptr<Client> c = session.clientAdd (Client::IPv6, "2001::100");
 
   ASSERT_TRUE (c != nullptr);
 
@@ -76,9 +76,9 @@ TEST_F(SessionTest, CreatedAndAddIPv6Client)
 TEST_F(SessionTest, CreatedAndAddBothIPv4IPv6Client)
 {
   shared_ptr<Client> c;
-  c = session.clientAdd ("192.168.1.100", ClientIP::IPv4);
+  c = session.clientAdd (Client::IPv4, "192.168.1.100");
   ASSERT_TRUE (c != nullptr);
-  c = session.clientAdd ("2001::1", ClientIP::IPv6);
+  c = session.clientAdd (Client::IPv6, "2001::100");
   ASSERT_TRUE (c != nullptr);
 
   EXPECT_EQ(session.clientCount (), 2);
@@ -86,10 +86,10 @@ TEST_F(SessionTest, CreatedAndAddBothIPv4IPv6Client)
 
 TEST_F(SessionTest, CreatedAndAddIPv4ClientNoDuplicate)
 {
-  shared_ptr<Client> c = session.clientAdd ("192.168.1.100", ClientIP::IPv4);
+  shared_ptr<Client> c = session.clientAdd (Client::IPv4, "192.168.1.100");
   ASSERT_TRUE (c != nullptr);
 
-  shared_ptr<Client> c2 = session.clientAdd ("192.168.1.100", ClientIP::IPv4);
+  shared_ptr<Client> c2 = session.clientAdd (Client::IPv4, "192.168.1.100");
   ASSERT_TRUE (c2 == c);
 
   EXPECT_EQ(session.clientCount (), 1);
@@ -97,41 +97,59 @@ TEST_F(SessionTest, CreatedAndAddIPv4ClientNoDuplicate)
 
 TEST_F(SessionTest, CreatedAndAddIPv6ClientNoDuplicate)
 {
-  shared_ptr<Client> c = session.clientAdd ("2001::1", ClientIP::IPv6);
+  shared_ptr<Client> c = session.clientAdd (Client::IPv6, "2001::100");
   ASSERT_TRUE (c != nullptr);
 
-  shared_ptr<Client> c2 = session.clientAdd ("2001::1", ClientIP::IPv6);
+  shared_ptr<Client> c2 = session.clientAdd (Client::IPv6, "2001::100");
   ASSERT_TRUE (c2 == c);
 
   EXPECT_EQ(session.clientCount (), 1);
 }
 
-TEST_F(SessionTest, CreatedAndAddIPv4ClientThenMoveToAnotherIPv4)
-{
-  shared_ptr<Client> c = session.clientAdd ("192.168.1.100", ClientIP::IPv4);
-  ASSERT_TRUE (c != nullptr);
-
-  c = session.clientMove ("192.168.1.100", "192.168.1.101", ClientIP::IPv4);
-  ASSERT_TRUE (c != nullptr);
-
-  EXPECT_EQ(c->getClientIP ().getIP (), "192.168.1.101");
-}
-
-TEST_F(SessionTest, CreatedAndAddIPv6ClientThenMoveToAnotherIPv6)
-{
-  shared_ptr<Client> c = session.clientAdd ("2001::1", ClientIP::IPv6);
-  ASSERT_TRUE (c != nullptr);
-
-  c = session.clientMove ("2001::1", "2001::2", ClientIP::IPv6);
-  ASSERT_TRUE (c != nullptr);
-
-  EXPECT_EQ(c->getClientIP ().getIP (), "2001::2");
-}
-
 TEST_F(SessionTest, CreatedAndFindIPv4Client)
 {
-  shared_ptr<Client> c = session.clientAdd ("192.168.1.100", ClientIP::IPv4);
+  shared_ptr<Client> c = session.clientAdd (Client::IPv4, "192.168.1.100");
   ASSERT_TRUE (c != nullptr);
 
   EXPECT_EQ(session.clientFind ("192.168.1.100"), c);
+}
+
+TEST_F(SessionTest, CreatedAndFindIPv6Client)
+{
+  shared_ptr<Client> c = session.clientAdd (Client::IPv6, "2001::100");
+  ASSERT_TRUE (c != nullptr);
+
+  EXPECT_EQ(session.clientFind ("2001::100"), c);
+}
+
+TEST_F(SessionTest, CreatedAndAddClientsThenRemove)
+{
+  shared_ptr<Client> c = session.clientAdd (Client::IPv4, "192.168.1.100");
+  ASSERT_TRUE(c != nullptr);
+
+  shared_ptr<Client> c2 = session.clientAdd (Client::IPv6, "2001::100");
+  ASSERT_TRUE(c2 != nullptr);
+
+  ASSERT_EQ(session.clientCount (), 2);
+
+  ASSERT_TRUE(session.clientRemove ("192.168.1.100"));
+  ASSERT_TRUE(session.clientRemove ("2001::100"));
+
+  EXPECT_EQ(session.clientCount (), 0);
+}
+
+TEST_F(SessionTest, CreatedAndAddClientsIgnoreRemoveNotExistsClient)
+{
+  shared_ptr<Client> c = session.clientAdd (Client::IPv4, "192.168.1.100");
+  ASSERT_TRUE(c != nullptr);
+
+  shared_ptr<Client> c2 = session.clientAdd (Client::IPv6, "2001::100");
+  ASSERT_TRUE(c2 != nullptr);
+
+  ASSERT_EQ(session.clientCount (), 2);
+
+  ASSERT_FALSE(session.clientRemove ("192.168.1.101"));
+  ASSERT_FALSE(session.clientRemove ("2001::101"));
+
+  EXPECT_EQ(session.clientCount (), 2);
 }
