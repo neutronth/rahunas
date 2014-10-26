@@ -13,6 +13,7 @@ rhtest_SOURCES = \
 	ClientIPCommonTest.cxx \
 	ClientIPv4Test.cxx \
 	ClientIPv6Test.cxx \
-	SessionTest.cxx
+	SessionTest.cxx \
+	SessionsPoolTest.cxx
 
 rhtest_LDADD  = gtest.a $(top_builddir)/src/librahunas.a

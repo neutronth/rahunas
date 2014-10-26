@@ -18,52 +18,48 @@
 
 *************************************************************************/
 
-#ifndef _RH_SESSION_H
-#define _RH_SESSION_H
+#ifndef _RH_SESSIONS_POOL_H
+#define _RH_SESSIONS_POOL_H
 
 #include <string>
+#include <unordered_map>
 #include <memory>
-#include <vector>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
+#include <boost/functional/hash.hpp>
 
+#include "Session.h"
 #include "Client.h"
 
 using std::string;
-using std::vector;
+using std::unordered_map;
 using std::shared_ptr;
+using boost::hash;
 using namespace boost::uuids;
 
-class Session {
+class SessionsPool {
 public:
-  Session ();
+  SessionsPool ();
+  ~SessionsPool ();
 
-  bool isAuthenticated ()   { return authenticated; }
-  void markAuthenticated () { authenticated = true; }
+  unsigned int size ()    { return uuid_pool.size (); }
+  unsigned int ipCount () { return ip_pool.size ();   }
 
-  vector<shared_ptr<Client>> getClients () { return clients; }
-
-  string getId ();
-  uuid   getRawId () { return id; }
-  void   setId (string s_id);
-
-  unsigned int clientCount () { return clients.size (); }
-
-  shared_ptr<Client> clientAdd    (enum Client::support_family f, string ip);
-  shared_ptr<Client> clientFind   (string ip);
-  bool               clientRemove (string ip);
+  shared_ptr<Session> sessionGetByIP (enum Client::support_family f, string ip);
+  shared_ptr<Session> sessionGetById (string id);
+  bool                sessionRemove  (string id);
 
 private:
-  bool authenticated;
-  uuid id;
-  vector<shared_ptr<Client>> clients;
+  unordered_map<uuid, shared_ptr<Session>, hash<uuid>> uuid_pool;
+  unordered_map<string, shared_ptr<Session>> ip_pool;
 };
 
 inline
-Session::Session () :
-  authenticated (false)
+SessionsPool::SessionsPool ()
 {
-  id = boost::uuids::random_generator()();
 }
 
-#endif // _RH_SESSION_H
+inline
+SessionsPool::~SessionsPool ()
+{
+}
+
+#endif // _RH_SESSIONS_POOL_H

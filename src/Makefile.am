@@ -11,4 +11,6 @@ librahunas_a_SOURCES = \
 	ClientFactory.h \
 	ClientExntensions.h \
 	Session.h \
-	Session.cxx
+	Session.cxx \
+	SessionsPool.h \
+	SessionsPool.cxx
