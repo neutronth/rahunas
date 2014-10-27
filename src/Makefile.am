@@ -16,4 +16,6 @@ librahunas_a_SOURCES = \
 	SessionsPool.cxx \
 	Netmask.h \
 	Network.h \
-	Network.cxx
+	Network.cxx \
+	Zone.h \
+	Zone.cxx

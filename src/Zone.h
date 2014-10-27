@@ -18,46 +18,55 @@
 
 *************************************************************************/
 
-#ifndef _RH_NETWORK_H
-#define _RH_NETWORK_H
+#ifndef _RH_ZONE_H
+#define _RH_ZONE_H
 
 #include <string>
-#include <sstream>
+#include <memory>
+#include <vector>
+#include <unordered_map>
 
+#include "Network.h"
 #include "Client.h"
-#include "Netmask.h"
 
 using std::string;
-using std::stringstream;
-using std::size_t;
+using std::vector;
+using std::unordered_map;
+using std::shared_ptr;
 
-class Network {
+class Zone {
 public:
-  enum cidr_max {
-    CIDR_IPv4_MAX = 32,
-    CIDR_IPv6_MAX = 128
-  };
+  Zone (string n);
 
-public:
-  Network (enum Client::support_family f, string net, string netname);
+  string& getName () { return name; }
+  bool    setName (string n);
 
-  enum Client::support_family getFamily () { return family; }
+  unsigned int netCount () { return networks.size (); }
+  bool         netAdd (enum Client::support_family f, string net,
+                       string netname);
+  bool         netRemoveByNetwork (string net);
+  bool         netRemoveByName    (string netname);
 
-  bool       isValid ()           { return valid;    }
-  string&    getName ()           { return netname;  }
-  bool       setName (string n)   { netname.assign (n); return netname == n; }
-  uint8_t    getPrefixLen ()      { return cidr;     }
-  IPStorage *getRawNetworkAddr () { return &netaddr; }
-  string     getNetworkAddr ();
-
-  bool       isInNetwork (string ip);
+  shared_ptr<Network> netFindByNetwork (string net);
+  shared_ptr<Network> netFindByName    (string netname);
+  shared_ptr<Network> netFindByIP      (string ip);
 
 private:
-  bool valid;
-  enum Client::support_family family;
-  IPStorage  netaddr;
-  uint8_t    cidr;
-  string     netname;
+  string name;
+  vector<shared_ptr<Network>> networks;
 };
 
-#endif // _RH_NETWORK_H
+inline
+Zone::Zone (string n)
+  : name (n)
+{
+}
+
+inline bool
+Zone::setName (string n)
+{
+  name.assign (n);
+  return name == n;
+}
+
+#endif // _RH_ZONE_H
