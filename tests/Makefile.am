@@ -16,6 +16,7 @@ rhtest_SOURCES = \
 	SessionTest.cxx \
 	SessionsPoolTest.cxx \
 	NetworkTest.cxx \
-	ZoneTest.cxx
+	ZoneTest.cxx \
+	ZonesPoolTest.cxx
 
 rhtest_LDADD  = gtest.a $(top_builddir)/src/librahunas.a

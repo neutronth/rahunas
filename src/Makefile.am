@@ -18,4 +18,6 @@ librahunas_a_SOURCES = \
 	Network.h \
 	Network.cxx \
 	Zone.h \
-	Zone.cxx
+	Zone.cxx \
+	ZonesPool.h \
+	ZonesPool.cxx
