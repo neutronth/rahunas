@@ -146,6 +146,7 @@ static int startsess (RHVServer *vs, struct task_req *req)
   member->vs = vs;
   member->id = id; 
   member->last_update = 0;
+  member->postupdate  = 0;
 
   if (member->username && member->username != termstring)
     free(member->username);

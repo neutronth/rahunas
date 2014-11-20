@@ -83,6 +83,7 @@ struct rahunas_member {
   char     secure_token[65];
   void    *luastate;
   time_t   last_update;
+  int      postupdate;
 };
 
 void rh_free_member(struct rahunas_member *member);

@@ -110,7 +110,9 @@ static int luahook_verdictprocess (enum luahook_verdict v,
 
       break;
     case LUAHOOK_UPDATE:
+      member->postupdate = 1;
       ret = rh_task_updatesess (member->vs, &req);
+      member->postupdate = 0;
       time (&member->last_update);
       break;
 
@@ -280,7 +282,7 @@ static int updatesess (RHVServer *vs, struct task_req *req)
 
   DP ("lua_ret - %p", L);
 
-  if (L) {
+  if (L && !member->postupdate) {
     luahook_callfunc (L, "session_update");
   }
 
