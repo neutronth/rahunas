@@ -9,10 +9,48 @@
 #include "rahunasd.h"
 #include "rh-xmlrpc-cmd.h"
 #include "rh-task-memset.h"
+#include "rh-ipset.h"
+#include "rh-json.h"
 
-int send_xmlrpc_stopacct(RHVServer *vs, uint32_t id, int cause) {
+static
+int send_xmlrpc (RHVServer *vs, const char *cmd, const char *params)
+{
   GNetXmlRpcClient *client = NULL;
   gchar *reply  = NULL;
+  int    ret    = 0;
+
+  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL,
+                                  XMLSERVICE_PORT);
+
+  if (!client) {
+    logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);
+    return -1;
+  }
+
+  if (gnet_xmlrpc_client_call(client, cmd, params, &reply) == 0)
+    {
+      DP("%s reply = %d", cmd, get_json_reply_status (reply));
+      if (get_json_reply_status (reply) != 200)
+        ret = -1;
+
+      g_free(reply);
+    }
+  else
+    {
+      if (reply != NULL) {
+        g_free(reply);
+      }
+
+      DP("%s", "Failed executing stopacct!");
+      ret = -1;
+    }
+
+  gnet_xmlrpc_client_delete(client);
+
+  return ret;
+}
+
+int send_xmlrpc_stopacct(RHVServer *vs, uint32_t id, int cause) {
   gchar *params = NULL;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
@@ -27,60 +65,29 @@ int send_xmlrpc_stopacct(RHVServer *vs, uint32_t id, int cause) {
   member_node = member_get_node_by_id(vs, id);
   if (member_node == NULL)
     return -1;
-  
+
   member = (struct rahunas_member *)member_node->data;
-  params = g_strdup_printf("%s|%s|%s|%d|%s|%d|%" PRId64 "|%" PRId64,
-                           idtoip(vs->v_map, id),
-                           member->username,
-                           member->session_id,
-                           member->session_start,
-                           mac_tostring(member->mac_address),
-                           cause,
-                           member->download_bytes,
-                           member->upload_bytes);
 
-  DP("Params = %s", params);
+  params = create_json_request ("{ss,ss,ss,si,ss,si,si,si}",
+                                "IP", idtoip (vs->v_map, id),
+                                "Username", member->username,
+                                "SessionID", member->session_id,
+                                "SessionStart", member->session_start,
+                                "MAC", mac_tostring (member->mac_address),
+                                "Cause", cause,
+                                "DownloadBytes", member->download_bytes,
+                                "UploadBytes", member->upload_bytes);
 
-  if (params == NULL)
+  if (!params)
     return -1;
 
-  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL, 
-                                  XMLSERVICE_PORT);
-
-  if (!client) {
-    logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);
-    return -1;
-  }
-  
-  if (gnet_xmlrpc_client_call(client, "stopacct", params, &reply) == 0)
-    {
-      DP("stopacct reply = %s", reply);
-      if (strcmp (reply, "FAIL") == 0)
-        ret = -1;
-
-      g_free(reply);
-    }
-  else
-    {
-      if (reply != NULL) {
-        DP("stopacct reply = %s", reply);
-        g_free(reply);
-      }
-
-      DP("%s", "Failed executing stopacct!");
-      ret = -1;
-    }
-
-  gnet_xmlrpc_client_delete(client);
-
+  ret = send_xmlrpc (vs, "stopacct", params);
   g_free(params);
 
   return ret;
 }
 
 int send_xmlrpc_interimupdate(RHVServer *vs, uint32_t id) {
-  GNetXmlRpcClient *client = NULL;
-  gchar *reply  = NULL;
   gchar *params = NULL;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
@@ -97,96 +104,39 @@ int send_xmlrpc_interimupdate(RHVServer *vs, uint32_t id) {
     return -1;
 
   member = (struct rahunas_member *)member_node->data;
-  params = g_strdup_printf("%s|%s|%s|%d|%s|%" PRId64 "|%" PRId64,
-                           idtoip(vs->v_map, id),
-                           member->username,
-                           member->session_id,
-                           member->session_start,
-                           mac_tostring(member->mac_address),
-                           member->download_bytes,
-                           member->upload_bytes);
 
-  DP("Params = %s", params);
+  params = create_json_request ("{ss,ss,ss,si,ss,si,si}",
+                                "IP", idtoip (vs->v_map, id),
+                                "Username", member->username,
+                                "SessionID", member->session_id,
+                                "SessionStart", member->session_start,
+                                "MAC", mac_tostring (member->mac_address),
+                                "DownloadBytes", member->download_bytes,
+                                "UploadBytes", member->upload_bytes);
 
   if (params == NULL)
     return -1;
 
-  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL,
-                                  XMLSERVICE_PORT);
-
-  if (!client) {
-    logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);
-    return -1;
-  }
-
-  if (gnet_xmlrpc_client_call(client, "update", params, &reply) == 0)
-    {
-      DP("update reply = %s", reply);
-      if (strcmp (reply, "FAIL") == 0)
-        ret = -1;
-
-      g_free(reply);
-    }
-  else
-    {
-      if (reply != NULL) {
-        DP("update reply = %s", reply);
-        g_free(reply);
-      }
-
-      DP("%s", "Failed executing stopacct!");
-      ret = -1;
-    }
-
-  gnet_xmlrpc_client_delete(client);
-
+  ret = send_xmlrpc (vs, "update", params);
   g_free(params);
 
   return ret;
 }
 
 int send_xmlrpc_offacct(RHVServer *vs) {
-  GNetXmlRpcClient *client = NULL;
-  gchar *reply  = NULL;
   gchar *params = NULL;
   int   ret     = 0;
 
   if (!vs)
     return -1;
 
-  params = g_strdup_printf("%d", vs->vserver_config->vserver_id);
-
-  DP("Params = %s", params);
+  params = create_json_request ("{si}",
+                                "VServerID", vs->vserver_config->vserver_id);
 
   if (params == NULL)
     return -1;
 
-  client = gnet_xmlrpc_client_new(XMLSERVICE_HOST, XMLSERVICE_URL,
-                                  XMLSERVICE_PORT);
-
-  if (!client) {
-    logmsg(RH_LOG_ERROR, "[%s] Could not connect to XML-RPC service", vs->vserver_config->vserver_name);
-    ret = -1;
-  }
-
-  if (gnet_xmlrpc_client_call(client, "offacct", params, &reply) == 0)
-    {
-      DP("offacct reply = %s", reply);
-      g_free(reply);
-    }
-  else
-    {
-      if (reply != NULL) {
-        DP("offacct reply = %s", reply);
-        g_free(reply);
-      }
-
-      DP("%s", "Failed executing offacct!");
-      ret = -1;
-    }
-
-  gnet_xmlrpc_client_delete(client);  
-
+  ret = send_xmlrpc (vs, "offacct", params);
   g_free(params);
 
   return 0;

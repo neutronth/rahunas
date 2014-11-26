@@ -31,6 +31,18 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
+define ('RADIUS_RAHUNAS_FAIR_USAGE_POLICY_NO',  0);
+define ('RADIUS_RAHUNAS_FAIR_USAGE_POLICY_YES', 1);
+
+$vendors[9999] = array (
+  1 => array ("AttributeName" => "RahuNAS-Volume-Quota",
+              "AttributeType" => "int"),
+  2 => array ("AttributeName" => "RahuNAS-Duration-Quota",
+              "AttributeType" => "int"),
+  3 => array ("AttributeName" => "RahuNAS-Fair-Usage-Policy",
+              "AttributeType" => "int")
+);
+
 $vendors[14122] = array ( 
   1 => array ("AttributeName" => "WISPr-Location-ID", 
               "AttributeType" => "string"),

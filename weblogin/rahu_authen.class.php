@@ -251,11 +251,14 @@ abstract class RahuAuthen {
     $this->xmlrpc->port = $this->config["RAHUNAS_PORT"];
 
     try {
-      $retinfo = $this->xmlrpc->do_getsessioninfo ($this->config["VSERVER_ID"],
-                                                   $this->client->getIP ());
-      if (is_array ($retinfo) && !empty ($retinfo["session_id"])) {
-        $this->sessioninfo = $retinfo;
-        $this->authenticated = true;
+      $result = $this->xmlrpc->do_getsessioninfo ($this->config["VSERVER_ID"],
+                                                  $this->client->getIP ());
+      if ($result["Status"] == 200) {
+        $retinfo = $result["Reply"];
+        if (is_array ($retinfo) && !empty ($retinfo["session_id"])) {
+          $this->sessioninfo = $retinfo;
+          $this->authenticated = true;
+        }
       }
     } catch (XML_RPC2_FaultException $e) {
       $this->message = get_message('ERR_CONNECT_SERVER');
@@ -303,14 +306,19 @@ class RahuAuthenLogin extends RahuAuthen {
     /* Verify SecureToken - only for cross network roaming */
     if (isset ($_COOKIE["rh_t"]) &&
           $_COOKIE["rh_vserver_id"] != $this->config["VSERVER_ID"]) {
-      $retinfo = $this->xmlrpc->do_roaming ($_COOKIE["rh_vserver_id"],
-                                            $_COOKIE["rh_session_id"],
-                                            $_COOKIE["rh_user_ip"],
-                                            $_COOKIE["rh_t"],
-                                            $this->client->getIP (),
-                                            $this->client->getMAC ());
+      $prepareData = array (
+        "SessionID"   => $_COOKIE['rh_session_id'],
+        "IP"          => $_COOKIE['rh_user_ip'],
+        "SecureToken" => $_COOKIE['rh_t'],
+        "RoamingIP"   => $this->client->getIP (),
+        "MAC"         => $this->client->getMAC ()
+      );
+      $result = $this->xmlrpc->do_roaming ($_COOKIE["rh_vserver_id"],
+                                            $prepareData);
 
-      if ($retinfo !== false) {
+      if ($result["Status"] == 200) {
+        $retinfo = $result["Reply"];
+
         $this->message = get_message('ROAMING');
         $this->roaming = true;
         $racct = new rahu_radius_acct ($retinfo['username']);
@@ -337,11 +345,9 @@ class RahuAuthenLogin extends RahuAuthen {
             "SecureToken" => $this->genSecureToken (),
           );
           $result = $this->xmlrpc->do_startsession($this->config['VSERVER_ID'], $prepareData);
-          if (strstr($result,"Client already login")) {
-            $this->message = get_message('ERR_ALREADY_LOGIN');
-          } else if (strstr($result, "Greeting")) {
-            $split = explode ("Mapping ", $result);
-            $called_station_id = $split[1];
+
+          if ($result["Status"] == 200) {
+            $called_station_id = $result["Reply"]["Mapping"];
             if (!empty ($called_station_id))
               $racct->called_station_id = $called_station_id;
 
@@ -350,11 +356,17 @@ class RahuAuthenLogin extends RahuAuthen {
 
             $user_ident = array("session_id" => $prepareData["SessionID"],
                                 "t" => $prepareData["SecureToken"],
-                                "session_timeout" =>$prepareData["Session-Timeout"]);
+                                "session_timeout" => $prepareData["Session-Timeout"]);
 
             $this->setUserIdentCookie ($user_ident);
-          } else if (strstr($result, "Invalid IP Address")) {
-            $this->message = get_message('ERR_INVALID_IP');
+          } else {
+            $msg = $result["Reply"]["Message"];
+            if (strstr($msg, "Client already login")) {
+              $this->message = get_message('ERR_ALREADY_LOGIN');
+            } else if (strstr($msg, "Invalid IP Address")) {
+              $this->failed  = true;
+              $this->message = get_message('ERR_INVALID_IP');
+            }
           }
         } catch (XML_RPC2_FaultException $e) {
           $this->message = get_message('ERR_CONNECT_SERVER');
@@ -418,11 +430,9 @@ class RahuAuthenLogin extends RahuAuthen {
             "SecureToken" => $this->genSecureToken (),
           );
           $result = $this->xmlrpc->do_startsession($this->config['VSERVER_ID'], $prepareData);
-          if (strstr($result,"Client already login")) {
-            $this->message = get_message('ERR_ALREADY_LOGIN');
-          } else if (strstr($result, "Greeting")) {
-            $split = explode ("Mapping ", $result);
-            $called_station_id = $split[1];
+
+          if ($result["Status"] == 200) {
+            $called_station_id = $result["Reply"]["Mapping"];
             if (!empty ($called_station_id))
               $racct->called_station_id = $called_station_id;
 
@@ -431,11 +441,17 @@ class RahuAuthenLogin extends RahuAuthen {
 
             $user_ident = array("session_id" => $prepareData["SessionID"],
                                 "t" => $prepareData["SecureToken"],
-                                "session_timeout" =>$prepareData["Session-Timeout"]);
+                                "session_timeout" => $prepareData["Session-Timeout"]);
 
             $this->setUserIdentCookie ($user_ident);
-          } else if (strstr($result, "Invalid IP Address")) {
-            $this->message = get_message('ERR_INVALID_IP');
+          } else {
+            $msg = $result["Reply"]["Message"];
+            if (strstr($msg, "Client already login")) {
+              $this->message = get_message('ERR_ALREADY_LOGIN');
+            } else if (strstr($msg, "Invalid IP Address")) {
+              $this->failed  = true;
+              $this->message = get_message('ERR_INVALID_IP');
+            }
           }
         } catch (XML_RPC2_FaultException $e) {
           $this->message = get_message('ERR_CONNECT_SERVER');
@@ -528,14 +544,21 @@ class RahuAuthenLogout extends RahuAuthen {
       $upload_speed = _("Unlimit");
     }
 
-    $speed_text = sprintf ("%s / %s", $download_speed, $upload_speed);
+    $icon_download = "<span style='color: #aaaaaa;' " .
+                     "class='glyphicon glyphicon-cloud-download'></span>";
+    $icon_upload = "<span style='color: #aaaaaa;' " .
+                   "class='glyphicon glyphicon-cloud-upload'></span>";
+    $speed_text = sprintf ("%s %s / %s %s", $icon_download, $download_speed,
+                           $upload_speed, $icon_upload);
 
     $download_bytes = intval ($this->sessioninfo["download_bytes"]);
     $upload_bytes   = intval ($this->sessioninfo["upload_bytes"]);
     if ($download_bytes > 0 || $upload_bytes > 0) {
-      $data_transfer_text = sprintf ("%sB / %sB",
+      $data_transfer_text = sprintf ("%s %sB / %sB %s",
+                                     $icon_download,
                                      $this->formatBytes ($download_bytes),
-                                     $this->formatBytes ($upload_bytes));
+                                     $this->formatBytes ($upload_bytes),
+                                     $icon_upload);
     }
 
     array_push ($this->userinfo,
@@ -603,9 +626,13 @@ class RahuAuthenLogout extends RahuAuthen {
   protected function onSubmit () {
     if (!empty($_POST['do_logout'])) {
       try {
-        $result = $this->xmlrpc->do_stopsession($this->config['VSERVER_ID'], $this->client->getIP (), $this->client->getMAC (),
-                                                RADIUS_TERM_USER_REQUEST);
-        if ($result === true) {
+        $prepareData = array (
+          "IP"  => $this->client->getIP (),
+          "MAC" => $this->client->getMAC (),
+          "TerminateCause" => RADIUS_TERM_USER_REQUEST
+        );
+        $result = $this->xmlrpc->do_stopsession($this->config['VSERVER_ID'], $prepareData);
+        if ($result["Status"] == 200) {
           $this->message = get_message('OK_USER_LOGOUT');
           $this->setUserIdentCookie (array ());
           $this->authenticated = false;

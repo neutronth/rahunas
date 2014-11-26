@@ -47,6 +47,10 @@ dnl Check for luajit
 LIBLUAJIT_REQ=2.0.3
 PKG_CHECK_MODULES(LIBLUAJIT, [ luajit >= $LIBLUAJIT_REQ ], , [ AC_MSG_ERROR([luajit is required]) ])
 
+dnl Check for libjansson
+LIBJANSSON_REQ=2.3.1
+PKG_CHECK_MODULES(LIBJANSSON, [ jansson >= $LIBJANSSON_REQ ], , [ AC_MSG_ERROR([libjansson is required]) ])
+
 dnl Disable snmp-module build
 AC_ARG_ENABLE(netsnmp-module,
               [AC_HELP_STRING([--enable-netsnmp-module],

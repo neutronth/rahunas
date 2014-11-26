@@ -8,6 +8,7 @@ AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
   $(LIBSQLITE3_CFLAGS) \
   $(LIBLUAJIT_CFLAGS) \
+  $(LIBJANSSON_CFLAGS) \
   -I$(top_srcdir)/src/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
@@ -65,11 +66,14 @@ rahunasd_SOURCES = \
   rh-config.c \
   rh-config.h \
   rh-serviceclass.h \
-  rh-serviceclass.c
+  rh-serviceclass.c \
+  rh-json.h \
+  rh-json.c
 
 rahunasd_LDADD =  \
   $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
   $(top_builddir)/lcfg/liblcfg.a \
   $(LIBGNET_LIBS) \
   $(LIBSQLITE3_LIBS) \
-  $(LIBLUAJIT_LIBS)
+  $(LIBLUAJIT_LIBS) \
+  $(LIBJANSSON_LIBS)
