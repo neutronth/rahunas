@@ -1,1 +1,2 @@
 etc/rahunas/serviceclass.d
+var/lib/rahunas/db

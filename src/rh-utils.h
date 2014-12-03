@@ -10,6 +10,8 @@
 
 #define LOG_MAIN_FD  -1
 
+#define COLNAME_MATCH(a, b) (strncmp(a, b, strlen(a)) == 0)
+
 void *rh_malloc(size_t size);
 void rh_free(void **data);
 
@@ -23,5 +25,8 @@ int logmsg(int priority, const char *msg, ...);
 
 uint32_t iptoid(struct rahunas_map *map, const char *ip);
 const char *idtoip(struct rahunas_map *map, uint32_t id);
+
+int rh_cmd_exec(const char *cmd, char *const args[], char *const envs[],
+                char *result_buffer, int buffer_size);
 
 #endif // __RH_UTILS_H

@@ -14,6 +14,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <syslog.h>
+#include <sqlite3.h>
+#include <inttypes.h>
+#include <execinfo.h>
 
 #include "rahunasd.h"
 #include "rh-server.h"
@@ -75,8 +78,83 @@ void rh_sighandler(int sig)
         syslog(LOG_ERR, "Invalid PID");
       }
       break;
+    case SIGSEGV:
+      {
+        void *array[10];
+        size_t size;
+
+        size = backtrace (array, 10);
+
+        fprintf (stderr, "Error: signal %d:\n", sig);
+        backtrace_symbols_fd (array, size, STDERR_FILENO);
+
+        exit (1);
+      }
+      break;
   }
   return;
+}
+
+void
+rh_data_sync (int vserver_id, struct rahunas_member *member)
+{
+  sqlite3 *connection = NULL;
+  char sql[256];
+  int  rc;
+  char **azResult = NULL;
+  char *zErrMsg   = NULL;
+  char *colname   = NULL;
+  char *value     = NULL;
+  int  nRow       = 0;
+  int  nColumn    = 0;
+  int  i          = 0;
+  static int dl_pos = 0;
+  static int ul_pos = 0;
+
+  snprintf(sql, sizeof (sql) - 1,
+           "SELECT * FROM dbset WHERE vserver_id='%d' AND session_id='%s' LIMIT 1",
+           vserver_id, member->session_id);
+  DP("SQL: %s", sql);
+
+  rc = sqlite3_open (RAHUNAS_DB, &connection);
+  if (rc) {
+    logmsg (RH_LOG_ERROR, "Task DBSET: could not open database, %s",
+            sqlite3_errmsg (connection));
+    sqlite3_close (connection);
+    return;
+  }
+
+  sqlite3_busy_timeout (connection, RH_SQLITE_BUSY_TIMEOUT_DEFAULT);
+
+  rc = sqlite3_get_table (connection, sql, &azResult, &nRow, &nColumn,
+                          &zErrMsg);
+  if (rc == SQLITE_OK && nRow > 0) {
+    /* Fetch row data */
+    if (dl_pos == 0 || ul_pos == 0) {
+      for (i = 0; i < nColumn; i++) {
+        colname = azResult[i];
+        value = azResult[nColumn + i];
+
+        DP ("Row: %s = %s", colname, value);
+        if (COLNAME_MATCH ("download_bytes", colname)) {
+          dl_pos = i;
+          sscanf (value, "%" SCNd64, &member->download_bytes);
+        } else if (COLNAME_MATCH ("upload_bytes", colname)) {
+          ul_pos = i;
+          sscanf (value, "%" SCNd64, &member->upload_bytes);
+        }
+      }
+    }
+
+    sscanf (azResult[nColumn + dl_pos], "%" SCNd64, &member->download_bytes);
+    sscanf (azResult[nColumn + ul_pos], "%" SCNd64, &member->upload_bytes);
+  }
+
+  DP ("Download/Upload bytes: %" PRId64 "/%" PRId64, member->download_bytes,
+      member->upload_bytes);
+
+  sqlite3_free (zErrMsg);
+  sqlite3_close (connection);
 }
 
 static int
@@ -100,16 +178,28 @@ expired_check(void *data)
   runner = g_list_first(process->vs->v_map->members);
 
   while (runner != NULL) {
+    pthread_mutex_lock (&RHMtxLock);
     time_t time_now = time (NULL);
 
     member = (struct rahunas_member *)runner->data;
     runner = g_list_next(runner);
 
+    rh_data_sync (process->vs->vserver_config->vserver_id, member);
+
     id = member->id;
 
+    if (time_now - member->last_interimupdate >
+          process->vs->vserver_config->interim_interval) {
+      if (send_xmlrpc_interimupdate (process->vs, id) == 0) {
+        member->last_interimupdate = time_now;
+      }
+    }
+
     d = get_data_from_set (process->list, id, process->vs->v_map);
-    if (d == NULL)
+    if (d == NULL) {
+      pthread_mutex_unlock (&RHMtxLock);
       continue;
+    }
 
     DP("Processing id = %d", id);
 
@@ -124,12 +214,10 @@ expired_check(void *data)
       memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_IDLE_TIMEOUT;
 
-      send_xmlrpc_stopacct(process->vs, id, 
-                           RH_RADIUS_TERM_IDLE_TIMEOUT);
-
-      pthread_mutex_lock (&RHMtxLock);
-      res = rh_task_stopsess(process->vs, &req);
-      pthread_mutex_unlock (&RHMtxLock);
+      if (send_xmlrpc_stopacct(process->vs, id,
+            RH_RADIUS_TERM_IDLE_TIMEOUT) == 0) {
+        res = rh_task_stopsess(process->vs, &req);
+      }
     } else if (member->session_timeout != 0 && 
                time_now > member->session_timeout) {
       // Session Timeout (Expired)
@@ -138,13 +226,13 @@ expired_check(void *data)
       memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       req.req_opt = RH_RADIUS_TERM_SESSION_TIMEOUT;
 
-      send_xmlrpc_stopacct(process->vs, id, 
-                           RH_RADIUS_TERM_SESSION_TIMEOUT);
-
-      pthread_mutex_lock (&RHMtxLock);
-      res = rh_task_stopsess(process->vs, &req);
-      pthread_mutex_unlock (&RHMtxLock);
+      if (send_xmlrpc_stopacct(process->vs, id,
+            RH_RADIUS_TERM_SESSION_TIMEOUT) == 0) {
+        res = rh_task_stopsess(process->vs, &req);
+      }
     }
+
+    pthread_mutex_unlock (&RHMtxLock);
   }
 }
 
@@ -348,6 +436,7 @@ int main(int argc, char *argv[])
     .rh_main.dhcp = NULL,
     .rh_main.polling_interval = POLLING,
     .rh_main.bandwidth_shape = BANDWIDTH_SHAPE,
+    .rh_main.ip_accounting = IP_ACCOUNTING,
     .rh_main.serviceclass = 0,
   };
 
@@ -357,6 +446,7 @@ int main(int argc, char *argv[])
 
   signal(SIGTERM, &rh_sighandler);
   signal(SIGHUP, &rh_sighandler);
+  signal(SIGSEGV, &rh_sighandler);
   signal(SIGINT, SIG_IGN);
   signal(SIGPIPE, SIG_IGN);
 
@@ -440,6 +530,11 @@ int main(int argc, char *argv[])
   gnet_xmlrpc_server_register_command (server, 
                                        "getsessioninfo", 
                                        do_getsessioninfo, 
+                                       rh_main_server);
+
+  gnet_xmlrpc_server_register_command (server,
+                                       "roaming",
+                                       do_roaming,
                                        rh_main_server);
 
   DP("Polling interval = %d", rh_main_server->main_config->polling_interval);

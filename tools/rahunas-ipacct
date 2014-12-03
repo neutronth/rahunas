@@ -1,0 +1,240 @@
+#!/bin/sh
+# File: rahunas-ipacct
+# Description: The IP accounting wrapper script for RahuNAS
+
+prefix=/usr
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:${prefix}/sbin:${prefix}/bin
+exec_prefix=${prefix}
+
+PMACCTD=/usr/sbin/pmacctd
+PMACCT_CONFDIR=/etc/pmacct
+RUNDIR=/var/run
+
+INIT=/etc/default/rahunas
+
+test -f $INIT || exit 0
+. $INIT
+
+test -f $RAHUNAS_CONFIG || exit 1
+
+get_section_name () {
+  file=$1
+
+  test -n "$file" || return
+  test -e "$file" && grep "^.*\= {$" "$file" | sed "s/= {//" |  sed "s/^ *\(.*[^ ]\) *$/\1/"
+}
+
+get_config_value () {
+  section=$1
+  key=$2
+  file=$3
+
+  test -n "$file" || return
+  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key[ ]*=" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+}
+
+##
+#  Global Declaration
+##
+
+PMACCT_CONF=
+PMACCT_PID=
+
+if [ "$ENV_OVERRIDE" != "yes" ]; then
+  # Virtual Server : config
+  VSERVER_ID=
+  DEV_INTERNAL=
+  CLIENTS=
+  SETNAME=
+fi
+
+get_config () {
+  file=$1
+  opt=$2
+
+  if [ "$ENV_OVERRIDE" != "yes" ]; then
+    test -f $file || return 1
+
+    SETNAME=`get_section_name $file`
+
+    # Get configuration
+    VSERVER_ID=`get_config_value $SETNAME vserver_id $file`
+    test -n "$VSERVER_ID" || return 2
+
+    DEV_INTERNAL=`get_config_value $SETNAME dev_internal $file`
+    CLIENTS=`get_config_value $SETNAME clients $file`
+  fi
+}
+
+do_get_config () {
+  file=$1
+  opt=$2
+  get_config $file $opt || true
+
+  PMACCT_CONF=$PMACCT_CONFDIR/pmacctd.$DEV_INTERNAL.conf
+  PMACCT_PID=$RUNDIR/pmacctd.$DEV_INTERNAL.pid
+  CLIENTLIST_FILE=$RUNDIR/rahunas-ipacct-clientlist.$DEV_INTERNAL
+
+  test -f $CLIENTLIST_FILE || touch $CLIENTLIST_FILE
+}
+
+create_pmacct_conf () {
+  in_agg_filter=
+  out_agg_filter=
+  pcap_filter=
+
+  while read net; do
+    in_agg_filter="${in_agg_filter} src net $net or"
+    out_agg_filter="${out_agg_filter} dst net $net or"
+    pcap_filter="${pcap_filter} net $net or"
+  done < $CLIENTLIST_FILE
+
+  in_agg_filter=`echo ${in_agg_filter} | sed "s/\sor$//g"`
+  out_agg_filter=`echo ${out_agg_filter} | sed "s/\sor$//g"`
+  pcap_filter=`echo ${pcap_filter} | sed "s/\sor$//g"`
+
+  cat << EOF > $PMACCT_CONF
+daemonize: true
+pidfile: $PMACCT_PID
+syslog: daemon
+aggregate[inbound]: src_host
+aggregate[outbound]: dst_host
+aggregate_filter[inbound]: ${in_agg_filter}
+aggregate_filter[outbound]: ${out_agg_filter}
+pcap_filter: (${pcap_filter}) and not broadcast
+interface: $DEV_INTERNAL
+plugins: sqlite3[inbound], sqlite3[outbound]
+plugin_buffer_size: 10240
+plugin_pipe_size: 10240000
+sql_optimize_clauses: true
+sql_db: /var/lib/rahunas/db/rahunas.db
+sql_table: acct
+sql_history: 12M
+sql_refresh_time: 10
+sql_max_writers: 2
+promisc: false
+EOF
+}
+
+append_clientlist() {
+  grep -w "$CLIENTS" $CLIENTLIST_FILE >/dev/null 2>&1
+  test $? = 0 || echo $CLIENTS >> $CLIENTLIST_FILE
+}
+
+drop_clientlist() {
+  sed -i "\|^${CLIENTS}$|d" $CLIENTLIST_FILE
+}
+
+start_config() {
+  should_run=yes
+  if [ -f $PMACCT_PID ]; then
+    pid=`cat $PMACCT_PID`
+    check=`pidof $PMACCTD | grep -w "$pid"`
+
+    test -n "$check" && should_run=""
+
+    if [ "x$should_run" = "x" ]; then
+      stop_config norestart
+    fi
+  fi
+
+  append_clientlist
+  create_pmacct_conf
+  $PMACCTD -f $PMACCT_CONF
+
+  return 0
+}
+
+start_config_env() {
+  do_get_config "" start
+  start_config
+  return $?
+}
+
+start_config_file() {
+  file=$1
+  do_get_config $file start
+  if [ $? -gt 0 ]; then
+    return 1
+  fi
+
+  start_config
+  return $?
+}
+
+stop_config() {
+  opt=$1
+  drop_clientlist
+
+  test -f $PMACCT_PID || return 0;
+  pid=`cat $PMACCT_PID`
+
+  retry=10
+  while /bin/true; do
+    if [ $retry -lt 1 ]; then
+      kill -9 $pid >/dev/null 2>&1
+      sleep 1
+      break
+    fi
+    kill -s INT $pid >/dev/null 2>&1
+    check=`pidof $PMACCTD | sed "s/\s\+/\n/g" | grep -w "$pid"`
+
+    test -z "$check" && break
+    retry=$((retry-1))
+    sleep 1
+  done
+
+  test=`cat $CLIENTLIST_FILE | wc -l`
+
+  if [ $test -eq 0 ]; then
+    rm -f $PMACCT_PID
+    rm -f $CLIENTLIST_FILE
+    test -f $PMACCT_CONF && rm -f $PMACCT_CONF
+  elif [ "x$opt" != "xnorestart" ]; then
+    create_pmacct_conf
+    $PMACCTD -f $PMACCT_CONF
+  fi
+
+  return 0
+}
+
+stop_config_env() {
+  do_get_config "" stop
+  stop_config
+  return $?
+}
+
+stop_config_file() {
+  file=$1
+  do_get_config $file stop
+  if [ $? -gt 0 ]; then
+    return 1
+  fi
+
+  stop_config
+  return $?
+}
+
+case "$1" in
+  start-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      start_config_env
+    elif [ -f "$2" ]; then
+      start_config_file $2
+    fi
+    ;;
+  stop-config)
+    if [ "$ENV_OVERRIDE" = "yes" ]; then
+      stop_config_env
+    elif [ -f "$2" ]; then
+      stop_config_file $2
+    fi
+    ;;
+  *)
+    N=${exec_prefix}/sbin/rahunas-ipacct
+    echo "Usage: $N {start-config|stop-config} [configfile]"
+    exit 3
+    ;;
+esac
+
+exit 0

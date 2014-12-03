@@ -63,5 +63,5 @@ else
   LOGMSG="${LOGMSG} Inactive"
 fi
 
-echo ${LOGMSG} >> $LOGFILE
+echo `date` "-" ${LOGMSG} >> $LOGFILE
 exit ${RET};

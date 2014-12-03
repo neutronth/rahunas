@@ -1,0 +1,26 @@
+From df786b503e409cb0c40ec7279215b9bda6169eab Mon Sep 17 00:00:00 2001
+From: Neutron Soutmun <neo.neutron@gmail.com>
+Date: Wed, 3 Dec 2014 17:33:40 +0700
+Subject: [PATCH] Fix memleaks, the result table must be freed
+
+Signed-off-by: Neutron Soutmun <neo.neutron@gmail.com>
+---
+ src/rahunasd.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/rahunasd.c b/src/rahunasd.c
+index c36abcb..8640f3d 100644
+--- a/src/rahunasd.c
++++ b/src/rahunasd.c
+@@ -148,6 +148,8 @@ rh_data_sync (int vserver_id, struct rahunas_member *member)
+ 
+     sscanf (azResult[nColumn + dl_pos], "%" SCNd64, &member->download_bytes);
+     sscanf (azResult[nColumn + ul_pos], "%" SCNd64, &member->upload_bytes);
++
++    sqlite3_free_table (azResult);
+   }
+ 
+   DP ("Download/Upload bytes: %" PRId64 "/%" PRId64, member->download_bytes,
+-- 
+2.1.3
+

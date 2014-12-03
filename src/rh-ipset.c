@@ -269,15 +269,15 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
   if (kernel_sendto_handleerrno(op, data, size) == -1)
     switch (op) {
     case IP_SET_OP_ADD_IP:
-      DP("%s:%s is already in set", ip_tostring(adtip), mac_tostring(adtmac));
+      DP("%s:%s is already in set", ip_tostring(*adtip), mac_tostring(adtmac));
       res = RH_IS_IN_SET;
       break;
     case IP_SET_OP_DEL_IP:
-      DP("%s:%s is not in set", ip_tostring(adtip), mac_tostring(adtmac));
+      DP("%s:%s is not in set", ip_tostring(*adtip), mac_tostring(adtmac));
       res = RH_IS_NOT_IN_SET; 
       break;
     case IP_SET_OP_TEST_IP:
-      DP("%s:%s is in set", ip_tostring(adtip), mac_tostring(adtmac));
+      DP("%s:%s is in set", ip_tostring(*adtip), mac_tostring(adtmac));
       res = RH_IS_IN_SET;
       break;
     default:
@@ -286,7 +286,7 @@ int set_adtip_nb(struct set *rahunas_set, ip_set_ip_t *adtip,
   else
     switch (op) {
     case IP_SET_OP_TEST_IP:
-      DP("%s:%s is not in set", ip_tostring(adtip), mac_tostring(adtmac));
+      DP("%s:%s is not in set", ip_tostring(*adtip), mac_tostring(adtmac));
       res = RH_IS_NOT_IN_SET;
       break;
     default:
@@ -339,15 +339,15 @@ int set_ipiphash_adtip_nb(struct set *rahunas_set, ip_set_ip_t *ip,
   if (kernel_sendto_handleerrno(op, data, size) == -1)
     switch (op) {
     case IP_SET_OP_ADD_IP:
-      DP("%s:%s is already in set", ip_tostring(ip), ip_tostring(ip1));
+      DP("%s:%s is already in set", ip_tostring(*ip), ip_tostring(*ip1));
       res = RH_IS_IN_SET;
       break;
     case IP_SET_OP_DEL_IP:
-      DP("%s:%s is not in set", ip_tostring(ip), ip_tostring(ip1));
+      DP("%s:%s is not in set", ip_tostring(*ip), ip_tostring(*ip1));
       res = RH_IS_NOT_IN_SET;
       break;
     case IP_SET_OP_TEST_IP:
-      DP("%s:%s is in set", ip_tostring(ip), ip_tostring(ip1));
+      DP("%s:%s is in set", ip_tostring(*ip), ip_tostring(*ip1));
       res = RH_IS_IN_SET;
       break;
     default:
@@ -356,7 +356,7 @@ int set_ipiphash_adtip_nb(struct set *rahunas_set, ip_set_ip_t *ip,
   else
     switch (op) {
     case IP_SET_OP_TEST_IP:
-      DP("%s:%s is not in set", ip_tostring(ip), ip_tostring(ip1));
+      DP("%s:%s is not in set", ip_tostring(*ip), ip_tostring(*ip1));
       res = RH_IS_NOT_IN_SET;
       break;
     default:

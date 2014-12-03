@@ -3,15 +3,14 @@ Section: net
 Priority: optional
 Maintainer: Neutron Soutmun <neo.neutron@gmail.com>
 Build-Depends:
- autoconf,
- automake,
  autopoint,
- autotools-dev,
- debhelper (>= 7),
- libgnet-dev (>= 2.0.8),
+ debhelper (>= 9~),
+ dh-autoreconf,
+ libgnet-dev (>= 2.0.8~),
+ libsnmp-dev,
  libsqlite3-dev,
  libtool
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://www.rahunas.org
 
 Package: rahunas
@@ -22,6 +21,7 @@ Depends:
  farpd,
  iproute,
  iptables,
+ pmacct,
  sqlite3 (>= 3.7.3),
  ucf (>= 0.28),
  xtables-addons-common,
@@ -64,3 +64,15 @@ Description: Web base login for RahuNAS
  support. It provides the login, logout and post login information page.
  The web base login do request the authorization from the FreeRADIUS and
  interact with RahuNAS.
+
+Package: rahunas-netsnmp-module
+Architecture: any
+Depends:
+ rahunas (= ${binary:Version}),
+ snmpd,
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: RahuNAS Net-SNMP module
+ RahuNAS Net-SNMP module provides the MIB module for the Net-SNMP agent.
+ .
+ The current logged in users could be queried from the snmp agent.

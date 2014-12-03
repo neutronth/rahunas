@@ -1,3 +1,74 @@
+rahunas (0.3.0-2) experimental; urgency=medium
+
+  * debian/patches/fix-requests-to-DNS-servers-over-tcp-failed.patch,
+    debian/patches/fix-memleaks-the-result-table-must-be-freed.patch:
+    - Cherry picks from upstream, to fix those problems.
+  * debian/rahunas.dirs:
+    - Create /var/lib/rahunas/db
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Wed, 03 Dec 2014 17:36:16 +0700
+
+rahunas (0.3.0-1) experimental; urgency=low
+
+  * Imported Upstream version 0.3.0
+  * Switch to debhelper 9
+    * debian/compat, debian/source/format:
+      - Set compatibility to 9
+      - Switch to source format 3.0 (quilt)
+    * debian/control:
+      - Set debhelper (>= 9~) and dh-autoreconf to Build-Deps.
+      - Set libgnet-dev (>= 2.0.8~) for backports friendly.
+      - Drop autoconf, automake and autotools-dev from Build-Deps as unneeded.
+    * debian/rules:
+      - Cleanup the rules by using the debhelper minimalist rules.
+  * Update watch file for new upstream release location
+  * Update files installation
+    * debian/rahunas.install:
+      - Install /usr/sbin/rahunas-ipacct.
+    * debian/rahunas.docs:
+      - Drop TODO, upstream dropped.
+    * debian/rahunas-weblogin.install:
+      - Install .htaccess
+      - Install rahunas-db.sql to /usr/share/rahunasd.
+      - Install third-party libs to /usr/share/rahunas/libs.
+      - Install browscap cache files to /var/lib/rahunas/weblogin.
+    * debian/rahunas-weblogin.dirs:
+      - Create empty dir /var/lib/rahunas/weblogin/data/template/{cache,compile}
+    * debian/rahunas-weblogin.links:
+      - Create symlinks /var/lib/rahunas/weblogin/data to
+        /usr/share/rahunas/data.
+    * debian/rahunas-weblogin.postinst:
+      - Change owner of /var/lib/rahunas/weblogin/data to www-data.
+  * Add new package "rahunas-netsnmp-module"
+    * debian/control:
+      - Add rahunas-netsnmp-module package.
+      - Add libsnmp-dev to Build-deps as it required by netsnmp-module build.
+    * debian/rahunas.postinst:
+      - Add group "rahunas"
+      - Set permission to writable by group rahunas as it require by
+        netsnmp-module to work properly.
+    * debian/rahunas.postrm:
+      - Remove group "rahunas" on purge.
+    * debian/rules:
+      - Add enable-netsnmp-module to build configuration.
+    * debian/RAHUNAS-MIB:
+      - The MIB file of RahuNAS, added to install with the package
+    * debian/patches/fix-netsnmp-module-db-path.patch:
+      - Add patch to fix the db path which has been moved to /var/lib/rahunas/db
+  * Add $remote_fs to Required-{Start,Stop} init script
+  * Update copyright file
+    * debian/copyright:
+      - Switch to copyright format version 1.0.
+      - Update copyright years.
+      - Add copyright for source files.
+  * Update watch file, add cryptographic upstream tarball signature verification
+    * debian/watch:
+      - Update upstream tarball release location.
+    * debian/upstream/signing-key.asc:
+      - Add cryptographic upstream tarball signature verification.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Sun, 10 Aug 2014 20:18:51 +0700
+
 rahunas (0.2.5-1squeeze1) stable; urgency=low
 
   * Imported Upstream version 0.2.5

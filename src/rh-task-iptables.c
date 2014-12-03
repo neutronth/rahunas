@@ -19,17 +19,10 @@
 
 int iptables_exec(RHVServer *vs, char *const args[])
 {
-  pid_t ws;
-  pid_t pid;
-  int status;
-  int exec_pipe[2];
-  char buffer[150];
-  char *endline = NULL;
-  int ret = 0;
-  int fd = 0;
-  int i = 0;
+  int  ret = 0;
   char *env[22];
   int env_size = (sizeof (env) / sizeof (char *));
+  int  i = 0;
 
   env[0]  = g_strdup("ENV_OVERRIDE=yes");
   env[1]  = g_strdup_printf("SETNAME=%s", vs->vserver_config->vserver_name);
@@ -64,40 +57,7 @@ int iptables_exec(RHVServer *vs, char *const args[])
       DP("%s", env[i]);
   }
   
-  memset(buffer, '\0', sizeof(buffer));
-
-  if (pipe(exec_pipe) == -1) {
-    logmsg(RH_LOG_ERROR, "Error: pipe()");
-    return -1;
-  }
-  DP("pipe0=%d,pipe1=%d", exec_pipe[0], exec_pipe[1]);
-
-  pid = vfork();
-  dup2(exec_pipe[1], STDOUT_FILENO);
-
-  if (pid == 0) {
-    // Child
-    execve(RAHUNAS_FIREWALL_WRAPPER, args, env);
-  } else if (pid < 0) {
-    // Fork error
-    logmsg(RH_LOG_ERROR, "Error: vfork()"); 
-    ret = -1;
-  } else {
-    // Parent
-    ws = waitpid(pid, &status, 0);
-
-    DP("IPTables: Return (%d)", WEXITSTATUS(status));
-
-    if (WIFEXITED(status)) {
-      ret = WEXITSTATUS(status);
-    } else {
-      ret = -1;
-    } 
-  }
-
-  close(exec_pipe[0]);
-  close(exec_pipe[1]);
-
+  ret =  rh_cmd_exec (RAHUNAS_FIREWALL_WRAPPER, args, env, NULL, 0);
  
   for (i = 0; i < env_size; i++) {
     g_free(env[i]);

@@ -1,0 +1,3 @@
+fix-netsnmp-module-db-path.patch
+fix-requests-to-DNS-servers-over-tcp-failed.patch
+fix-memleaks-the-result-table-must-be-freed.patch

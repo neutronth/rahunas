@@ -1,0 +1,62 @@
+From 825ca7066ed9df07944803ecac2447d6e65d687a Mon Sep 17 00:00:00 2001
+From: Neutron Soutmun <neo.neutron@gmail.com>
+Date: Wed, 3 Sep 2014 23:55:57 +0700
+Subject: [PATCH] Fix requests to DNS servers over tcp failed
+
+* Some requests won't success over udp, clients retry over tcp but
+  RahuNAS firewall rules does not handle it and the DNS tcp requests
+  have been blindly blocked.
+
+  The symptom is "Facebook could not load the avatars" for an example.
+
+Signed-off-by: Neutron Soutmun <neo.neutron@gmail.com>
+---
+ tools/rahunas-firewall.in | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/tools/rahunas-firewall.in b/tools/rahunas-firewall.in
+index 64af1b9..97750fe 100755
+--- a/tools/rahunas-firewall.in
++++ b/tools/rahunas-firewall.in
+@@ -506,6 +506,9 @@ policy () {
+     $IPTABLES -A ${NAME}_ext_fw -p udp --sport 53 \
+       -m state --state ESTABLISHED,RELATED -j ACCEPT
+ 
++    $IPTABLES -A ${NAME}_ext_fw -p tcp --sport 53 \
++      -m state --state ESTABLISHED,RELATED -j ACCEPT
++
+     if [ -n "$MAIN_EXT_IFACE_PORTS_ALLOW" ]; then
+       $IPTABLES -A ${NAME}_ext_fw -p tcp \
+         -m multiport --dports ${MAIN_EXT_IFACE_PORTS_ALLOW} -j ACCEPT
+@@ -583,18 +586,28 @@ rules () {
+   if [ "$DNS" = "yes" -o "$DNS" = "intercept" ]; then
+     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j DROP
++    $IPTABLES -A $CHAIN_INPUT -p tcp --dport domain -j ACCEPT
++    $IPTABLES -A $CHAIN_FORWARD -p tcp --dport domain -j DROP
+ 
+     if [ "$DNS" = "intercept" ]; then
+       $IPTABLES -t nat $DEV_IN_PARAM $DEV_INTERNAL \
+         -A $CHAIN_NAT_PREROUTING -p udp --dport domain \
+         ! -d $VSERVER_IP -j REDIRECT --to-port 53
++
++      $IPTABLES -t nat $DEV_IN_PARAM $DEV_INTERNAL \
++        -A $CHAIN_NAT_PREROUTING -p tcp --dport domain \
++        ! -d $VSERVER_IP -j REDIRECT --to-port 53
+     fi
+   elif [ "$DNS" = "no" ]; then
+     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j DROP
+     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
++    $IPTABLES -A $CHAIN_INPUT -p tcp --dport domain -j DROP
++    $IPTABLES -A $CHAIN_FORWARD -p tcp --dport domain -j ACCEPT
+   elif [ "$DNS" = "forward" ]; then
+     $IPTABLES -A $CHAIN_INPUT -p udp --dport domain -j ACCEPT
+     $IPTABLES -A $CHAIN_FORWARD -p udp --dport domain -j ACCEPT
++    $IPTABLES -A $CHAIN_INPUT -p tcp --dport domain -j ACCEPT
++    $IPTABLES -A $CHAIN_FORWARD -p tcp --dport domain -j ACCEPT
+   fi 
+ 
+   ##
+-- 
+2.1.3
+

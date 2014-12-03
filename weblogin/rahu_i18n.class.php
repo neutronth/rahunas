@@ -32,21 +32,33 @@
 */
 
 class RahuI18N {
-  var $langlist;
-  var $textdomain;
-  var $localepath;
+  private $langlist;
+  private $textdomain;
+  private $localepath;
+  private $current_lang;
 
-  function RahuI18N ($langlist, $textdomain = "rahunas-weblogin",
+  function RahuI18N ($textdomain = "rahunas-weblogin",
                      $localepath = "/usr/share/locale") {
-    $this->langlist   = $langlist;
+    $this->langlist   = array (); 
+
+    /* English is default should not modified */
+    $this->langlist['English']['name'] = 'English';
+    $this->langlist['English']['code'] = 'en_US.UTF-8';
+    
+    /* Languages */ 
+    $this->langlist['Thai']['name'] = 'ไทย';
+    $this->langlist['Thai']['code'] = 'th_TH.UTF-8';
+
     $this->textdomain = $textdomain;
     $this->localepath  = $localepath;
   }
 
   public function localeSetup () {
+    $lang = "English";
     if (!empty ($_GET['language'])) {
       setcookie ("rh_language", $_GET['language']);
       $selected_lang =& $this->langlist[$_GET["language"]];
+      $lang = $_GET["language"];
     } else if (empty ($_COOKIE["rh_language"])) {
       $accept_lang = $this->getAcceptLanguage ();
       $lang = empty ($accept_lang) ? "English" : $accept_lang;
@@ -54,19 +66,25 @@ class RahuI18N {
       $selected_lang =& $this->langlist[$lang];
     } else {
       $selected_lang =& $this->langlist[$_COOKIE["rh_language"]];
+      $lang = $_COOKIE["rh_language"];
     }
 
+    $this->current_lang = $lang;
 
     if (!empty ($selected_lang['code'])) {
       setlocale (LC_ALL, $selected_lang['code']);
       bindtextdomain ($this->textdomain, $this->localepath);
       textdomain ($this->textdomain);
     }
+
   }
 
-  public function getLangList ($begintag = "", $endtag = "") {
-    $languages = "";
-    $link_tpl = $begintag . "<a href='%s'>%s</a>" . $endtag;
+  public function getCurrentLanguage () {
+    return $this->current_lang;
+  }
+
+  public function getLanguages () {
+    $languages = array ();
     $qs = $this->explodeQueryString ($_SERVER['QUERY_STRING']);
 
     if (is_array ($this->langlist)) {
@@ -74,7 +92,7 @@ class RahuI18N {
         $q = $qs;
         $q['language'] = $lang;
         $link = $_SERVER['PHP_SELF'] . "?" . $this->implodeQueryString ($q);
-        $languages .= sprintf ($link_tpl, $link, $data["name"]);
+        $languages[$data["name"]] =  $link;
       }
     }
 
@@ -121,12 +139,17 @@ class RahuI18N {
     if (is_array ($qs)) {
       foreach ($qs as $qq) {
         $sep = explode ("=", $qq);
-        $q_key[] = $sep[0];
-        $q_val[] = $sep[1];
+        if (count ($sep) == 2) {
+          $q_key[] = $sep[0];
+          $q_val[] = $sep[1];
+        }
       }
     }
 
-    $qr = array_combine ($q_key, $q_val);
+    $qr = array ();
+    if (!empty ($q_key)) {
+      $qr = array_combine ($q_key, $q_val);
+    }
     return $qr;
   }
 

@@ -22,6 +22,8 @@ case "$1" in
 
     rm -f /etc/rahunas/rahunas.conf
     rm -f /etc/rahunas/rahunas.d/01_rahunas-vserver.conf
+
+    delgroup rahunas
     ;;
   remove)
     ;;
