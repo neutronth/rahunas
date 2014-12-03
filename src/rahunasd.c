@@ -148,6 +148,8 @@ rh_data_sync (int vserver_id, struct rahunas_member *member)
 
     sscanf (azResult[nColumn + dl_pos], "%" SCNd64, &member->download_bytes);
     sscanf (azResult[nColumn + ul_pos], "%" SCNd64, &member->upload_bytes);
+
+    sqlite3_free_table (azResult);
   }
 
   DP ("Download/Upload bytes: %" PRId64 "/%" PRId64, member->download_bytes,
