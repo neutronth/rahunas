@@ -25,6 +25,7 @@
 #include "rh-ipset.h"
 #include "rh-utils.h"
 #include "rh-task.h"
+#include "rh-macauthen.h"
 
 const char *termstring = "";
 pid_t pid, sid;
@@ -560,6 +561,8 @@ int main(int argc, char *argv[])
     {
       pthread_detach (polling_tid);
     }
+
+  macauthen_setup (rh_main_server);
 
   logmsg(RH_LOG_NORMAL, "Ready to serve...");
   g_main_loop_run(main_loop);

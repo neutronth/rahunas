@@ -141,3 +141,26 @@ int send_xmlrpc_offacct(RHVServer *vs) {
 
   return 0;
 }
+
+int send_xmlrpc_macauthen(MACAuthenElem *elem) {
+  int   ret     = 0;
+  gchar *params = NULL;
+  char  mac[18];
+
+  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+             elem->mac[0], elem->mac[1], elem->mac[2],
+             elem->mac[3], elem->mac[4], elem->mac[5]);
+
+  params = create_json_request ("{ss,ss}",
+             "IP", inet_ntoa (elem->src),
+             "MAC", mac);
+
+  if (!params)
+    return NULL;
+
+  ret = send_xmlrpc (elem->vs, "macauthen", params);
+
+  g_free(params);
+
+  return ret;
+}

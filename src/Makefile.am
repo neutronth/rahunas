@@ -9,6 +9,8 @@ AM_CFLAGS = \
   $(LIBSQLITE3_CFLAGS) \
   $(LIBLUAJIT_CFLAGS) \
   $(LIBJANSSON_CFLAGS) \
+  $(LIBMNL_CFLAGS) \
+  $(LIBNETFILTER_QUEUE_CFLAGS) \
   -I$(top_srcdir)/src/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
@@ -68,7 +70,10 @@ rahunasd_SOURCES = \
   rh-serviceclass.h \
   rh-serviceclass.c \
   rh-json.h \
-  rh-json.c
+  rh-json.c \
+  jhash.h \
+  rh-macauthen.h \
+  rh-macauthen.c
 
 rahunasd_LDADD =  \
   $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
@@ -76,4 +81,6 @@ rahunasd_LDADD =  \
   $(LIBGNET_LIBS) \
   $(LIBSQLITE3_LIBS) \
   $(LIBLUAJIT_LIBS) \
-  $(LIBJANSSON_LIBS)
+  $(LIBJANSSON_LIBS) \
+  $(LIBMNL_LIBS) \
+  $(LIBNETFILTER_QUEUE_LIBS)

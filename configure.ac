@@ -51,6 +51,14 @@ dnl Check for libjansson
 LIBJANSSON_REQ=2.3.1
 PKG_CHECK_MODULES(LIBJANSSON, [ jansson >= $LIBJANSSON_REQ ], , [ AC_MSG_ERROR([libjansson is required]) ])
 
+dnl Check for libmnl
+LIBMNL_REQ=1.0.3
+PKG_CHECK_MODULES(LIBMNL, [ libmnl >= $LIBMNL_REQ ], , [ AC_MSG_ERROR([libmnl is required]) ])
+
+dnl Check for libnetfilter_queue
+LIBNETFILTER_QUEUE_REQ=0.0.17
+PKG_CHECK_MODULES(LIBNETFILTER_QUEUE, [ libnetfilter_queue >= $LIBNETFILTER_QUEUE_REQ ], , [ AC_MSG_ERROR([libnetfilter_queue is required]) ])
+
 dnl Disable snmp-module build
 AC_ARG_ENABLE(netsnmp-module,
               [AC_HELP_STRING([--enable-netsnmp-module],

@@ -147,6 +147,22 @@ function do_offacct($method_name, $params, $app_data)
   return $response;
 }
 
+function do_macauthen ($method_name, $params, $app_data)
+{
+  $response = JSON_REPLY_FAIL;
+  $request = $params[0];
+  $info = json_decode(base64_decode($request), true);
+
+  $auth = new RahuAuthenMAC ($info["IP"], $info["MAC"]);
+  $auth->start ();
+
+  if ($auth->isValid ())
+    $response = JSON_REPLY_OK;
+
+  return $response;
+}
+
+
 session_start ();
 
 if (!isset ($_SESSION["xmlrpc_server"])) {
@@ -155,6 +171,7 @@ if (!isset ($_SESSION["xmlrpc_server"])) {
   xmlrpc_server_register_method($xmlrpc_server, "stopacct", "do_stopacct");
   xmlrpc_server_register_method($xmlrpc_server, "offacct", "do_offacct");
   xmlrpc_server_register_method($xmlrpc_server, "update", "do_update");
+  xmlrpc_server_register_method($xmlrpc_server, "macauthen", "do_macauthen");
 
   $_SESSION["xmlrpc_server"] = $xmlrpc_server;
 }
