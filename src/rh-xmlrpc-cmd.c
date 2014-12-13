@@ -156,7 +156,7 @@ int send_xmlrpc_macauthen(MACAuthenElem *elem) {
              "MAC", mac);
 
   if (!params)
-    return NULL;
+    return -1;
 
   ret = send_xmlrpc (elem->vs, "macauthen", params);
 
