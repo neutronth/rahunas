@@ -20,6 +20,7 @@
 #include "rh-task.h"
 #include "rh-task-memset.h"
 #include "rh-json.h"
+#include "rh-macauthen.h"
 
 extern const char* termstring;
 
@@ -234,6 +235,13 @@ int do_stopsession(GNetXmlRpcServer *server,
       res = send_xmlrpc_stopacct (vs, id, cause_id);
       if (res == 0) {
         res = rh_task_stopsess(vs, &req);
+
+        if (!NO_MAC (member->mac_address)) {
+          macauthen_add_elem (member->mac_address,
+                              htonl ((ntohl (vs->v_map->first_ip) + id)),
+                              vs->vserver_config->dev_internal_idx,
+                              MACAUTHEN_ELEM_DELAY_CLEARTIME);
+        }
       }
 
       if (res == 0) {

@@ -24,6 +24,12 @@
 
 #include "rh-server.h"
 
+#define NO_MAC(m) (m[0] == 0 && m[1] == 0 && m[2] == 0 && \
+                   m[3] == 0 && m[4] == 0 && m[5] == 0)
+
+#define MACAUTHEN_ELEM_RETRY_CLEARTIME  10
+#define MACAUTHEN_ELEM_DELAY_CLEARTIME  60
+
 typedef struct macauthen_source MACAuthenSource;
 typedef struct macauthen_elem   MACAuthenElem;
 typedef struct macauthen_key    MACAuthenKey;
@@ -47,9 +53,13 @@ struct macauthen_elem {
   struct in_addr src;
   uint32_t       iface_idx;
   time_t         last;
+  time_t         cleartime;
   RHVServer     *vs;
 };
 
 int macauthen_setup (RHMainServer *main_server);
+
+MACAuthenElem *macauthen_add_elem (uint8_t *mac, unsigned long s_addr,
+                                   uint32_t iface_idx, time_t cleartime);
 
 #endif // __RH_MACAUTHEN_H

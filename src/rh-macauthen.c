@@ -16,9 +16,6 @@
 #include "jhash.h"
 #include "rh-xmlrpc-cmd.h"
 
-#define NO_MAC(m) (m[0] == 0 && m[1] == 0 && m[2] == 0 && \
-                   m[3] == 0 && m[4] == 0 && m[5] == 0)
-
 pthread_mutex_t RHMACAuthenMtxLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RHMACAuthenDataMtxLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  RHMACAuthenCond    = PTHREAD_COND_INITIALIZER;
@@ -104,20 +101,11 @@ static int mac_queue_cb (const struct nlmsghdr *nlh, void *data)
         src.s_addr = hdr->saddr;
       }
 
-    pthread_mutex_lock (&RHMACAuthenDataMtxLock);
     DP ("MAC Authen main update table");
-    MACAuthenElem *elem = (MACAuthenElem *) g_malloc0 (sizeof (MACAuthenElem));
-    memcpy (elem->mac, mac_addr->hw_addr, sizeof (elem->mac));
-    elem->src.s_addr = hdr->saddr;
-    elem->iface_idx  = ntohl (mnl_attr_get_u32(tb[NFQA_IFINDEX_INDEV]));
 
-    if (!g_hash_table_lookup (macip_table, elem)) {
-      g_hash_table_insert (macip_table, elem, elem);
-    } else {
-      g_free (elem);
-    }
-
-    pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
+    macauthen_add_elem (mac_addr->hw_addr, hdr->saddr,
+                        ntohl (mnl_attr_get_u32(tb[NFQA_IFINDEX_INDEV])),
+                        MACAUTHEN_ELEM_RETRY_CLEARTIME);
   }
 
   return MNL_CB_OK + id;
@@ -380,13 +368,15 @@ void *macauthen_service (void *data)
 
       if (elem->last > 0) {
         time_t elapse = (start_process - elem->last);
-        if (elapse > 10) {
+        if (elapse > elem->cleartime) {
           DP ("Entry timeout - iface-idx: %d, ip: %s, "
-              "mac: %02x:%02x:%02x:%02x:%02x:%02x",
+              "mac: %02x:%02x:%02x:%02x:%02x:%02x, "
+              "cleartime: %d",
           elem->iface_idx,
           inet_ntoa (elem->src),
           elem->mac[0], elem->mac[1], elem->mac[2],
-          elem->mac[3], elem->mac[4], elem->mac[5]);
+          elem->mac[3], elem->mac[4], elem->mac[5],
+          elem->cleartime);
 
           pthread_mutex_lock (&RHMACAuthenDataMtxLock);
           g_hash_table_iter_remove (&iter);
@@ -491,4 +481,36 @@ gboolean macauthen_is_loggedin  (MACAuthenElem *elem)
   pthread_mutex_unlock (&RHMtxLock);
 
   return ret;
+}
+
+MACAuthenElem *
+macauthen_add_elem (uint8_t *mac, unsigned long s_addr, uint32_t iface_idx,
+                    time_t cleartime)
+{
+  MACAuthenElem *elem = (MACAuthenElem *) g_malloc0 (sizeof (MACAuthenElem));
+  memcpy (elem->mac, mac, 6);
+  elem->src.s_addr = s_addr;
+  elem->iface_idx  = iface_idx;
+  elem->cleartime  = cleartime;
+  elem->last       = 0;
+
+  pthread_mutex_lock (&RHMACAuthenDataMtxLock);
+
+  MACAuthenElem *found = (MACAuthenElem *) g_hash_table_lookup (macip_table, elem);
+
+  if (!found) {
+    g_hash_table_insert (macip_table, elem, elem);
+  } else {
+    if (found->cleartime < cleartime) {
+      found->cleartime = cleartime;
+      time (&found->last);
+    }
+
+    g_free (elem);
+    elem = found;
+  }
+
+  pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
+
+  return elem;
 }
