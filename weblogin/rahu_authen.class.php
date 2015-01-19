@@ -436,14 +436,17 @@ class RahuAuthenLogin extends RahuAuthen {
             if (!empty ($called_station_id))
               $racct->called_station_id = $called_station_id;
 
-            $racct->acctStart();
             $this->authenticated = true;
 
-            $user_ident = array("session_id" => $prepareData["SessionID"],
-                                "t" => $prepareData["SecureToken"],
-                                "session_timeout" => $prepareData["Session-Timeout"]);
+            if ($result["Reply"]["State"] == "New") {
+              $racct->acctStart();
 
-            $this->setUserIdentCookie ($user_ident);
+              $user_ident = array("session_id" => $prepareData["SessionID"],
+                                  "t" => $prepareData["SecureToken"],
+                                  "session_timeout" => $prepareData["Session-Timeout"]);
+
+              $this->setUserIdentCookie ($user_ident);
+            }
           } else {
             $msg = $result["Reply"]["Message"];
             if (strstr($msg, "Client already login")) {

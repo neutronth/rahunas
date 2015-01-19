@@ -67,6 +67,7 @@ int do_startsession(GNetXmlRpcServer *server,
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
   json_t *root = NULL;
+  int     isNew = 1;
 
   pthread_mutex_lock (&RHMtxLock);
 
@@ -109,8 +110,10 @@ int do_startsession(GNetXmlRpcServer *server,
   /* Check if client already registered */
   member_node = member_get_node_by_id(vs, id);
 
-  if (member_node != NULL)
+  if (member_node != NULL) {
+    isNew = 0;
     goto pass;
+  }
 
   req.id = id;
   req.vserver_id = atoi(vserver_id);
@@ -142,8 +145,9 @@ int do_startsession(GNetXmlRpcServer *server,
   if (member_node != NULL) {
 pass:
     member = (struct rahunas_member *)member_node->data;
-    *reply_string = create_json_reply (200, "{ss}",
-                                       "Mapping", member->mapping_ip);
+    *reply_string = create_json_reply (200, "{ss,ss}",
+                                       "Mapping", member->mapping_ip,
+                                       "State", (isNew ? "New" : "Existing"));
 
     goto cleanup;
   }
