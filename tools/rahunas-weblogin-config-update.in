@@ -63,6 +63,7 @@ generate_config() {
   NAS_PORT=`get_config_value $SETNAME nas_port $file`
   NAS_LOGIN_TITLE=`get_config_value $SETNAME nas_login_title $file`
   DEFAULT_REDIRECT_URL=`get_config_value $SETNAME nas_default_redirect $file`
+  NAS_REDIRECTOR_URL=`get_config_value $SETNAME nas_redirector_url $file`
   DEFAULT_LANGUAGE=`get_config_value $SETNAME nas_default_language $file`
   UAM_TEMPLATE=`get_config_value $SETNAME nas_weblogin_template $file`
 
@@ -83,6 +84,7 @@ generate_config() {
   printf "\t\"NAS_PORT\" => %s,\n"                   "$NAS_PORT"
   printf "\t\"NAS_LOGIN_TITLE\" => \"%s\",\n"        "$NAS_LOGIN_TITLE"
   printf "\t\"NAS_HELP_LINK\" => \"%s\",\n"          "$NAS_HELP_LINK"
+  printf "\t\"NAS_REDIRECTOR_URL\" => \"%s\",\n"     "$NAS_REDIRECTOR_URL"
   printf "\t\"DEFAULT_REDIRECT_URL\" => \"%s\",\n"   "$DEFAULT_REDIRECT_URL"
   printf "\t\"DEFAULT_LANGUAGE\" => \"%s\",\n"       "$DEFAULT_LANGUAGE"
   printf "\t\"UAM_TEMPLATE\" => \"%s\",\n"           "$UAM_TEMPLATE"

@@ -298,6 +298,13 @@ class RahuAuthenLogin extends RahuAuthen {
                  urlencode ($this->config['DEFAULT_REDIRECT_URL']) :
                  $_GET['request_url']);
 
+    if (isset ($this->config["NAS_REDIRECTOR_URL"]) &&
+          !empty ($this->config["NAS_REDIRECTOR_URL"])) {
+      $this->request_url = urlencode ($this->config["NAS_REDIRECTOR_URL"]) .
+                             $this->redirect_url . "&ref=" .
+                             urlencode ($this->config["NAS_LOGIN_TITLE"]);
+    }
+
     if (empty ($this->message)) {
       header ("Location: " . $this->redirect_url);
     }
