@@ -197,8 +197,8 @@ stop () {
   fi
 }
 
-usage_add() {
-  echo "Usage: $1 add ID IP DOWNSPEED UPSPEED DOWN_IF UP_IF"
+usage_add_replace() {
+  echo "Usage: $1 $2 ID IP DOWNSPEED UPSPEED DOWN_IF UP_IF"
   echo "         ID - ID number from 1 to 10240"
   echo "         IP - IPv4 Address"
   echo "  DOWNSPEED - Download speed (bits/s)"
@@ -215,8 +215,9 @@ usage_del() {
 }
 
 usage() {
-  echo "Usage: $1 {start|stop|restart|add|del}"
+  echo "Usage: $1 {start|stop|restart|add|replace|del}"
   echo "       $1 add --help"
+  echo "       $1 replace --help"
   echo "       $1 del --help"
 }
 
@@ -304,17 +305,18 @@ filter_del() {
   done
 }
 
-bw_add() {
-  ID=`echo "obase=16;$1" | $BC | awk '{print tolower($0)}'`
+bw_set() {
+  ACTION=$1
+  ID=`echo "obase=16;$2" | $BC | awk '{print tolower($0)}'`
 
   if [ -z "$ID" ]; then
     MESSAGE=$MSG_NOT_COMPLETED
     return
   fi
 
-  IP=$2
-  DOWNSPEED=$3
-  UPSPEED=$4
+  IP=$3
+  DOWNSPEED=$4
+  UPSPEED=$5
   MAX_DOWN=`echo "$MAX_DOWN_SPEED*1024" | $BC`
   MAX_UP=`echo "$MAX_UP_SPEED*1024" | $BC`
 
@@ -342,7 +344,9 @@ bw_add() {
     UP_MBPS="Unlimit"
   fi
 
-  MESSAGE="Add shaping slot id: $ID for $IP with D/U=${DOWN_MBPS}/${UP_MBPS} Mbits/s"
+  ACTION_MSG="Add"
+  test "x$ACTION" = "xreplace" && ACTION_MSG="Replace"
+  MESSAGE="${ACTION_MSG} shaping slot id: $ID for $IP with D/U=${DOWN_MBPS}/${UP_MBPS} Mbits/s"
 
   if [ "x$QDISC" = "xhfsc" ]; then
     class_down_opt="hfsc sc rate ${DOWNSPEED}bit ul rate ${DOWNSPEED}"
@@ -471,15 +475,15 @@ case "$1" in
     echo $MESSAGE
 
     ;;
-  add)
+  add|replace)
     if [ "$2" = "--help" ]; then
-      usage_add $N
+      usage_add_replace $N $1
       exit 3
     fi
 
     if [ $# != 7 ]; then
       echo "Error: too few arguments"
-      usage_add $N
+      usage_add_replace $N $1
       exit 1
     fi
 
@@ -489,7 +493,7 @@ case "$1" in
       chk_interface $6 $7
       if [ $? -eq 0 ]; then
         RUN=${RUN}-${SHAPING_DOWN_INF}-${SHAPING_UP_INF}
-        bw_add $2 $3 $4 $5
+        bw_set $1 $2 $3 $4 $5
       else
         MESSAGE="$MSG_NOT_COMPLETED"
       fi

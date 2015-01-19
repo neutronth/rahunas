@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <net/if.h>
 
 #include "rahunasd.h"
 #include "rh-config.h"
@@ -170,6 +171,7 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_vserver.dev_internal != NULL)
           free(config->rh_vserver.dev_internal);
         config->rh_vserver.dev_internal = strdup(value);
+        config->rh_vserver.dev_internal_idx = if_nametoindex (value);
       } else if (strncmp(sub_key, "vlan", 4) == 0) {
         if (config->rh_vserver.vlan != NULL)
           free(config->rh_vserver.vlan);
@@ -214,6 +216,22 @@ enum lcfg_status rahunas_visitor(const char *key, void *data, size_t size,
         if (config->rh_vserver.clients != NULL)
           free(config->rh_vserver.clients);
         config->rh_vserver.clients = strdup(value);
+
+        char *network = config->rh_vserver.clients;
+        char *prefix_sep = NULL;
+        char *prefix     = NULL;
+        prefix_sep = strchr (network, '/');
+
+        if (prefix_sep) {
+          *prefix_sep = '\0';
+
+          prefix = prefix_sep + 1;
+
+          inet_aton (network, &config->rh_vserver.clients_net);
+          config->rh_vserver.clients_prefix = atoi (prefix);
+
+          *prefix_sep = '/';
+        }
       } else if (strncmp(sub_key, "excluded", 8) == 0) {
         if (config->rh_vserver.excluded != NULL)
           free(config->rh_vserver.excluded);

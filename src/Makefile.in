@@ -61,11 +61,15 @@ am_rahunasd_OBJECTS = rahunasd.$(OBJEXT) rh-server.$(OBJEXT) \
 	rh-task-ipset.$(OBJEXT) rh-task-dbset.$(OBJEXT) \
 	rh-task-bandwidth.$(OBJEXT) rh-task-conntrack.$(OBJEXT) \
 	rh-task-serviceclass.$(OBJEXT) rh-task-ipacct.$(OBJEXT) \
-	rh-config.$(OBJEXT) rh-serviceclass.$(OBJEXT)
+	rh-task-luahook.$(OBJEXT) rh-config.$(OBJEXT) \
+	rh-serviceclass.$(OBJEXT) rh-json.$(OBJEXT) \
+	rh-macauthen.$(OBJEXT)
 rahunasd_OBJECTS = $(am_rahunasd_OBJECTS)
 am__DEPENDENCIES_1 =
 rahunasd_DEPENDENCIES = $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
 	$(top_builddir)/lcfg/liblcfg.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -125,6 +129,14 @@ LIBGNET_CFLAGS = @LIBGNET_CFLAGS@
 LIBGNET_LIBS = @LIBGNET_LIBS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
+LIBJANSSON_CFLAGS = @LIBJANSSON_CFLAGS@
+LIBJANSSON_LIBS = @LIBJANSSON_LIBS@
+LIBLUAJIT_CFLAGS = @LIBLUAJIT_CFLAGS@
+LIBLUAJIT_LIBS = @LIBLUAJIT_LIBS@
+LIBMNL_CFLAGS = @LIBMNL_CFLAGS@
+LIBMNL_LIBS = @LIBMNL_LIBS@
+LIBNETFILTER_QUEUE_CFLAGS = @LIBNETFILTER_QUEUE_CFLAGS@
+LIBNETFILTER_QUEUE_LIBS = @LIBNETFILTER_QUEUE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBSQLITE3_CFLAGS = @LIBSQLITE3_CFLAGS@
@@ -229,6 +241,10 @@ IPSET_VERSION := 4.2
 AM_CFLAGS = \
   $(LIBGNET_CFLAGS) \
   $(LIBSQLITE3_CFLAGS) \
+  $(LIBLUAJIT_CFLAGS) \
+  $(LIBJANSSON_CFLAGS) \
+  $(LIBMNL_CFLAGS) \
+  $(LIBNETFILTER_QUEUE_CFLAGS) \
   -I$(top_srcdir)/src/ \
   -DRAHUNAS_VERSION=\"$(RAHUNAS_VERSION)\" \
   -DPROGRAM=\"$(PROGRAM)\" \
@@ -241,6 +257,7 @@ AM_CFLAGS = \
   -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\" \
   -DRAHUNAS_CONNTRACK_WRAPPER=\"$(sbindir)/rahunas-conntrack\" \
   -DRAHUNAS_IPACCT_WRAPPER=\"$(sbindir)/rahunas-ipacct\" \
+  -DRAHUNAS_LUA_SCRIPT=\"$(sysconfdir)/rahunas/scripts.d/rahunas.lua\" \
   -D_GNU_SOURCE
 
 rahunasd_SOURCES = \
@@ -279,17 +296,28 @@ rahunasd_SOURCES = \
   rh-task-serviceclass.h \
   rh-task-ipacct.c \
   rh-task-ipacct.h \
+  rh-task-luahook.c \
+  rh-task-luahook.h \
   rh-radius.h \
   rh-config.c \
   rh-config.h \
   rh-serviceclass.h \
-  rh-serviceclass.c
+  rh-serviceclass.c \
+  rh-json.h \
+  rh-json.c \
+  jhash.h \
+  rh-macauthen.h \
+  rh-macauthen.c
 
 rahunasd_LDADD = \
   $(top_builddir)/xmlrpc/libgnetxmlrpc.a \
   $(top_builddir)/lcfg/liblcfg.a \
   $(LIBGNET_LIBS) \
-  $(LIBSQLITE3_LIBS)
+  $(LIBSQLITE3_LIBS) \
+  $(LIBLUAJIT_LIBS) \
+  $(LIBJANSSON_LIBS) \
+  $(LIBMNL_LIBS) \
+  $(LIBNETFILTER_QUEUE_LIBS)
 
 all: all-am
 
@@ -381,6 +409,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rahunasd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-ipset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-json.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-macauthen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-serviceclass.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-bandwidth.Po@am__quote@
@@ -389,6 +419,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-ipacct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-ipset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-iptables.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-luahook.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-memset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task-serviceclass.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rh-task.Po@am__quote@

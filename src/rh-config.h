@@ -54,6 +54,7 @@ struct rahunas_vserver_config {
   int  init_flag;
   char *dev_external;
   char *dev_internal;
+  unsigned int dev_internal_idx;
   struct interfaces *iface;
   char *vlan;
   char *vlan_raw_dev_external;
@@ -66,6 +67,8 @@ struct rahunas_vserver_config {
   char *vserver_ports_allow;
   char *vserver_ports_intercept;
   char *clients;
+  struct in_addr clients_net;
+  uint8_t clients_prefix;
   char *excluded;
   int  idle_timeout;
   char *dns;

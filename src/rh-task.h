@@ -51,6 +51,9 @@ struct task {
   /* Stop session task */
   int (*stopsess) (RHVServer  *vs, struct task_req *req);
 
+  /* Update session task */
+  int (*updatesess) (RHVServer *vs, struct task_req *req);
+
   /* Commit start session task */
   int (*commitstartsess) (RHVServer  *vs, struct task_req *req);
 
@@ -70,10 +73,12 @@ void rh_task_register          (RHMainServer *ms);
 void rh_task_unregister        (RHMainServer *ms);
 int  rh_task_startservice      (RHMainServer *ms);
 int  rh_task_stopservice       (RHMainServer *ms);
+int  rh_task_stopservice       (RHMainServer *ms);
 void rh_task_init              (RHMainServer *ms, RHVServer  *vs);
 void rh_task_cleanup           (RHMainServer *ms, RHVServer  *vs);
 int  rh_task_startsess         (RHVServer  *vs, struct task_req *req);
 int  rh_task_stopsess          (RHVServer  *vs, struct task_req *req);
+int  rh_task_updatesess        (RHVServer  *vs, struct task_req *req);
 int  rh_task_commitstartsess   (RHVServer  *vs, struct task_req *req);
 int  rh_task_commitstopsess    (RHVServer  *vs, struct task_req *req);
 int  rh_task_rollbackstartsess (RHVServer  *vs, struct task_req *req);

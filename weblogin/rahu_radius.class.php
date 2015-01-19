@@ -66,6 +66,11 @@ class rahu_radius_auth {
     $this->LoggedIn = false;
   }
 
+  function getRawAttribute ($attr) {
+    return array_key_exists ($attr, $this->rawAttributes) ?
+             $this->rawAttributes[$attr] : "";
+  }
+
   function getAttribute ($attr) {
     return array_key_exists ($attr, $this->attributes) ?
              $this->attributes[$attr] : "";
@@ -78,14 +83,19 @@ class rahu_radius_auth {
     $username =& $this->username;
     $password =& $this->password;
 
-    $classname = 'Auth_RADIUS_' . $type;
+    if ($type == "Call-Check") {
+      $classname = 'Auth_RADIUS_PAP';
+    } else {
+      $classname = 'Auth_RADIUS_' . $type;
+    }
+
     $rauth = new $classname ($username, $password);
     $rauth->addServer($this->host, $this->port, $this->secret);
     $rauth->username = $username;
     
     // Disable the standard attributes
     $rauth->useStandardAttributes = 0;
-    
+
     switch ($type) {
       case 'CHAP_MD5':
       case 'MSCHAPv1':
@@ -117,6 +127,11 @@ class rahu_radius_auth {
     if (!$rauth->start ()) {
       $this->error = 1;
       return -1;
+    }
+
+    if ($type == "Call-Check") {
+      $rauth->putAttribute (RADIUS_CALLING_STATION_ID, $this->username);
+      $rauth->putAttribute (RADIUS_SERVICE_TYPE, 10);
     }
     
     $this->result = $rauth->send ();
