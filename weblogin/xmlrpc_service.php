@@ -120,7 +120,7 @@ function do_offacct($method_name, $params, $app_data)
   $info = json_decode(base64_decode($request), true);
 
   foreach ($config_list as $network=>$cfg) {
-    if ($cfg["VSERVER_ID"] == $info["VServerID"]) {
+    if (intval ($cfg["VSERVER_ID"]) == $info["VServerID"]) {
       $config = $cfg;
       break;
     }
