@@ -13,25 +13,6 @@
 #include "rh-task.h"
 #include "rh-xmlrpc-cmd.h"
 
-static int
-set_cleanup(void *data)
-{
-  struct processing_set *process = (struct processing_set *) data;
-  int retry = 3;
-
-  set_flush (process->vs->vserver_config->vserver_name);
-
-  while (send_xmlrpc_offacct (process->vs) != 0 && --retry > 0) {
-    sleep (5);
-  }
-
-  if (retry < 0) {
-    /* TODO: Accounting-Off failed, should be checked on next service start,
-     *       stop-delay should be added.
-     */
-  }
-}
-
 /* Start service task */
 static int startservice ()
 {
@@ -72,7 +53,17 @@ static void cleanup (RHVServer *vs)
   logmsg(RH_LOG_NORMAL, "[%s] Task IPSET cleanup..",
          vs->vserver_config->vserver_name);  
 
-  walk_through_set(&set_cleanup, vs);
+  int retry = 3;
+
+  while (send_xmlrpc_offacct (vs) != 0 && --retry > 0) {
+    sleep (5);
+  }
+
+  if (retry < 0) {
+    /* TODO: Accounting-Off failed, should be checked on next service start,
+     *       stop-delay should be added.
+     */
+  }
 
   set_flush(vs->vserver_config->vserver_name);
   rh_free((void **) &vs->v_set);
