@@ -11,6 +11,7 @@ fi
 
 test -d /var/log/rahunas || mkdir /var/log/rahunas
 test -d /etc/rahunas/rahunas.d || mkdir -p /etc/rahunas/rahunas.d
+test -d /var/lib/rahunas/db || mkdir -p /var/lib/rahunas/db
 
 ucf /usr/share/doc/rahunas/rahunas.conf /etc/rahunas/rahunas.conf
 
