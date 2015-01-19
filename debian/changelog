@@ -1,3 +1,13 @@
+rahunas (1.0.0-1) UNRELEASED; urgency=medium
+
+  * Imported Upstream version 1.0.0
+  * Drop patches
+    * debian/patches/fix-memleaks-the-result-table-must-be-freed.patch,
+      debian/patches/fix-requests-to-DNS-servers-over-tcp-failed.patch:
+      - Dropped, included upstream.
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 19 Jan 2015 14:31:26 +0700
+
 rahunas (0.3.0-2) experimental; urgency=medium
 
   * debian/patches/fix-requests-to-DNS-servers-over-tcp-failed.patch,
