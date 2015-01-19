@@ -20,6 +20,18 @@
       {/foreach}
     </ul>
   </div>
+  {if $current_language == 'Thai'}
+  <a href="{$help_link}">ลงทะเบียน</a>
+  {else}
+  <a href="{$help_link}">Register</a>
+  {/if}
+
+  {if $current_language == 'Thai'}
+  <a href="{$help_link}">ความช่วยเหลือ</a>
+  {else}
+  <a href="{$help_link}">Help</a>
+  {/if}
+
 </div>
 <div class='rh-container'>
   <div class='rh-login-container'>

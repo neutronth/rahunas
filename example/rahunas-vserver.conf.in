@@ -7,7 +7,7 @@ rahunas_default = {
   ignore_mac = "no"
   vserver_ip = "172.30.0.1"
   vserver_fqdn = "authen.rahunas.local"
-  vserver_ports_allow = "80,443"
+  vserver_ports_allow = "80,443,3000"
   vserver_ports_intercept = "80,8080,8088,3128"
   clients = "172.30.0.0/22"
   excluded = ""
@@ -34,4 +34,5 @@ rahunas_default = {
   nas_default_redirect = "http://www.rahunas.org"
   nas_default_language = "Thai"
   nas_weblogin_template = "rahunas-bootstrap"
+  nas_help_link = "https://authen.rahunas.org:3000/help"
 }

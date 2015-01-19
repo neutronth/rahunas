@@ -54,6 +54,32 @@
             {/foreach}
           </ul>
         </li>
+        <li>
+          {if $current_language == 'Thai'}
+          <a href="{$help_link}">
+            <span class="glyphicon glyphicon-barcode" style="display: inline-block; color: 999999; padding-right: 3px;"></span>
+            ลงทะเบียน
+          </a>
+          {else}
+          <a href="{$help_link}">
+            <span class="glyphicon glyphicon-barcode" style="display: inline-block; color: 999999; padding-right: 3px;"></span>
+            Register
+          </a>
+          {/if}
+        </li>
+        <li>
+          {if $current_language == 'Thai'}
+          <a href="{$help_link}">
+            <span class="glyphicon glyphicon-question-sign" style="display: inline-block; color: 999999; padding-right: 3px;"></span>
+            ความช่วยเหลือ
+          </a>
+          {else}
+          <a href="{$help_link}">
+            <span class="glyphicon glyphicon-question-sign" style="display: inline-block; color: 999999; padding-right: 3px;"></span>
+            Help
+          </a>
+          {/if}
+        </li>
       </ul>
     </div>
   </div>
@@ -119,6 +145,23 @@
         </div>
         </form>
       </div>
+      <div class="visible-xs" style="height: 200px;">
+        {if $current_language == 'Thai'}
+        <span class="img-thumbnail" style="padding: 10px;">
+          <a href="{$help_link}">
+            <span class="glyphicon glyphicon-barcode" style="display: inline-block; color: 999999; padding-right: 3px;"></span>
+            ลงทะเบียน
+          </a>
+        </span>
+        {else}
+        <span class="img-thumbnail" style="padding: 10px;">
+          <a href="{$help_link}">
+            <span class="glyphicon glyphicon-barcode" style="display: inline-block; color: 999999; padding-right: 3px;"></span>
+            Register
+          </a>
+        </span>
+        {/if}
+      <div>
       {/if}
       </center>
     </div>

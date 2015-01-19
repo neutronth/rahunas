@@ -201,6 +201,7 @@ abstract class RahuAuthen {
     $tpl->setState ($this->state);
     $tpl->setRedirect (false);
     $tpl->setBrandTitle ($this->config["NAS_LOGIN_TITLE"]);
+    $tpl->setHelpLink ($this->config["NAS_HELP_LINK"]);
     $tpl->setLanguages ($this->i18n->getLanguages ());
     $tpl->setCurrentLanguage ($this->i18n->getCurrentLanguage ());
     $tpl->setUserRequestUrl (@urldecode ($_GET['request_url']));

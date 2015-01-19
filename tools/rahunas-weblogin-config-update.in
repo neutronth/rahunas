@@ -49,6 +49,7 @@ generate_config() {
   NAS_IP_ADDRESS=`get_config_value $SETNAME vserver_ip $file`
   NAS_LOGIN_HOST=`get_config_value $SETNAME vserver_fqdn $file`
   NAS_LOGIN_PROTO=`get_config_value $SETNAME nas_login_proto $file`
+  NAS_HELP_LINK=`get_config_value $SETNAME nas_help_link $file`
   test -z "$NAS_LOGIN_PROTO" && NAS_LOGIN_PROTO="https"
 
   NAS_LOGIN_PORT=`get_config_value $SETNAME nas_login_port $file`
@@ -81,6 +82,7 @@ generate_config() {
   printf "\t\"NAS_LOGIN_PROTO\" => \"%s\",\n"        "$NAS_LOGIN_PROTO"
   printf "\t\"NAS_PORT\" => %s,\n"                   "$NAS_PORT"
   printf "\t\"NAS_LOGIN_TITLE\" => \"%s\",\n"        "$NAS_LOGIN_TITLE"
+  printf "\t\"NAS_HELP_LINK\" => \"%s\",\n"          "$NAS_HELP_LINK"
   printf "\t\"DEFAULT_REDIRECT_URL\" => \"%s\",\n"   "$DEFAULT_REDIRECT_URL"
   printf "\t\"DEFAULT_LANGUAGE\" => \"%s\",\n"       "$DEFAULT_LANGUAGE"
   printf "\t\"UAM_TEMPLATE\" => \"%s\",\n"           "$UAM_TEMPLATE"
