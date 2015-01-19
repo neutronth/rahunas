@@ -116,6 +116,10 @@ class RahuRender {
     $this->engine->assign ("user_info", $info);
   }
 
+  public function setHelpLink ($link) {
+    $this->engine->assign ("help_link", $link);
+  }
+
   function setupSlideImages () {
     $this->engine->assign ("slide_images", array ());
     $images_dir = $this->tplpath . "images/photo/";

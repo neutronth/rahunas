@@ -25,6 +25,7 @@
 #include "rh-ipset.h"
 #include "rh-utils.h"
 #include "rh-task.h"
+#include "rh-macauthen.h"
 
 const char *termstring = "";
 pid_t pid, sid;
@@ -148,6 +149,8 @@ rh_data_sync (int vserver_id, struct rahunas_member *member)
 
     sscanf (azResult[nColumn + dl_pos], "%" SCNd64, &member->download_bytes);
     sscanf (azResult[nColumn + ul_pos], "%" SCNd64, &member->upload_bytes);
+
+    sqlite3_free_table (azResult);
   }
 
   DP ("Download/Upload bytes: %" PRId64 "/%" PRId64, member->download_bytes,
@@ -230,6 +233,11 @@ expired_check(void *data)
             RH_RADIUS_TERM_SESSION_TIMEOUT) == 0) {
         res = rh_task_stopsess(process->vs, &req);
       }
+    } else {
+      /* Update session */
+      req.id = id;
+      memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
+      res = rh_task_updatesess (process->vs, &req);
     }
 
     pthread_mutex_unlock (&RHMtxLock);
@@ -553,6 +561,8 @@ int main(int argc, char *argv[])
     {
       pthread_detach (polling_tid);
     }
+
+  macauthen_setup (rh_main_server);
 
   logmsg(RH_LOG_NORMAL, "Ready to serve...");
   g_main_loop_run(main_loop);

@@ -39,6 +39,9 @@ require_once 'rahu_authen.class.php';
 if ($_SERVER['REMOTE_ADDR'] != "127.0.0.1")
   die();
 
+define ("JSON_REPLY_OK",   base64_encode(json_encode(array("Status" => 200))));
+define ("JSON_REPLY_FAIL", base64_encode(json_encode(array("Status" => 400))));
+
 function rahu_xml_getConfig ($ip) {
   $client = new RahuClient ($ip);
   $rahuconfig = new RahuConfig ($client); 
@@ -47,48 +50,31 @@ function rahu_xml_getConfig ($ip) {
 
 function do_stopacct($method_name, $params, $app_data)
 {
-  $response = "FAIL";
+  $request = $params[0];
+  $info = json_decode(base64_decode($request), true);
 
-  // parsing[0] - ip
-  // parsing[1] - username
-  // parsing[2] - session_id
-  // parsing[3] - session_start  
-  // parsing[4] - mac_address  
-  // parsing[5] - cause  
-  // parsing[6] - download_bytes
-  // parsing[7] - upload_bytes
- 
-  $parsing = explode("|", $params[0]);
-  $ip = $parsing[0];
-  $username   = $parsing[1];
-  $session_id = $parsing[2];
-  $session_start = intval($parsing[3]);
-  $mac_address = $parsing[4];
-  $cause = intval($parsing[5]);
-  $download_bytes = intval($parsing[6]);
-  $upload_bytes   = intval($parsing[7]);
-
-  $config =& rahu_xml_getConfig ($ip);
+  $config =& rahu_xml_getConfig ($info["IP"]);
   $vserver_id = $config["VSERVER_ID"];
 
-  $racct = new rahu_radius_acct ($username);
+  $racct = new rahu_radius_acct ($info["Username"]);
   $racct->host = $config["RADIUS_HOST"];
   $racct->port = $config["RADIUS_ACCT_PORT"];
   $racct->secret = $config["RADIUS_SECRET"];
   $racct->nas_identifier = $config["NAS_IDENTIFIER"];
   $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-  $racct->framed_ip_address  = $ip;
-  $racct->calling_station_id = $mac_address;
-  $racct->terminate_cause = !empty($cause) ? $cause : RADIUS_TERM_NAS_ERROR;
+  $racct->framed_ip_address  = $info["IP"];
+  $racct->calling_station_id = $info["MAC"];
+  $racct->terminate_cause = !empty($info["Cause"]) ? $info["Cause"] : RADIUS_TERM_NAS_ERROR;
   $racct->nas_port = $config["VSERVER_ID"];
-  $racct->session_id    = $session_id;
-  $racct->session_start = $session_start;
-  $racct->download_bytes = $download_bytes;
-  $racct->upload_bytes   = $upload_bytes;
+  $racct->session_id    = $info["SessionID"];
+  $racct->session_start = $info["SessionStart"];
+  $racct->download_bytes = $info["DownloadBytes"];
+  $racct->upload_bytes   = $info["UploadBytes"];
+
   if ($racct->acctStop() === true) {
-    $response = "OK";
+    $response = JSON_REPLY_OK;
   } else {
-    $response = "FAIL";
+    $response = JSON_REPLY_FAIL;
   }
 
   return $response;
@@ -96,45 +82,30 @@ function do_stopacct($method_name, $params, $app_data)
 
 function do_update($method_name, $params, $app_data)
 {
-  $response = "FAIL";
+  $request = $params[0];
+  $info = json_decode(base64_decode($request), true);
 
-  // parsing[0] - ip
-  // parsing[1] - username
-  // parsing[2] - session_id
-  // parsing[3] - session_start
-  // parsing[4] - mac_address
-  // parsing[5] - download_bytes
-  // parsing[6] - upload_bytes
-
-  $parsing = explode("|", $params[0]);
-  $ip = $parsing[0];
-  $username   = $parsing[1];
-  $session_id = $parsing[2];
-  $session_start = intval($parsing[3]);
-  $mac_address = $parsing[4];
-  $download_bytes = intval($parsing[5]);
-  $upload_bytes   = intval($parsing[6]);
-
-  $config =& rahu_xml_getConfig ($ip);
+  $config =& rahu_xml_getConfig ($info["IP"]);
   $vserver_id = $config["VSERVER_ID"];
 
-  $racct = new rahu_radius_acct ($username);
+  $racct = new rahu_radius_acct ($info["Username"]);
   $racct->host = $config["RADIUS_HOST"];
   $racct->port = $config["RADIUS_ACCT_PORT"];
   $racct->secret = $config["RADIUS_SECRET"];
   $racct->nas_identifier = $config["NAS_IDENTIFIER"];
   $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
-  $racct->framed_ip_address  = $ip;
-  $racct->calling_station_id = $mac_address;
+  $racct->framed_ip_address  = $info["IP"];
+  $racct->calling_station_id = $info["MAC"];
   $racct->nas_port = $config["VSERVER_ID"];
-  $racct->session_id    = $session_id;
-  $racct->session_start = $session_start;
-  $racct->download_bytes = $download_bytes;
-  $racct->upload_bytes   = $upload_bytes;
+  $racct->session_id    = $info["SessionID"];
+  $racct->session_start = $info["SessionStart"];
+  $racct->download_bytes = $info["DownloadBytes"];
+  $racct->upload_bytes   = $info["UploadBytes"];
+
   if ($racct->acctUpdate() === true) {
-    $response = "OK";
+    $response = JSON_REPLY_OK;
   } else {
-    $response = "FAIL";
+    $response = JSON_REPLY_FAIL;
   }
 
   return $response;
@@ -143,17 +114,13 @@ function do_update($method_name, $params, $app_data)
 function do_offacct($method_name, $params, $app_data)
 {
   $config_list =& $GLOBALS["config_list"];
-  $response = "FAIL";
-
-  // parsing[0] - vserver_id
-
-  $parsing = explode("|", $params[0]);
-  $vserver_id = $parsing[0];
-
   $config = array ();
 
+  $request = $params[0];
+  $info = json_decode(base64_decode($request), true);
+
   foreach ($config_list as $network=>$cfg) {
-    if ($cfg["VSERVER_ID"] = $vserver_id) {
+    if (intval ($cfg["VSERVER_ID"]) == $info["VServerID"]) {
       $config = $cfg;
       break;
     }
@@ -169,27 +136,50 @@ function do_offacct($method_name, $params, $app_data)
     $racct->nas_port = $config["VSERVER_ID"];
 
     if ($racct->acctOff() === true) {
-      $response = "OK";
+      $response = JSON_REPLY_OK;
     } else {
-      $response = "FAIL";
+      $response = JSON_REPLY_FAIL;
     }
   } else {
-    $response = "FAIL";
+    $response = JSON_REPLY_FAIL;
   }
 
   return $response;
 }
 
-$xmlrpc_server = xmlrpc_server_create();
+function do_macauthen ($method_name, $params, $app_data)
+{
+  $response = JSON_REPLY_FAIL;
+  $request = $params[0];
+  $info = json_decode(base64_decode($request), true);
 
-xmlrpc_server_register_method($xmlrpc_server, "stopacct", "do_stopacct");
-xmlrpc_server_register_method($xmlrpc_server, "offacct", "do_offacct");
-xmlrpc_server_register_method($xmlrpc_server, "update", "do_update");
+  $auth = new RahuAuthenMAC ($info["IP"], $info["MAC"]);
+  $auth->start ();
+
+  if ($auth->isValid ())
+    $response = JSON_REPLY_OK;
+
+  return $response;
+}
+
+
+session_start ();
+
+if (!isset ($_SESSION["xmlrpc_server"])) {
+  $xmlrpc_server = xmlrpc_server_create();
+
+  xmlrpc_server_register_method($xmlrpc_server, "stopacct", "do_stopacct");
+  xmlrpc_server_register_method($xmlrpc_server, "offacct", "do_offacct");
+  xmlrpc_server_register_method($xmlrpc_server, "update", "do_update");
+  xmlrpc_server_register_method($xmlrpc_server, "macauthen", "do_macauthen");
+
+  $_SESSION["xmlrpc_server"] = $xmlrpc_server;
+}
+
+$xmlrpc_server = $_SESSION["xmlrpc_server"];
 
 $request_xml = $HTTP_RAW_POST_DATA;
 
 $response = xmlrpc_server_call_method($xmlrpc_server, $request_xml, '');
 print $response;
-
-xmlrpc_server_destroy($xmlrpc_server);
 ?>

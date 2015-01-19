@@ -177,6 +177,27 @@ int bandwidth_add(RHVServer *vs, struct bandwidth_req *bw_req)
   return bandwidth_exec(vs, args);
 }
 
+int bandwidth_replace(RHVServer *vs, struct bandwidth_req *bw_req)
+{
+  char *args[9];
+  struct interfaces *iface = vs->vserver_config->iface;
+
+  DP("Bandwidth: request %s %s %s %s", bw_req->slot_id,
+     bw_req->ip, bw_req->bandwidth_max_down, bw_req->bandwidth_max_up);
+
+  args[0] = RAHUNAS_BANDWIDTH_WRAPPER;
+  args[1] = "replace";
+  args[2] = bw_req->slot_id;
+  args[3] = bw_req->ip;
+  args[4] = bw_req->bandwidth_max_down;
+  args[5] = bw_req->bandwidth_max_up;
+  args[6] = iface->dev_internal;
+  args[7] = iface->dev_ifb;
+  args[8] = (char *) 0;
+
+  return bandwidth_exec(vs, args);
+}
+
 int bandwidth_del(RHVServer *vs, struct bandwidth_req *bw_req)
 {
   char *args[6];
@@ -339,6 +360,50 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
   }
 }
 
+/* Update session task */
+static int updatesess (RHVServer *vs, struct task_req *req)
+{
+  struct bandwidth_req bw_req;
+  GList *member_node = NULL;
+  struct rahunas_member *member = NULL;
+
+  member_node = member_get_node_by_id(vs, req->id);
+  if (member_node == NULL)
+    return (-1);
+
+  member = (struct rahunas_member *) member_node->data;
+
+  if (member->bandwidth_max_down == 0 && member->bandwidth_max_up == 0)
+    return 0;
+
+  if (member->saved_bandwidth_max_down[SAVED_CURRENT] ==
+        member->bandwidth_max_down &&
+      member->saved_bandwidth_max_up[SAVED_CURRENT] ==
+        member->bandwidth_max_up) {
+    return 0;
+  }
+
+  memset (bw_req.ip, 0, sizeof (bw_req.ip));
+  memset (bw_req.bandwidth_max_down, 0, sizeof (bw_req.bandwidth_max_down));
+  memset (bw_req.bandwidth_max_up, 0, sizeof (bw_req.bandwidth_max_up));
+
+  // Formating the bandwidth request
+  snprintf(bw_req.ip, sizeof (bw_req.ip), "%s", idtoip(vs->v_map, req->id));
+  snprintf(bw_req.bandwidth_max_down, sizeof (bw_req.bandwidth_max_down),
+           "%lu", member->saved_bandwidth_max_down[SAVED_CURRENT]);
+  snprintf(bw_req.bandwidth_max_up, sizeof (bw_req.bandwidth_max_up), "%lu",
+           member->saved_bandwidth_max_up[SAVED_CURRENT]);
+  snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%" PRIu16,
+           member->bandwidth_slot_id);
+
+  if (bandwidth_replace (vs, &bw_req) == 0) {
+    member->bandwidth_max_down = member->saved_bandwidth_max_down[SAVED_CURRENT];
+    member->bandwidth_max_up = member->saved_bandwidth_max_up[SAVED_CURRENT];
+  }
+
+  return 0;
+}
+
 /* Commit start session task */
 static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
@@ -372,6 +437,7 @@ static struct task taskbandwidth = {
   .stopservice = &stopservice,
   .startsess = &startsess,
   .stopsess = &stopsess,
+  .updatesess = &updatesess,
   .commitstartsess = &commitstartsess,
   .commitstopsess = &commitstopsess,
   .rollbackstartsess = &rollbackstartsess,

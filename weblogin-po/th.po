@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2014-08-09 14:10+0000\n"
+"POT-Creation-Date: 2015-01-19 06:54+0000\n"
 "PO-Revision-Date: 2014-08-07 16:08+0700\n"
 "Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
@@ -78,75 +78,75 @@ msgstr "สำเร็จ! ผู้ใช้นี้ ได้เลิกใ
 msgid "Roaming in progress, User will be moved to current network"
 msgstr "กำลังย้ายเครือข่าย ผู้ใช้งานจะถูกย้ายมายังเครือข่ายที่เชื่อมต่อปัจจุบัน"
 
-#: weblogin/rahu_authen.class.php:501
+#: weblogin/rahu_authen.class.php:528
 msgid "Never"
 msgstr "ไม่มีกำหนด"
 
-#: weblogin/rahu_authen.class.php:505
+#: weblogin/rahu_authen.class.php:532
 msgid "Session Time"
 msgstr "เวลาใช้งาน"
 
-#: weblogin/rahu_authen.class.php:505
+#: weblogin/rahu_authen.class.php:532
 msgid "Session Remain Time"
 msgstr "เหลือเวลาในวาระ"
 
-#: weblogin/rahu_authen.class.php:522 weblogin/rahu_authen.class.php:528
+#: weblogin/rahu_authen.class.php:549 weblogin/rahu_authen.class.php:555
 msgid "Unlimit"
 msgstr "ไม่จำกัด"
 
-#: weblogin/rahu_authen.class.php:542 weblogin/rahu_render.class.php:76
+#: weblogin/rahu_authen.class.php:576 weblogin/rahu_render.class.php:76
 msgid "Username"
 msgstr "ชื่อผู้ใช้"
 
-#: weblogin/rahu_authen.class.php:543
+#: weblogin/rahu_authen.class.php:577
 msgid "Speed"
 msgstr "ความเร็ว"
 
-#: weblogin/rahu_authen.class.php:546
+#: weblogin/rahu_authen.class.php:580
 msgid "Data"
 msgstr "ข้อมูล"
 
-#: weblogin/rahu_authen.class.php:549
+#: weblogin/rahu_authen.class.php:583
 msgid "Session Start"
 msgstr "เริ่มวาระ"
 
-#: weblogin/rahu_authen.class.php:550
+#: weblogin/rahu_authen.class.php:584
 msgid "Session End"
 msgstr "สิ้นสุดวาระ"
 
-#: weblogin/rahu_authen.class.php:554
+#: weblogin/rahu_authen.class.php:588
 msgid "Request URL"
 msgstr "URL ที่ร้องขอ"
 
-#: weblogin/rahu_authen.class.php:559
+#: weblogin/rahu_authen.class.php:593
 msgid "day"
 msgstr "วัน"
 
-#: weblogin/rahu_authen.class.php:560
+#: weblogin/rahu_authen.class.php:594
 msgid "days"
 msgstr "วัน"
 
-#: weblogin/rahu_authen.class.php:562
+#: weblogin/rahu_authen.class.php:596
 msgid "hour"
 msgstr "ชั่วโมง"
 
-#: weblogin/rahu_authen.class.php:563
+#: weblogin/rahu_authen.class.php:597
 msgid "hours"
 msgstr "ชั่วโมง"
 
-#: weblogin/rahu_authen.class.php:565
+#: weblogin/rahu_authen.class.php:599
 msgid "minute"
 msgstr "นาที"
 
-#: weblogin/rahu_authen.class.php:566
+#: weblogin/rahu_authen.class.php:600
 msgid "minutes"
 msgstr "นาที"
 
-#: weblogin/rahu_authen.class.php:568
+#: weblogin/rahu_authen.class.php:602
 msgid "second"
 msgstr "วินาที"
 
-#: weblogin/rahu_authen.class.php:569
+#: weblogin/rahu_authen.class.php:603
 msgid "seconds"
 msgstr "วินาที"
 

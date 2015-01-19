@@ -152,6 +152,13 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
   return 0;
 }
 
+/* Update session task */
+static int updatesess (RHVServer *vs, struct task_req *req)
+{
+  /* Do nothing */
+  return 0;
+}
+
 /* Commit start session task */
 static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
@@ -185,6 +192,7 @@ static struct task taskipacct = {
   .stopservice = &stopservice,
   .startsess = &startsess,
   .stopsess = &stopsess,
+  .updatesess = &updatesess,
   .commitstartsess = &commitstartsess,
   .commitstopsess = &commitstopsess,
   .rollbackstartsess = &rollbackstartsess,

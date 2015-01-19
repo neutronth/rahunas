@@ -93,6 +93,13 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
   return conntrack_flush (vs, req);
 }
 
+/* Update session task */
+static int updatesess (RHVServer *vs, struct task_req *req)
+{
+  /* Do nothing */
+  return 0;
+}
+
 /* Commit start session task */
 static int commitstartsess (RHVServer *vs, struct task_req *req)
 {
@@ -126,6 +133,7 @@ static struct task taskconntrack = {
   .stopservice = &stopservice,
   .startsess = &startsess,
   .stopsess = &stopsess,
+  .updatesess = &updatesess,
   .commitstartsess = &commitstartsess,
   .commitstopsess = &commitstopsess,
   .rollbackstartsess = &rollbackstartsess,

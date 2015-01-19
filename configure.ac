@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-m4_define(rh_major, 0)
-m4_define(rh_minor, 3)
+m4_define(rh_major, 1)
+m4_define(rh_minor, 0)
 m4_define(rh_micro, 0)
 
 AC_PREREQ(2.61)
@@ -42,6 +42,22 @@ PKG_CHECK_MODULES(LIBSQLITE3, [ sqlite3 >= $LIBSQLITE3_REQ ], , [ AC_MSG_ERROR([
 
 AC_SUBST(LIBSQLITE3_CFLAGS)
 AC_SUBST(LIBSQLITE3_LIBS)
+
+dnl Check for luajit
+LIBLUAJIT_REQ=2.0.3
+PKG_CHECK_MODULES(LIBLUAJIT, [ luajit >= $LIBLUAJIT_REQ ], , [ AC_MSG_ERROR([luajit is required]) ])
+
+dnl Check for libjansson
+LIBJANSSON_REQ=2.3.1
+PKG_CHECK_MODULES(LIBJANSSON, [ jansson >= $LIBJANSSON_REQ ], , [ AC_MSG_ERROR([libjansson is required]) ])
+
+dnl Check for libmnl
+LIBMNL_REQ=1.0.3
+PKG_CHECK_MODULES(LIBMNL, [ libmnl >= $LIBMNL_REQ ], , [ AC_MSG_ERROR([libmnl is required]) ])
+
+dnl Check for libnetfilter_queue
+LIBNETFILTER_QUEUE_REQ=0.0.17
+PKG_CHECK_MODULES(LIBNETFILTER_QUEUE, [ libnetfilter_queue >= $LIBNETFILTER_QUEUE_REQ ], , [ AC_MSG_ERROR([libnetfilter_queue is required]) ])
 
 dnl Disable snmp-module build
 AC_ARG_ENABLE(netsnmp-module,
