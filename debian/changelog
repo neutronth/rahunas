@@ -5,6 +5,7 @@ rahunas (1.0.0-1) UNRELEASED; urgency=medium
     * debian/patches/fix-memleaks-the-result-table-must-be-freed.patch,
       debian/patches/fix-requests-to-DNS-servers-over-tcp-failed.patch:
       - Dropped, included upstream.
+  * debian/rahunas.postinst: Make /var/lib/rahunas/db dir
 
  -- Neutron Soutmun <neo.neutron@gmail.com>  Mon, 19 Jan 2015 14:31:26 +0700
 
