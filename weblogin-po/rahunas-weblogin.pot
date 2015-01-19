@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: rahunas 0.2.5\n"
+"Project-Id-Version: rahunas 0.3.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2013-05-13 14:45+0700\n"
+"POT-Creation-Date: 2014-08-09 14:10+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,125 +17,16 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: weblogin/chpwd.php:71
-msgid "Could not connect to database"
-msgstr ""
-
-#: weblogin/chpwd.php:75
-msgid "Password mismatch"
-msgstr ""
-
-#: weblogin/chpwd.php:78
-msgid "Password has been changed"
-msgstr ""
-
-#: weblogin/chpwd.php:90
-msgid "Please apply all information"
-msgstr ""
-
-#: weblogin/chpwd.php:97 weblogin/login.php:170 weblogin/logout.php:176
-msgid "Username"
-msgstr ""
-
-#: weblogin/chpwd.php:100 weblogin/login.php:172
-msgid "Password"
-msgstr ""
-
-#: weblogin/chpwd.php:103
-msgid "New Password"
-msgstr ""
-
-#: weblogin/chpwd.php:105
-msgid "Confirm Password"
-msgstr ""
-
-#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:252
-#: weblogin/logout.php:283
-msgid "Change Password"
-msgstr ""
-
-#: weblogin/index.php:76
+#: weblogin/index.php:87
 msgid "If it is not redirecting within 3 seconds"
 msgstr ""
 
-#: weblogin/index.php:76
+#: weblogin/index.php:87
 msgid "click"
 msgstr ""
 
-#: weblogin/index.php:76
+#: weblogin/index.php:88
 msgid "Login Page"
-msgstr ""
-
-#: weblogin/login.php:175
-msgid "Login"
-msgstr ""
-
-#: weblogin/logout.php:55
-msgid "day"
-msgstr ""
-
-#: weblogin/logout.php:56
-msgid "days"
-msgstr ""
-
-#: weblogin/logout.php:58
-msgid "hour"
-msgstr ""
-
-#: weblogin/logout.php:59
-msgid "hours"
-msgstr ""
-
-#: weblogin/logout.php:61
-msgid "minute"
-msgstr ""
-
-#: weblogin/logout.php:62
-msgid "minutes"
-msgstr ""
-
-#: weblogin/logout.php:64
-msgid "second"
-msgstr ""
-
-#: weblogin/logout.php:65
-msgid "seconds"
-msgstr ""
-
-#: weblogin/logout.php:180
-msgid "Session Start"
-msgstr ""
-
-#: weblogin/logout.php:184
-msgid "Session End"
-msgstr ""
-
-#: weblogin/logout.php:185
-msgid "Never"
-msgstr ""
-
-#: weblogin/logout.php:189
-msgid "Session Time"
-msgstr ""
-
-#: weblogin/logout.php:189
-msgid "Session Remain Time"
-msgstr ""
-
-#: weblogin/logout.php:195
-msgid "Class of service"
-msgstr ""
-
-#: weblogin/logout.php:200
-msgid "Request URL"
-msgstr ""
-
-#: weblogin/logout.php:207
-msgid "OK"
-msgstr ""
-
-#: weblogin/logout.php:208
-msgid "Logout"
 msgstr ""
 
 #: weblogin/messages.php:35
@@ -182,14 +73,98 @@ msgstr ""
 msgid "Success! User has been logout"
 msgstr ""
 
-#: weblogin/user.class.php:81
-msgid "Error: Could not get data from database"
+#: weblogin/messages.php:49
+msgid "Roaming in progress, User will be moved to current network"
 msgstr ""
 
-#: weblogin/user.class.php:86 weblogin/user.class.php:106
-msgid "Invalid username or password"
+#: weblogin/rahu_authen.class.php:501
+msgid "Never"
 msgstr ""
 
-#: weblogin/user.class.php:127
-msgid "Error: Could not change password"
+#: weblogin/rahu_authen.class.php:505
+msgid "Session Time"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:505
+msgid "Session Remain Time"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:522 weblogin/rahu_authen.class.php:528
+msgid "Unlimit"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:542 weblogin/rahu_render.class.php:76
+msgid "Username"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:543
+msgid "Speed"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:546
+msgid "Data"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:549
+msgid "Session Start"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:550
+msgid "Session End"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:554
+msgid "Request URL"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:559
+msgid "day"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:560
+msgid "days"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:562
+msgid "hour"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:563
+msgid "hours"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:565
+msgid "minute"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:566
+msgid "minutes"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:568
+msgid "second"
+msgstr ""
+
+#: weblogin/rahu_authen.class.php:569
+msgid "seconds"
+msgstr ""
+
+#: weblogin/rahu_render.class.php:75
+msgid "Language"
+msgstr ""
+
+#: weblogin/rahu_render.class.php:77
+msgid "Password"
+msgstr ""
+
+#: weblogin/rahu_render.class.php:78
+msgid "Login"
+msgstr ""
+
+#: weblogin/rahu_render.class.php:79
+msgid "Logout"
+msgstr ""
+
+#: weblogin/rahu_render.class.php:80
+msgid "OK"
 msgstr ""

@@ -3,8 +3,10 @@
 # the clients and redirect them to the login page to get the authorization to 
 # access the network.
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/sbin:/usr/bin
 prefix=/usr
+sysconfdir=/etc
+localstatedir=/var
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:${prefix}/sbin:${prefix}/bin
 exec_prefix=${prefix}
 
 IPTABLES=/sbin/iptables
@@ -13,13 +15,17 @@ IFCONFIG=/sbin/ifconfig
 FARPD=/usr/sbin/farpd
 
 NAME="rahunas"
-INIT=${prefix}/etc/default/rahunas
-RUN=${prefix}/var/run/rahunas-firewall
-RUNDIR=${prefix}/var/run/rahunas-set
-VSERVER_LIST=${prefix}/var/run/rahunas-vserver
-MAIN_EXT_IFACE_LIST=${prefix}/var/run/rahunas_ext_iface_list
-SERVICECLASS_STATE=${prefix}/var/run/rahunas-serviceclass
-FARPD_STATE=${prefix}/var/run/rahunas-farpd
+INIT=${sysconfdir}/default/rahunas
+RUN=${localstatedir}/run/rahunas-firewall
+RUNDIR=${localstatedir}/run/rahunas-set
+VSERVER_LIST=${localstatedir}/run/rahunas-vserver
+MAIN_EXT_IFACE_LIST=${localstatedir}/run/rahunas_ext_iface_list
+MAIN_EXT_IFACE_HOLD=${localstatedir}/run/rahunas_ext_iface_hold
+SERVICECLASS_STATE=${localstatedir}/run/rahunas-serviceclass
+FARPD_STATE=${localstatedir}/run/rahunas-farpd
+
+test -f $MAIN_EXT_IFACE_LIST || touch $MAIN_EXT_IFACE_LIST
+test -f $MAIN_EXT_IFACE_HOLD || touch $MAIN_EXT_IFACE_HOLD
 
 RUN_DAEMON=no
 
@@ -273,6 +279,8 @@ navigation_rules () {
 
   # INPUT from external (External Firewall) and Service Class
   if [ "$opt" = "start" ]; then
+    echo "${DEV_EXTERNAL}-${SETNAME}" >> $MAIN_EXT_IFACE_HOLD
+
     for dev in $DEV_EXTERNAL_LIST; do
       # Filter duplicated external interfaces
       if ! cat $MAIN_EXT_IFACE_LIST | grep $dev > /dev/null; then
@@ -293,8 +301,11 @@ navigation_rules () {
       fi
     done
   else #stop
-    for dev in $DEV_EXTERNAL_LIST; do
-      sed -i "/$dev/d" $MAIN_EXT_IFACE_LIST
+    sed -i "/\b${DEV_EXTERNAL}-${SETNAME}\b/d" $MAIN_EXT_IFACE_HOLD
+
+    if ! grep -w "${DEV_EXTERNAL}" $MAIN_EXT_IFACE_HOLD >/dev/null; then
+      dev=${DEV_EXTERNAL}
+      sed -i "/\b$dev\b/d" $MAIN_EXT_IFACE_LIST
 
       $IPTABLES $action INPUT $DEV_IN_PARAM $dev -j ${NAME}_ext_fw
 
@@ -307,7 +318,7 @@ navigation_rules () {
         -m set --set rahunas_serviceclass src \
         -j RAHURAWSNAT --bind-set rahunas_serviceclass >/dev/null 2>&1 || true
 
-    done
+    fi
   fi
 
   # INPUT
@@ -956,7 +967,7 @@ case "$1" in
     fi
     ;;
   *)
-    N=${exec_prefix}/sbin/rahunas-firewall
+    N=${prefix}/sbin/rahunas-firewall
     echo "Usage: $N {start|stop|restart}"
     exit 3
     ;;

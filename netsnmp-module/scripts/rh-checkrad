@@ -16,7 +16,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/sbin:/usr/bin
 prefix=/usr
 exec_prefix=${prefix}
 
-LOGDIR=${prefix}/var/log/freeradius
+LOGDIR=/var/log/freeradius
 LOGFILE=${LOGDIR}/rh-checkrad.log
 
 SNMPGET=`which snmpget`
@@ -63,5 +63,5 @@ else
   LOGMSG="${LOGMSG} Inactive"
 fi
 
-echo ${LOGMSG} >> $LOGFILE
+echo `date` "-" ${LOGMSG} >> $LOGFILE
 exit ${RET};

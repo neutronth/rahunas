@@ -39,6 +39,10 @@ require_once 'Auth/RADIUS.php';
 require_once 'Crypt/CHAP.php';
 require_once 'rahu_dictionary.php';
 
+define ("RADIUS_ACCT_INPUT_GIGAWORDS", 52);
+define ("RADIUS_ACCT_OUTPUT_GIGAWORDS", 53);
+define ("RADIUS_GIGAWORD", 4294967296); /* 2^32 */
+
 class rahu_radius_auth {
   var $type;
   var $username;
@@ -60,6 +64,11 @@ class rahu_radius_auth {
     $this->password = $password;
     $this->error = 0;
     $this->LoggedIn = false;
+  }
+
+  function getAttribute ($attr) {
+    return array_key_exists ($attr, $this->attributes) ?
+             $this->attributes[$attr] : "";
   }
 
   function start() {
@@ -127,8 +136,10 @@ class rahu_radius_auth {
         foreach ($data as $attr_id => $val) {
           $get_helper = "radius_cvt_" . 
                         $vendors[$ven_id][$attr_id]["AttributeType"];
-          $this->attributes[$vendors[$ven_id][$attr_id]["AttributeName"]] =
-            $get_helper($val);
+          if (function_exists ($get_helper)) {
+            $this->attributes[$vendors[$ven_id][$attr_id]["AttributeName"]] =
+              $get_helper($val);
+          }
         }
       }
       
@@ -181,7 +192,7 @@ class rahu_radius_acct {
   var $result;
   var $error;
 
-  function rahu_radius_acct ($username) {
+  function rahu_radius_acct ($username = "") {
     $this->username = $username;
     $this->error = 0;
   }
@@ -206,10 +217,20 @@ class rahu_radius_acct {
   }
 
   function acct($accttype, $param=NULL) {
-    $classname = "Auth_RADIUS_Acct_" .$accttype;
+    if ($accttype == "Off") {
+      $classname = "Auth_RADIUS_Acct";
+      $this->session_id = "";
+    } else {
+      $classname = "Auth_RADIUS_Acct_" .$accttype;
+    }
+
     $racct = new $classname;
     $racct->addServer($this->host, $this->port, $this->secret);
-    $racct->username = $this->username;
+
+    if (!empty ($this->username)) {
+      $racct->username = $this->username;
+    }
+
     $racct->authentic = RADIUS_AUTH_LOCAL;
 
     if (empty($this->session_id)) {
@@ -223,27 +244,36 @@ class rahu_radius_acct {
           /* Do not permit the requests that have no session ID */
           return -1;
           break;
+        case "Off":
+          $racct->status_type = RADIUS_ACCOUNTING_OFF;
+          break;
       }
     }
 
-    $racct->session_id = $this->session_id;
-    $racct->session_time = $this->get_session_time();
     $racct->useStandardAttributes = 0;
-  
+
+    if (!empty ($this->session_id)) {
+      $racct->session_id = $this->session_id;
+      $racct->session_time = $this->get_session_time();
+    }
+
     $status = $racct->start();
     if(PEAR::isError($status)) {
       $this->error = 1;
       return -1;
     }
 
-    $racct->putAttribute(RADIUS_NAS_PORT_TYPE, RADIUS_ETHERNET);
-    $racct->putAttribute(RADIUS_USER_NAME, $this->username);
-    $racct->putAttribute(RADIUS_FRAMED_IP_ADDRESS, 
-                             ip2long($this->framed_ip_address));
-    $racct->putAttribute(RADIUS_CALLING_STATION_ID, $this->calling_station_id);
+    if (!empty ($this->session_id)) {
+      $racct->putAttribute(RADIUS_NAS_PORT_TYPE, RADIUS_ETHERNET);
+      $racct->putAttribute(RADIUS_USER_NAME, $this->username);
+      $racct->putAttribute(RADIUS_FRAMED_IP_ADDRESS,
+                               ip2long($this->framed_ip_address));
+      $racct->putAttribute(RADIUS_CALLING_STATION_ID, $this->calling_station_id);
+      $racct->putAttribute(RADIUS_CALLED_STATION_ID, $this->called_station_id);
+    }
+
     $racct->putAttribute(RADIUS_NAS_IDENTIFIER, $this->nas_identifier);
     $racct->putAttribute(RADIUS_NAS_PORT, intval($this->nas_port));
-    $racct->putAttribute(RADIUS_CALLED_STATION_ID, $this->called_station_id);
 
     switch($accttype) {
       case "Start":
@@ -251,8 +281,22 @@ class rahu_radius_acct {
       case "Stop":
         $racct->putAttribute(RADIUS_ACCT_TERMINATE_CAUSE, 
                              $this->terminate_cause);
-        break;
+        /* Fall-through */
       case "Update":
+        $racct->putAttribute(RADIUS_ACCT_SESSION_TIME, $racct->session_time);
+        $racct->putAttribute(RADIUS_ACCT_INPUT_GIGAWORDS,
+                             intval($this->download_bytes / RADIUS_GIGAWORD));
+        $racct->putAttribute(RADIUS_ACCT_OUTPUT_GIGAWORDS,
+                             intval($this->upload_bytes / RADIUS_GIGAWORD));
+        $racct->putAttribute(RADIUS_ACCT_INPUT_OCTETS,
+                             $this->download_bytes % RADIUS_GIGAWORD);
+        $racct->putAttribute(RADIUS_ACCT_OUTPUT_OCTETS,
+                             $this->upload_bytes % RADIUS_GIGAWORD);
+        break;
+      case "Off":
+        $racct->putAttribute(RADIUS_ACCT_TERMINATE_CAUSE,
+                             RADIUS_TERM_NAS_REQUEST);
+        break;
     }
     
     $this->result = $racct->send();
@@ -275,6 +319,10 @@ class rahu_radius_acct {
 
   function acctStop() {
     return $this->acct("Stop");
+  }
+
+  function acctOff() {
+    return $this->acct("Off");
   }
 }
 

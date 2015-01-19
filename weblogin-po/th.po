@@ -1,14 +1,14 @@
 # Thai translations for rahunas-weblogin package.
-# Copyright (C) 2011 Neutron Soutmun <neutron@rahunas.org> 
+# Copyright (C) 2011 Neutron Soutmun <neutron@rahunas.org>
 # This file is distributed under the same license as the rahunas-weblogin package.
-# Neutron Soutmun <neutron@rahunas.org>, 2011.
+# Neutron Soutmun <neutron@rahunas.org>, 2011, 2014.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: rahunas-weblogin 0.2.0\n"
 "Report-Msgid-Bugs-To: neutron@rahunas.org\n"
-"POT-Creation-Date: 2013-05-13 14:45+0700\n"
-"PO-Revision-Date: 2011-10-04 17:24+0700\n"
+"POT-Creation-Date: 2014-08-09 14:10+0000\n"
+"PO-Revision-Date: 2014-08-07 16:08+0700\n"
 "Last-Translator: Neutron Soutmun <neutron@rahunas.org>\n"
 "Language-Team: Thai\n"
 "Language: th\n"
@@ -16,127 +16,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 1.5.4\n"
 
-#: weblogin/chpwd.php:71
-msgid "Could not connect to database"
-msgstr "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"
-
-#: weblogin/chpwd.php:75
-msgid "Password mismatch"
-msgstr "รหัสผ่านไม่ตรงกัน"
-
-#: weblogin/chpwd.php:78
-msgid "Password has been changed"
-msgstr "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว"
-
-#: weblogin/chpwd.php:90
-msgid "Please apply all information"
-msgstr "กรุณากรอกข้อมูลให้ครบถ้วน"
-
-#: weblogin/chpwd.php:97 weblogin/login.php:170 weblogin/logout.php:176
-msgid "Username"
-msgstr "ชื่อผู้ใช้"
-
-#: weblogin/chpwd.php:100 weblogin/login.php:172
-msgid "Password"
-msgstr "รหัสผ่าน"
-
-#: weblogin/chpwd.php:103
-msgid "New Password"
-msgstr "รหัสผ่านใหม่"
-
-#: weblogin/chpwd.php:105
-msgid "Confirm Password"
-msgstr "ยืนยันรหัสผ่าน"
-
-#: weblogin/chpwd.php:108 weblogin/chpwd.php:171 weblogin/login.php:252
-#: weblogin/logout.php:283
-msgid "Change Password"
-msgstr "เปลี่ยนรหัสผ่าน"
-
-#: weblogin/index.php:76
+#: weblogin/index.php:87
 msgid "If it is not redirecting within 3 seconds"
-msgstr ""
+msgstr "หากระบบไม่นำคุณสู่หน้าถัดไปภายใน 3 วินาที"
 
-#: weblogin/index.php:76
+#: weblogin/index.php:87
 msgid "click"
-msgstr ""
+msgstr "เลือก"
 
-#: weblogin/index.php:76
+#: weblogin/index.php:88
 msgid "Login Page"
-msgstr ""
-
-#: weblogin/login.php:175
-msgid "Login"
-msgstr "เข้าสู่ระบบ"
-
-#: weblogin/logout.php:55
-msgid "day"
-msgstr "วัน"
-
-#: weblogin/logout.php:56
-msgid "days"
-msgstr "วัน"
-
-#: weblogin/logout.php:58
-msgid "hour"
-msgstr "ชั่วโมง"
-
-#: weblogin/logout.php:59
-msgid "hours"
-msgstr "ชั่วโมง"
-
-#: weblogin/logout.php:61
-msgid "minute"
-msgstr "นาที"
-
-#: weblogin/logout.php:62
-msgid "minutes"
-msgstr "นาที"
-
-#: weblogin/logout.php:64
-msgid "second"
-msgstr "วินาที"
-
-#: weblogin/logout.php:65
-msgid "seconds"
-msgstr "วินาที"
-
-#: weblogin/logout.php:180
-msgid "Session Start"
-msgstr "เริ่มวาระ"
-
-#: weblogin/logout.php:184
-msgid "Session End"
-msgstr "สิ้นสุดวาระ"
-
-#: weblogin/logout.php:185
-msgid "Never"
-msgstr "ไม่มีกำหนด"
-
-#: weblogin/logout.php:189
-msgid "Session Time"
-msgstr "เวลาใช้งาน"
-
-#: weblogin/logout.php:189
-msgid "Session Remain Time"
-msgstr "เหลือเวลาในวาระ"
-
-#: weblogin/logout.php:195
-msgid "Class of service"
-msgstr "บริการพิเศษ"
-
-#: weblogin/logout.php:200
-msgid "Request URL"
-msgstr "URL ที่ร้องขอ"
-
-#: weblogin/logout.php:207
-msgid "OK"
-msgstr "ตกลง"
-
-#: weblogin/logout.php:208
-msgid "Logout"
-msgstr "เลิกใช้งาน"
+msgstr "หน้าเข้าระบบ"
 
 #: weblogin/messages.php:35
 msgid "Error! Could not connect to the server"
@@ -182,14 +74,110 @@ msgstr "สำเร็จ! ผู้ใช้นี้ผ่านการต�
 msgid "Success! User has been logout"
 msgstr "สำเร็จ! ผู้ใช้นี้ ได้เลิกใช้งานแล้ว"
 
-#: weblogin/user.class.php:81
-msgid "Error: Could not get data from database"
-msgstr "ผิดพลาด: ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้"
+#: weblogin/messages.php:49
+msgid "Roaming in progress, User will be moved to current network"
+msgstr "กำลังย้ายเครือข่าย ผู้ใช้งานจะถูกย้ายมายังเครือข่ายที่เชื่อมต่อปัจจุบัน"
 
-#: weblogin/user.class.php:86 weblogin/user.class.php:106
-msgid "Invalid username or password"
-msgstr "ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้อง"
+#: weblogin/rahu_authen.class.php:501
+msgid "Never"
+msgstr "ไม่มีกำหนด"
 
-#: weblogin/user.class.php:127
-msgid "Error: Could not change password"
-msgstr "ผิดพลาด: ไม่สามารถเปลี่ยนรหัสผ่านได้"
+#: weblogin/rahu_authen.class.php:505
+msgid "Session Time"
+msgstr "เวลาใช้งาน"
+
+#: weblogin/rahu_authen.class.php:505
+msgid "Session Remain Time"
+msgstr "เหลือเวลาในวาระ"
+
+#: weblogin/rahu_authen.class.php:522 weblogin/rahu_authen.class.php:528
+msgid "Unlimit"
+msgstr "ไม่จำกัด"
+
+#: weblogin/rahu_authen.class.php:542 weblogin/rahu_render.class.php:76
+msgid "Username"
+msgstr "ชื่อผู้ใช้"
+
+#: weblogin/rahu_authen.class.php:543
+msgid "Speed"
+msgstr "ความเร็ว"
+
+#: weblogin/rahu_authen.class.php:546
+msgid "Data"
+msgstr "ข้อมูล"
+
+#: weblogin/rahu_authen.class.php:549
+msgid "Session Start"
+msgstr "เริ่มวาระ"
+
+#: weblogin/rahu_authen.class.php:550
+msgid "Session End"
+msgstr "สิ้นสุดวาระ"
+
+#: weblogin/rahu_authen.class.php:554
+msgid "Request URL"
+msgstr "URL ที่ร้องขอ"
+
+#: weblogin/rahu_authen.class.php:559
+msgid "day"
+msgstr "วัน"
+
+#: weblogin/rahu_authen.class.php:560
+msgid "days"
+msgstr "วัน"
+
+#: weblogin/rahu_authen.class.php:562
+msgid "hour"
+msgstr "ชั่วโมง"
+
+#: weblogin/rahu_authen.class.php:563
+msgid "hours"
+msgstr "ชั่วโมง"
+
+#: weblogin/rahu_authen.class.php:565
+msgid "minute"
+msgstr "นาที"
+
+#: weblogin/rahu_authen.class.php:566
+msgid "minutes"
+msgstr "นาที"
+
+#: weblogin/rahu_authen.class.php:568
+msgid "second"
+msgstr "วินาที"
+
+#: weblogin/rahu_authen.class.php:569
+msgid "seconds"
+msgstr "วินาที"
+
+#: weblogin/rahu_render.class.php:75
+msgid "Language"
+msgstr "ภาษา"
+
+#: weblogin/rahu_render.class.php:77
+msgid "Password"
+msgstr "รหัสผ่าน"
+
+#: weblogin/rahu_render.class.php:78
+msgid "Login"
+msgstr "เข้าสู่ระบบ"
+
+#: weblogin/rahu_render.class.php:79
+msgid "Logout"
+msgstr "เลิกใช้งาน"
+
+#: weblogin/rahu_render.class.php:80
+msgid "OK"
+msgstr "ตกลง"
+
+#~ msgid "Class of service"
+#~ msgstr "บริการพิเศษ"
+
+#~ msgid "Error: Could not get data from database"
+#~ msgstr "ผิดพลาด: ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้"
+
+#~ msgid "Invalid username or password"
+#~ msgstr "ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้อง"
+
+#~ msgid "Error: Could not change password"
+#~ msgstr "ผิดพลาด: ไม่สามารถเปลี่ยนรหัสผ่านได้"

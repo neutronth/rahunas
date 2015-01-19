@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 #include "rahunasd.h"
 #include "rh-task.h"
@@ -19,14 +20,14 @@
 #include "rh-task-memset.h"
 #include "rh-utils.h"
 
-static unsigned short slot_flags[MAX_SLOT_PAGE] = {1};
-static unsigned short slot_count = 0;
+static uint64_t slot_flags[MAX_SLOT_PAGE];
+static uint64_t slot_count = 0;
 
-unsigned short _get_slot_id()
+static uint16_t _get_slot_id()
 {
-  unsigned short slot_id    = 0;
-  unsigned short page       = 0;
-  unsigned char  id_on_page = 0;
+  uint16_t slot_id    = 0;
+  uint16_t page       = 0;
+  uint8_t  id_on_page = 0;
   time_t random_time;
 
   // Slot is full 
@@ -34,13 +35,15 @@ unsigned short _get_slot_id()
     return 0;
 
   // Do a random slot_id 
+  time(&(random_time));
+  srandom(random_time);
+  srandom(random());
+
   while (slot_id == 0) {
-    time(&(random_time));
-    srandom(random_time);
-    slot_id = random()/(int)(((unsigned int)RAND_MAX + 1) / (MAX_SLOT_ID + 1));
+    slot_id = random () % (MAX_SLOT_ID + 1);
    
     // Check validity
-    page = slot_id / PAGE_SIZE; 
+    page = slot_id / PAGE_SIZE;
     id_on_page = slot_id % PAGE_SIZE;
    
     if (!(slot_flags[page] & (1 << id_on_page))) {
@@ -48,90 +51,72 @@ unsigned short _get_slot_id()
       break;
     }
 
+    // Second try, probe other slot in current page
+    uint16_t id    = 0;
+    for (id = 0; id < PAGE_SIZE; id++) {
+      if (!(slot_flags[page] & (1 << id))) {
+        slot_id = (page * PAGE_SIZE) + id;
+        goto done;
+      }
+    }
+
     // Slot not available, retry
+    srandom(slot_id);
     slot_id = 0;
   }
 
+done:
   return slot_id;
 }
 
-void mark_reserved_slot_id(unsigned int slot_id)
+void mark_reserved_slot_id(uint16_t slot_id)
 {
-  unsigned short page       = 0;
-  unsigned char  id_on_page = 0;
+  uint16_t page       = 0;
+  uint8_t  id_on_page = 0;
 
-  page = slot_id / PAGE_SIZE; 
+  page = slot_id / PAGE_SIZE;
   id_on_page = slot_id % PAGE_SIZE;
 
   slot_count++;
   slot_flags[page] |= 1 << id_on_page;
 }
 
+void unmark_reserved_slot_id(uint16_t slot_id)
+{
+  uint16_t page       = 0;
+  uint8_t  id_on_page = 0;
+  uint16_t id_flag    = 0;
+
+  page = slot_id / PAGE_SIZE;
+  id_on_page = slot_id % PAGE_SIZE;
+  id_flag = 1 << id_on_page;
+
+  if (slot_count > 0)
+    slot_count--;
+
+  slot_flags[page] &= ~(id_flag);
+}
+
 int bandwidth_exec(RHVServer *vs, char *const args[])
 {
-  pid_t ws;
-  pid_t pid;
-  int status;
-  int exec_pipe[2];
   char buffer[150];
-  char *endline = NULL;
-  int ret = 0;
-  int fd = 0;
-  
-  memset(buffer, '\0', sizeof(buffer));
+  int  ret = 0;
 
-  if (pipe(exec_pipe) == -1) {
-    logmsg(RH_LOG_ERROR, "Error: pipe()");
-    return -1;
-  }
-  DP("pipe0=%d,pipe1=%d", exec_pipe[0], exec_pipe[1]);
+  ret = rh_cmd_exec(RAHUNAS_BANDWIDTH_WRAPPER, args, NULL, buffer,
+                    sizeof (buffer));
 
-  pid = vfork();
-  dup2(exec_pipe[1], STDOUT_FILENO);
-
-  if (pid == 0) {
-    // Child
-    execv(RAHUNAS_BANDWIDTH_WRAPPER, args);
-  } else if (pid < 0) {
-    // Fork error
-    logmsg(RH_LOG_ERROR, "Error: vfork()"); 
-    ret = -1;
-  } else {
-    // Parent
-    ws = waitpid(pid, &status, 0);
-
-    DP("Bandwidth: Return (%d)", WEXITSTATUS(status));
-
-    // Return message log
-    DP("Read message");
-    read(exec_pipe[0], buffer, sizeof(buffer));
-
-    if (buffer != NULL) {
-      DP("Got message: %s", buffer);
-      endline = strstr(buffer, "\n");
-      if (endline != NULL) 
-        *endline = '\0';
-
-      if (vs != NULL) {
-        logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: %s", 
-          vs->vserver_config->vserver_name, buffer);
-      } else {
-        logmsg(RH_LOG_NORMAL, "[main server] Bandwidth: %s", buffer);
-      }
+  if (ret >= 0) {
+    if (strncmp (buffer, "NOT COMPLETED", 13) == 0) {
+      ret = -2;
     }
 
-    if (WIFEXITED(status)) {
-      ret = WEXITSTATUS(status);
-    } else {
-      ret = -1;
-    } 
+    logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: %s",
+           vs->vserver_config->vserver_name, buffer);
+  } else {
+    logmsg(RH_LOG_NORMAL, "[%s] Bandwidth: error",
+           vs->vserver_config->vserver_name);
   }
 
-  if ((buffer != NULL) && (strncmp (buffer, "NOT COMPLETED", 13) == 0))
-    ret = -2;  // Not complete need to retry
-
-  close(exec_pipe[0]);
-  close(exec_pipe[1]);
   return ret;
 }
 
@@ -228,6 +213,10 @@ static void init (RHVServer *vs)
   if (!vs)
     return;
 
+  if (vs->vserver_config->init_flag <= VS_INIT) {
+    memset (slot_flags, 0, sizeof (uint64_t) * MAX_SLOT_PAGE);
+  }
+
   if (vs->vserver_config->init_flag == VS_RELOAD)
     goto initial;
 
@@ -267,7 +256,7 @@ static void cleanup (RHVServer *vs)
 static int startsess (RHVServer *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
-  unsigned short slot_id;
+  uint16_t slot_id;
   unsigned char max_try = 3;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
@@ -296,9 +285,10 @@ static int startsess (RHVServer *vs, struct task_req *req)
            member->bandwidth_max_up);
   
   while (max_try > 0) { 
-    slot_id = _get_slot_id();
-    snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
-    if (bandwidth_add(vs, &bw_req) == 0)
+    slot_id = req->bandwidth_slot_id > 0 ? req->bandwidth_slot_id :
+                _get_slot_id();
+    snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%" PRIu16, slot_id);
+    if (slot_id > 0 && bandwidth_add(vs, &bw_req) == 0)
       break;
     else {
       max_try--;
@@ -323,7 +313,7 @@ static int startsess (RHVServer *vs, struct task_req *req)
 static int stopsess  (RHVServer *vs, struct task_req *req)
 {
   struct bandwidth_req bw_req;
-  unsigned short slot_id = 0;
+  uint16_t slot_id = 0;
   GList *member_node = NULL;
   struct rahunas_member *member = NULL;
   
@@ -337,14 +327,12 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
   if (slot_id < 1)
     return 0;
 
-  snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%d", slot_id);
+  snprintf(bw_req.slot_id, sizeof (bw_req.slot_id), "%" PRIu16, slot_id);
 
   if (bandwidth_del(vs, &bw_req) == 0) {
+    unmark_reserved_slot_id (member->bandwidth_slot_id);
     member->bandwidth_slot_id = 0;
 
-    if (slot_count > 0)
-      slot_count--;
-  
     return 0; 
   } else {
     return -1;

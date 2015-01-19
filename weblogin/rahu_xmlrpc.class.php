@@ -58,7 +58,7 @@ class rahu_xmlrpc_client {
   function do_startsession($vserver_id, $data) {
     $client = $this->getClient(); 
     $params = implode("|", $data);
-    $params = sprintf("%s|%s", $params, $vserver_id);
+    $params = sprintf("%s|%s", $vserver_id, $params);
     $result = $client->startsession($params);
     return $result;
   }
@@ -66,7 +66,7 @@ class rahu_xmlrpc_client {
   function do_stopsession($vserver_id, $ip, $mac, 
                           $cause = RADIUS_TERM_USER_REQUEST) {
     $client = $this->getClient(); 
-    $params = sprintf("%s|%s|%s|%s", $ip, $mac, $cause, $vserver_id);
+    $params = sprintf("%s|%s|%s|%s", $vserver_id, $ip, $mac, $cause);
     $result = $client->stopsession($params);
     if (strstr($result, "was removed"))
       return true;
@@ -76,7 +76,7 @@ class rahu_xmlrpc_client {
 
   function do_getsessioninfo($vserver_id, $ip) {
     $client = $this->getClient(); 
-    $params = sprintf("%s|%s", $ip, $vserver_id);
+    $params = sprintf("%s|%s", $vserver_id, $ip);
     $result = $client->getsessioninfo($params);
     $ret = explode("|", $result);
 
@@ -86,22 +86,84 @@ class rahu_xmlrpc_client {
        $ret[3] - session_start
        $ret[4] - mac_address
        $ret[5] - session_timeout
-       $ret[6] - serviceclass_description */
-    $ip = $ret[0];
-    $username = $ret[1];
-    $session_id = $ret[2];
-    $session_start = $ret[3];
-    $mac_address = $ret[4];
-    $session_timeout = $ret[5];
-    $serviceclass_description = $ret[6];
+       $ret[6] - serviceclass_description
+       $ret[7] - download_bytes
+       $ret[8] - upload_bytes
+       $ret[9] - download_speed
+       $ret[10] - upload_speed
+    */
 
-    $result = array("ip"=>$ip, 
-                    "username"=>$username, 
-                    "session_id"=>$session_id,
-                    "session_start"=>$session_start,
-                    "mac_address"=>$mac_address,
-                    "session_timeout"=>$session_timeout,
-                    "serviceclass_description"=>$serviceclass_description);
+    if (count ($ret) == 11) {
+      $ip = $ret[0];
+      $username = $ret[1];
+      $session_id = $ret[2];
+      $session_start = $ret[3];
+      $mac_address = $ret[4];
+      $session_timeout = $ret[5];
+      $serviceclass_description = $ret[6];
+      $download_bytes = $ret[7];
+      $upload_bytes = $ret[8];
+      $download_speed   = $ret[9];
+      $upload_speed     = $ret[10];
+
+      $result = array("ip"=>$ip,
+                      "username"=>$username,
+                      "session_id"=>$session_id,
+                      "session_start"=>$session_start,
+                      "mac_address"=>$mac_address,
+                      "session_timeout"=>$session_timeout,
+                      "serviceclass_description"=>$serviceclass_description,
+                      "download_bytes"=>$download_bytes,
+                      "upload_bytes"=>$upload_bytes,
+                      "download_speed"=>$download_speed,
+                      "upload_speed"=>$upload_speed);
+    }
+
+    return $result;
+  }
+
+  function do_roaming($vserver_id, $session_id, $ip, $secure_token, $new_ip, $mac) {
+    $client = $this->getClient();
+    $params = sprintf("%s|%s|%s|%s|%s|%s", $vserver_id, $session_id, $ip,
+                      $secure_token, $new_ip, $mac);
+    $result = $client->roaming($params);
+    $ret = explode("|", $result);
+
+    /* $ret[0] - ip
+       $ret[1] - username
+       $ret[2] - session_id
+       $ret[3] - session_start
+       $ret[4] - mac_address
+       $ret[5] - session_timeout
+       $ret[6] - serviceclass_name
+       $ret[7] - bandwidth_max_down
+       $ret[8] - bandwidth_max_up
+    */
+
+    if (count ($ret) == 9) {
+      $ip = $ret[0];
+      $username = $ret[1];
+      $session_id = $ret[2];
+      $session_start = $ret[3];
+      $mac_address = $ret[4];
+      $session_timeout = $ret[5];
+      $serviceclass_name = $ret[6];
+      $bandwidth_max_down = $ret[7];
+      $bandwidth_max_up = $ret[8];
+
+      $result = array("ip"=>$ip,
+                      "username"=>$username,
+                      "session_id"=>$session_id,
+                      "session_start"=>$session_start,
+                      "mac_address"=>$mac_address,
+                      "session_timeout"=>$session_timeout,
+                      "serviceclass_name"=>$serviceclass_name,
+                      "bandwidth_max_down"=>$bandwidth_max_down,
+                      "bandwidth_max_up"=>$bandwidth_max_up);
+    } else {
+      $result = false;
+    }
+
     return $result;
   }
 }

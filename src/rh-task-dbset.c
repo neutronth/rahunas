@@ -15,7 +15,6 @@
 #include "rh-utils.h"
 #include "rh-task-memset.h"
 
-#define COLNAME_MATCH(a, b) (strncmp(a, b, strlen(a)) == 0)
 
 struct dbset_row {
   gchar *session_id;
@@ -25,11 +24,12 @@ struct dbset_row {
   gchar *mac;
   time_t session_start;
   time_t session_timeout;
-  unsigned short bandwidth_slot_id; 
+  uint16_t bandwidth_slot_id;
   long bandwidth_max_down;
   long bandwidth_max_up;
   gchar *service_class;
   uint32_t service_class_slot_id;
+  gchar *secure_token;
 };
 
 static void
@@ -44,6 +44,7 @@ free_dbset_row (struct dbset_row *row)
   g_free (row->ip);
   g_free (row->mac);
   g_free (row->service_class);
+  g_free (row->secure_token);
 }
 
 static sqlite3 *
@@ -58,6 +59,8 @@ openconn (void)
             sqlite3_errmsg (connection));
     sqlite3_close (connection);
     connection = NULL;
+  } else {
+    sqlite3_busy_timeout (connection, RH_SQLITE_BUSY_TIMEOUT_DEFAULT);
   }
 
   return connection;
@@ -186,6 +189,8 @@ restore_set (RHVServer *vs)
           row.service_class_slot_id = atol (value);
       } else if (COLNAME_MATCH ("service_class", colname)) {
           row.service_class = g_strdup (value);
+      } else if (COLNAME_MATCH ("secure_token", colname)) {
+          row.secure_token = g_strdup (value);
       }
     }
 
@@ -214,6 +219,7 @@ restore_set (RHVServer *vs)
 
     req.serviceclass_name = row.service_class;
     req.serviceclass_slot_id = row.service_class_slot_id;
+    strncpy (req.secure_token, row.secure_token, sizeof (req.secure_token) - 1);
 
     rh_task_startsess(vs, &req);
 
@@ -249,8 +255,8 @@ static int startservice ()
 /* Stop service task */
 static int stopservice  ()
 {
-  /* Do nothing */
-  return 0;
+  /* Clear all data in the database */
+  return sql_execute ("DELETE FROM dbset;");
 }
 
 /* Initialize */
@@ -293,8 +299,8 @@ static int startsess (RHVServer *vs, struct task_req *req)
   snprintf(startsess_cmd, sizeof (startsess_cmd) - 1, "INSERT INTO dbset"
          "(session_id,vserver_id,username,ip,mac,session_start,"
          "session_timeout,bandwidth_slot_id,bandwidth_max_down,"
-         "bandwidth_max_up,service_class,service_class_slot_id) "
-         "VALUES('%s','%d','%s','%s','%s',%s,%s,%u,%lu,%lu,'%s',%u)",
+         "bandwidth_max_up,service_class,service_class_slot_id,secure_token) "
+         "VALUES('%s','%d','%s','%s','%s',%s,%s,%" PRIu16 ",%lu,%lu,'%s',%u,'%s')",
          req->session_id, 
          vs->vserver_config->vserver_id, 
          req->username, 
@@ -306,7 +312,8 @@ static int startsess (RHVServer *vs, struct task_req *req)
          req->bandwidth_max_down,
          req->bandwidth_max_up,
          member->serviceclass_name,
-         member->serviceclass_slot_id);
+         member->serviceclass_slot_id,
+         req->secure_token);
   startsess_cmd[sizeof (startsess_cmd) - 1] = '\0';
 
   DP("SQL: %s", startsess_cmd);

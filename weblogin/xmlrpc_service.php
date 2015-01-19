@@ -33,20 +33,21 @@
 
 require_once 'config.php';
 require_once 'rahu_radius.class.php';
-require_once 'networkchk.php';
+require_once 'rahu_authen.class.php';
 
 // Deny all connections that does not come from the localhost
 if ($_SERVER['REMOTE_ADDR'] != "127.0.0.1")
   die();
 
+function rahu_xml_getConfig ($ip) {
+  $client = new RahuClient ($ip);
+  $rahuconfig = new RahuConfig ($client); 
+  return $rahuconfig->getConfig (); 
+}
+
 function do_stopacct($method_name, $params, $app_data)
 {
-  $ip =& $GLOBALS["ip"];
-  $username =& $GLOBALS["username"];
-  $session_id =& $GLOBALS["session_id"];
-  $session_start =& $GLOBALS["session_start"];
-  $mac_address =& $GLOBALS["mac_address"];
-  $cause =& $GLOBALS["cause"];
+  $response = "FAIL";
 
   // parsing[0] - ip
   // parsing[1] - username
@@ -54,8 +55,9 @@ function do_stopacct($method_name, $params, $app_data)
   // parsing[3] - session_start  
   // parsing[4] - mac_address  
   // parsing[5] - cause  
+  // parsing[6] - download_bytes
+  // parsing[7] - upload_bytes
  
-  //return $params[0];
   $parsing = explode("|", $params[0]);
   $ip = $parsing[0];
   $username   = $parsing[1];
@@ -63,34 +65,10 @@ function do_stopacct($method_name, $params, $app_data)
   $session_start = intval($parsing[3]);
   $mac_address = $parsing[4];
   $cause = intval($parsing[5]);
+  $download_bytes = intval($parsing[6]);
+  $upload_bytes   = intval($parsing[7]);
 
-  if (!empty($username) && !empty($session_id)) {
-    $GLOBALS["task"] = "do_stopacct";
-  } else {
-    $GLOBALS["task"] = "";
-  }
-
-//  return "Recieve: IP=$ip, Username=$username, Session-ID=$session_id, Session-Start=$session_start, MAC=$mac_address";
-  return "[RESULT]";
-}
-
-$xmlrpc_server = xmlrpc_server_create();
-
-xmlrpc_server_register_method($xmlrpc_server, "stopacct", "do_stopacct");
-
-$request_xml = $HTTP_RAW_POST_DATA;
-
-$response = xmlrpc_server_call_method($xmlrpc_server, $request_xml, '');
-
-if ($GLOBALS["task"] == "do_stopacct") {
-  $ip =& $GLOBALS["ip"];
-  $username =& $GLOBALS["username"];
-  $session_id =& $GLOBALS["session_id"];
-  $session_start =& $GLOBALS["session_start"];
-  $mac_address =& $GLOBALS["mac_address"];
-  $cause =& $GLOBALS["cause"];
-
-  $config = get_config_by_network($ip, $config_list);
+  $config =& rahu_xml_getConfig ($ip);
   $vserver_id = $config["VSERVER_ID"];
 
   $racct = new rahu_radius_acct ($username);
@@ -105,13 +83,112 @@ if ($GLOBALS["task"] == "do_stopacct") {
   $racct->nas_port = $config["VSERVER_ID"];
   $racct->session_id    = $session_id;
   $racct->session_start = $session_start;
+  $racct->download_bytes = $download_bytes;
+  $racct->upload_bytes   = $upload_bytes;
   if ($racct->acctStop() === true) {
-    $response = str_replace ("[RESULT]", "OK", $response);
+    $response = "OK";
   } else {
-    $response = str_replace ("[RESULT]", "FAIL", $response);
+    $response = "FAIL";
   }
+
+  return $response;
 }
 
+function do_update($method_name, $params, $app_data)
+{
+  $response = "FAIL";
+
+  // parsing[0] - ip
+  // parsing[1] - username
+  // parsing[2] - session_id
+  // parsing[3] - session_start
+  // parsing[4] - mac_address
+  // parsing[5] - download_bytes
+  // parsing[6] - upload_bytes
+
+  $parsing = explode("|", $params[0]);
+  $ip = $parsing[0];
+  $username   = $parsing[1];
+  $session_id = $parsing[2];
+  $session_start = intval($parsing[3]);
+  $mac_address = $parsing[4];
+  $download_bytes = intval($parsing[5]);
+  $upload_bytes   = intval($parsing[6]);
+
+  $config =& rahu_xml_getConfig ($ip);
+  $vserver_id = $config["VSERVER_ID"];
+
+  $racct = new rahu_radius_acct ($username);
+  $racct->host = $config["RADIUS_HOST"];
+  $racct->port = $config["RADIUS_ACCT_PORT"];
+  $racct->secret = $config["RADIUS_SECRET"];
+  $racct->nas_identifier = $config["NAS_IDENTIFIER"];
+  $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
+  $racct->framed_ip_address  = $ip;
+  $racct->calling_station_id = $mac_address;
+  $racct->nas_port = $config["VSERVER_ID"];
+  $racct->session_id    = $session_id;
+  $racct->session_start = $session_start;
+  $racct->download_bytes = $download_bytes;
+  $racct->upload_bytes   = $upload_bytes;
+  if ($racct->acctUpdate() === true) {
+    $response = "OK";
+  } else {
+    $response = "FAIL";
+  }
+
+  return $response;
+}
+
+function do_offacct($method_name, $params, $app_data)
+{
+  $config_list =& $GLOBALS["config_list"];
+  $response = "FAIL";
+
+  // parsing[0] - vserver_id
+
+  $parsing = explode("|", $params[0]);
+  $vserver_id = $parsing[0];
+
+  $config = array ();
+
+  foreach ($config_list as $network=>$cfg) {
+    if ($cfg["VSERVER_ID"] = $vserver_id) {
+      $config = $cfg;
+      break;
+    }
+  }
+
+  if (!empty ($config)) {
+    $racct = new rahu_radius_acct ();
+
+    $racct->host = $config["RADIUS_HOST"];
+    $racct->port = $config["RADIUS_ACCT_PORT"];
+    $racct->secret = $config["RADIUS_SECRET"];
+    $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
+    $racct->nas_port = $config["VSERVER_ID"];
+
+    if ($racct->acctOff() === true) {
+      $response = "OK";
+    } else {
+      $response = "FAIL";
+    }
+  } else {
+    $response = "FAIL";
+  }
+
+  return $response;
+}
+
+$xmlrpc_server = xmlrpc_server_create();
+
+xmlrpc_server_register_method($xmlrpc_server, "stopacct", "do_stopacct");
+xmlrpc_server_register_method($xmlrpc_server, "offacct", "do_offacct");
+xmlrpc_server_register_method($xmlrpc_server, "update", "do_update");
+
+$request_xml = $HTTP_RAW_POST_DATA;
+
+$response = xmlrpc_server_call_method($xmlrpc_server, $request_xml, '');
 print $response;
 
 xmlrpc_server_destroy($xmlrpc_server);

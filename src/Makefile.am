@@ -12,12 +12,13 @@ AM_CFLAGS = \
   -DPROGRAM=\"$(PROGRAM)\" \
   -DIPSET_VERSION=\"$(IPSET_VERSION)\" \
   -DRAHUNAS_CONF_DIR=\"$(sysconfdir)/rahunas/\" \
-  -DRAHUNAS_DB=\"$(localstatedir)/lib/rahunas/rahunas.db\" \
+  -DRAHUNAS_DB=\"$(localstatedir)/lib/rahunas/db/rahunas.db\" \
   -DRAHUNAS_LOG_DIR=\"$(localstatedir)/log/rahunas/\" \
   -DRAHUNAS_RUN_DIR=\"$(localstatedir)/run/\" \
   -DRAHUNAS_FIREWALL_WRAPPER=\"$(sbindir)/rahunas-firewall\" \
   -DRAHUNAS_BANDWIDTH_WRAPPER=\"$(sbindir)/rahunas-bandwidth\" \
   -DRAHUNAS_CONNTRACK_WRAPPER=\"$(sbindir)/rahunas-conntrack\" \
+  -DRAHUNAS_IPACCT_WRAPPER=\"$(sbindir)/rahunas-ipacct\" \
   -D_GNU_SOURCE
 
 rahunasd_SOURCES = \
@@ -54,6 +55,8 @@ rahunasd_SOURCES = \
   rh-task-conntrack.h \
   rh-task-serviceclass.c \
   rh-task-serviceclass.h \
+  rh-task-ipacct.c \
+  rh-task-ipacct.h \
   rh-radius.h \
   rh-config.c \
   rh-config.h \

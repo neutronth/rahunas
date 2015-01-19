@@ -1,5 +1,19 @@
 RahuNAS
 
+0.3.0 (2014-08-07)
+=====
+[rahunasd]
+- Add IP accounting, the download/upload bytes for each users are collected.
+- Cross network roaming support.
+- Improve bandwidth management
+- Fix the users login not cleanup properly on service shutdown/restart
+
+[weblogin]
+- Renovate the core PHP code
+- Renovate the template which result is fully customizable
+- Detect browser with "browscap" and render the full or plain template
+  depending on the browsers' capability.
+
 0.2.1 (2012-08-20)
 =====
 [rahunasd]

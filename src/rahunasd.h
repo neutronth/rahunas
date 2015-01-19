@@ -22,6 +22,7 @@
 #define MAX_MEMBERS 0x00FFFF
 
 #define DEFAULT_MAC "00:00:00:00:00:00"
+#define RH_SQLITE_BUSY_TIMEOUT_DEFAULT  10000  /* 10 seconds */
 
 extern const char *termstring; 
 extern RHMainServer rh_main_server_instance;
@@ -59,7 +60,7 @@ struct rahunas_member {
   time_t session_timeout;
   long bandwidth_max_down;
   long bandwidth_max_up;
-  unsigned short bandwidth_slot_id;
+  uint16_t bandwidth_slot_id;
   char *serviceclass_name;
   const char *serviceclass_description;
   uint32_t serviceclass_slot_id;
@@ -67,9 +68,15 @@ struct rahunas_member {
   char *username;
   char *session_id;
   unsigned char mac_address[ETH_ALEN];
+  uint64_t download_bytes;
+  uint64_t upload_bytes;
+  time_t   last_interimupdate;
+  int      interim_interval;
+  char     secure_token[65];
 };
 
 void rh_free_member(struct rahunas_member *member);
+void rh_data_sync (int vserver_id, struct rahunas_member *member);
 
 static const char *timemsg()
 {

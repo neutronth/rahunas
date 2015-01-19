@@ -4,7 +4,10 @@ dist_sbin_SCRIPTS = \
 	rahunas-firewall \
 	rahunas-bandwidth \
 	rahunas-conntrack \
+	rahunas-ipacct \
 	rahunas-weblogin-config-update
+
+if ENABLE_SQUID_AUTH_HELPER
 
 bin_PROGRAMS = \
 	squid-auth-helper
@@ -22,3 +25,4 @@ squid_auth_helper_LDADD = \
 	$(top_builddir)/xmlrpc/libgnetxmlrpc.a	\
 	$(LIBGNET_LIBS)
 
+endif

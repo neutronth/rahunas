@@ -322,6 +322,12 @@ rh_add_new_data_set (netsnmp_table_data_set *table_set)
           colname = azResult[i];
           value   = azResult[(row_offset * nColumn) + i];
 
+          if (!value)
+            {
+               netsnmp_table_data_delete_row (row);
+               goto skip;
+            }
+
           if (strcmp (colname, "session_id") == 0)
             {
               netsnmp_table_row_add_index (row, ASN_OCTET_STR, value,
@@ -359,6 +365,7 @@ rh_add_new_data_set (netsnmp_table_data_set *table_set)
 
       netsnmp_table_dataset_add_row (table_set, row);
 
+skip:
       row_offset++;
     }
 

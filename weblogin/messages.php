@@ -46,6 +46,7 @@ function get_message($message) {
   $MSG['OK_USER_AUTHORIZED'] = 
     _("Success! User has been authorized, please wait a moment");
   $MSG['OK_USER_LOGOUT'] = _("Success! User has been logout");
+  $MSG['ROAMING'] = _("Roaming in progress, User will be moved to current network");
 
   return $MSG[$message];
 }

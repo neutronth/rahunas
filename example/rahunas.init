@@ -17,7 +17,7 @@ prefix=/usr
 exec_prefix=${prefix}
 
 DAEMON=${exec_prefix}/sbin/rahunasd
-INIT=${prefix}/etc/default/rahunas
+INIT=/etc/default/rahunas
 FIREWALL=${exec_prefix}/sbin/rahunas-firewall
 WEBLOGIN_CONFIG=${exec_prefix}/sbin/rahunas-weblogin-config-update
 NAME=rahunasd
@@ -37,7 +37,7 @@ test -f $INIT || exit 0
 
 . /lib/lsb/init-functions
 
-PID=${prefix}/var/run/$NAME.pid
+PID=/var/run/$NAME.pid
 
 start () {
   $FIREWALL start
@@ -136,7 +136,7 @@ case "$1" in
     status_of_proc -p "$PID" "$DAEMON" "$NAME" && exit 0 || exit $?
     ;;
   *)
-    N=${prefix}/etc/init.d/$NAME
+    N=/etc/init.d/$NAME
     echo "Usage: $N {start|stop|restart|status}" >&2
     exit 1
     ;;

@@ -9,20 +9,20 @@
 #include "rh-server.h"
 
 /* MAX_SLOT_PAGE is calculated from the formula of
-   MAX_SLOT_PAGE = ceil(MAX_SLOT_ID/PAGE_SIZE)
+   MAX_SLOT_PAGE = MAX_SLOT_ID/PAGE_SIZE
 
    where
-     PAGE_SIZE = sizeof(short) * 8
+     PAGE_SIZE = sizeof(uint64_t) * 8
 */
 
-#define MAX_SLOT_ID    9900
-#define PAGE_SIZE      16
-#define MAX_SLOT_PAGE  619
+#define MAX_SLOT_ID    10240
+#define PAGE_SIZE      (sizeof(uint64_t) * 8)
+#define MAX_SLOT_PAGE  (MAX_SLOT_ID/PAGE_SIZE)
 
 extern void rh_task_bandwidth_reg(RHMainServer *ms);
 
 struct bandwidth_req {
-  char slot_id[5];
+  char slot_id[6];
   char ip[16];
   char bandwidth_max_down[15];
   char bandwidth_max_up[15];
@@ -30,5 +30,5 @@ struct bandwidth_req {
 
 int bandwidth_add(RHVServer *vs, struct bandwidth_req *bw_req);
 int bandwidth_exec(RHVServer *vs, char *const args[]);
-void mark_reserved_slot_id(unsigned int slot_id);
+void mark_reserved_slot_id(uint16_t slot_id);
 #endif // __RH_TASK_BANDWIDTH_H

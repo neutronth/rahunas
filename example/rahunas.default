@@ -5,4 +5,4 @@
 RUN_DAEMON=no
 
 # RahuNAS config file
-RAHUNAS_CONFIG=${prefix}/etc/rahunas/rahunas.conf
+RAHUNAS_CONFIG=/etc/rahunas/rahunas.conf

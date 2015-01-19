@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 m4_define(rh_major, 0)
-m4_define(rh_minor, 2)
-m4_define(rh_micro, 5)
+m4_define(rh_minor, 3)
+m4_define(rh_micro, 0)
 
 AC_PREREQ(2.61)
 AC_INIT([RahuNAS], rh_major.rh_minor.rh_micro,[neo.neutron@gmail.com] )
@@ -13,7 +13,7 @@ AC_CONFIG_SRCDIR([src/rahunasd.h])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_SUBST(RAHUNAS_VERSION, major.minor.micro)
+AC_SUBST(RAHUNAS_VERSION, rh_major.rh_minor.rh_micro)
 AC_SUBST(PROGRAM, "RahuNAS")
 
 # gettext
@@ -58,6 +58,14 @@ fi
 
 AM_CONDITIONAL(ENABLE_NETSNMP_MODULE,test "x$enable_netsnmp_module" = "xyes")
 
+dnl Disable Squid auth helper build
+AC_ARG_ENABLE(squid-auth-helper,
+              [AC_HELP_STRING([--enable-squid-auth-helper],
+                              [enable squid-auth-helper build])],
+              enable_squid_auth_helper="yes")
+
+AM_CONDITIONAL(ENABLE_SQUID_AUTH_HELPER,test "x$enable_squid_auth_helper" = "xyes")
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
@@ -85,6 +93,7 @@ AC_CONFIG_FILES([
   tools/rahunas-firewall
   tools/rahunas-bandwidth
   tools/rahunas-conntrack
+  tools/rahunas-ipacct
   tools/rahunas-weblogin-config-update
   netsnmp-module/Makefile
   netsnmp-module/scripts/rh-checkrad
