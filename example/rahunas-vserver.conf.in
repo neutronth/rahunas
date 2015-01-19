@@ -18,8 +18,6 @@ rahunas_default = {
   proxy = "transparent"
   proxy_host = "localhost"
   proxy_port = "3128"
-  bittorrent = "block"
-  bittorrent_allow = ""
 
   radius_host = "localhost"
   radius_secret = "testing123"
