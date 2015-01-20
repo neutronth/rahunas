@@ -1,3 +1,13 @@
+rahunas (1.0.0-2) UNRELEASED; urgency=medium
+
+  * Update rahunas init script
+    * debian/rahunas.init:
+      - Apache2 must running while rahunas start and stop
+      - FreeRADIUS and PostgreSQL, if present, should running while
+        rahunas start and stop
+
+ -- Neutron Soutmun <neo.neutron@gmail.com>  Tue, 20 Jan 2015 08:54:05 +0700
+
 rahunas (1.0.0-1) experimental; urgency=medium
 
   * Imported Upstream version 1.0.0
