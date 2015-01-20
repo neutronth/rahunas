@@ -1,4 +1,4 @@
-rahunas (1.0.0-2) UNRELEASED; urgency=medium
+rahunas (1.0.0-2) experimental; urgency=medium
 
   * Update rahunas init script
     * debian/rahunas.init:
