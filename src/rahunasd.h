@@ -84,6 +84,7 @@ struct rahunas_member {
   void    *luastate;
   time_t   last_update;
   int      postupdate;
+  int      deleted;
 };
 
 void rh_free_member(struct rahunas_member *member);

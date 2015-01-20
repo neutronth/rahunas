@@ -181,10 +181,23 @@ expired_check(void *data)
   runner = g_list_first(process->vs->v_map->members);
 
   while (runner != NULL) {
-    pthread_mutex_lock (&RHMtxLock);
     time_t time_now = time (NULL);
 
     member = (struct rahunas_member *)runner->data;
+
+    if (member->deleted) {
+      pthread_mutex_lock (&RHMtxLock);
+      DP("Deleting member = %s", member->username);
+      rh_free_member(member);
+      process->vs->v_map->members =
+        g_list_delete_link(process->vs->v_map->members, runner);
+
+      /* Restart from begining */
+      runner = g_list_first(process->vs->v_map->members);
+      pthread_mutex_unlock (&RHMtxLock);
+      continue;
+    }
+
     runner = g_list_next(runner);
 
     rh_data_sync (process->vs->vserver_config->vserver_id, member);
@@ -200,7 +213,6 @@ expired_check(void *data)
 
     d = get_data_from_set (process->list, id, process->vs->v_map);
     if (d == NULL) {
-      pthread_mutex_unlock (&RHMtxLock);
       continue;
     }
 
@@ -219,7 +231,9 @@ expired_check(void *data)
 
       if (send_xmlrpc_stopacct(process->vs, id,
             RH_RADIUS_TERM_IDLE_TIMEOUT) == 0) {
+        pthread_mutex_lock (&RHMtxLock);
         res = rh_task_stopsess(process->vs, &req);
+        pthread_mutex_unlock (&RHMtxLock);
       }
     } else if (member->session_timeout != 0 && 
                time_now > member->session_timeout) {
@@ -231,7 +245,9 @@ expired_check(void *data)
 
       if (send_xmlrpc_stopacct(process->vs, id,
             RH_RADIUS_TERM_SESSION_TIMEOUT) == 0) {
+        pthread_mutex_lock (&RHMtxLock);
         res = rh_task_stopsess(process->vs, &req);
+        pthread_mutex_unlock (&RHMtxLock);
       }
     } else {
       /* Update session */
@@ -239,8 +255,6 @@ expired_check(void *data)
       memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       res = rh_task_updatesess (process->vs, &req);
     }
-
-    pthread_mutex_unlock (&RHMtxLock);
   }
 }
 
