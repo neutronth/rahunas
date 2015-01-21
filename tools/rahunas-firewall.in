@@ -49,7 +49,7 @@ get_config_value () {
   file=$3
 
   test -n "$file" || return
-  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key[ ]*=" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | awk -F'=' '{st = index($0,"="); print substr($0,st+1)}' | sed "s/^\s*//g" | sed 's/"//g'
 }
 
 ##
