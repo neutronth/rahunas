@@ -63,7 +63,7 @@ function do_stopacct($method_name, $params, $app_data)
   $racct->nas_identifier = $config["NAS_IDENTIFIER"];
   $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
   $racct->framed_ip_address  = $info["IP"];
-  $racct->calling_station_id = $info["MAC"];
+  $racct->calling_station_id = strtolower ($info["MAC"]);
   $racct->terminate_cause = !empty($info["Cause"]) ? $info["Cause"] : RADIUS_TERM_NAS_ERROR;
   $racct->nas_port = $config["VSERVER_ID"];
   $racct->session_id    = $info["SessionID"];
@@ -95,7 +95,7 @@ function do_update($method_name, $params, $app_data)
   $racct->nas_identifier = $config["NAS_IDENTIFIER"];
   $racct->nas_ip_address = $config["NAS_IP_ADDRESS"];
   $racct->framed_ip_address  = $info["IP"];
-  $racct->calling_station_id = $info["MAC"];
+  $racct->calling_station_id = strtolower ($info["MAC"]);
   $racct->nas_port = $config["VSERVER_ID"];
   $racct->session_id    = $info["SessionID"];
   $racct->session_start = $info["SessionStart"];
