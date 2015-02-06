@@ -349,6 +349,7 @@ static
 void *macauthen_service (void *data)
 {
   RHMainServer *ms = (RHMainServer *) data;
+  time_t last_process = 0;
 
   for (;;) {
     pthread_mutex_lock (&RHMACAuthenMtxLock);
@@ -362,6 +363,12 @@ void *macauthen_service (void *data)
     g_hash_table_iter_init (&iter, macip_table);
 
     time_t start_process = time (NULL);
+    int    count = 0;
+
+    if (start_process - last_process < 2) {
+      pthread_mutex_unlock (&RHMACAuthenMtxLock);
+      continue;
+    }
 
     while (g_hash_table_iter_next (&iter, &key, &value)) {
       MACAuthenElem *elem = (MACAuthenElem *) value;
@@ -395,8 +402,14 @@ void *macauthen_service (void *data)
           elem->last);
 
       if (macauthen_verify (ms, elem) && !macauthen_is_loggedin (elem)) {
-        send_xmlrpc_macauthen (elem);
-        time (&elem->last);
+        if (++count > 10) {
+          DP ("MACAuthen Suspend");
+          goto suspend;
+        } else {
+          DP ("Send MACAuthen");
+          send_xmlrpc_macauthen (elem);
+          time (&elem->last);
+        }
       } else {
         pthread_mutex_lock (&RHMACAuthenDataMtxLock);
         g_hash_table_iter_remove (&iter);
@@ -404,6 +417,8 @@ void *macauthen_service (void *data)
       }
     }
 
+suspend:
+    last_process = start_process;
     pthread_mutex_unlock (&RHMACAuthenMtxLock);
   }
 }
