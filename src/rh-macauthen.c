@@ -7,6 +7,7 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <inttypes.h>
 #include <string.h>
 #include <time.h>
@@ -20,6 +21,7 @@ pthread_mutex_t RHMACAuthenMtxLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RHMACAuthenDataMtxLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  RHMACAuthenCond    = PTHREAD_COND_INITIALIZER;
 pthread_t       RHMACAuthenTID     = -1;
+sem_t           sem_workers;
 
 static GHashTable *macip_table  = NULL;
 static MACAuthenSource *mac_src = NULL;
@@ -31,6 +33,7 @@ static guint  macip_table_key_hash (gconstpointer key);
 static gboolean macip_table_key_equal (gconstpointer v1, gconstpointer v2);
 static void  macip_table_value_free (gpointer data);
 static void *macauthen_service (void *data);
+static void *do_macauthen (void *data);
 static gboolean macauthen_verify  (RHMainServer *ms, MACAuthenElem *elem);
 static gboolean macauthen_is_loggedin  (MACAuthenElem *elem);
 static gboolean addr4_match (const struct in_addr *addr,
@@ -274,12 +277,15 @@ macauthen_setup (RHMainServer *main_server)
     pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
   }
 
+  sem_init (&sem_workers, 0, 16);
+
   if (pthread_create (&RHMACAuthenTID, NULL, macauthen_service,
                       (void *) main_server) == 0) {
     pthread_detach (RHMACAuthenTID);
     g_source_add_poll ((GSource *) mac_src, &mac_src->pfd);
     g_source_attach ((GSource *) mac_src, NULL);
   } else {
+    sem_destroy (&sem_workers);
     g_source_destroy ((GSource *)mac_src);
     mac_src = NULL;
     goto fail;
@@ -344,6 +350,15 @@ gboolean input_check_handler (GSource *src)
   return s->pfd.revents & POLLIN;
 }
 
+static void *do_macauthen (void *data)
+{
+  sem_wait (&sem_workers);
+  MACAuthenElem *elem = (MACAuthenElem *) data;
+  DP ("Send MACAuthen");
+  send_xmlrpc_macauthen (elem);
+
+  sem_post (&sem_workers);
+}
 
 static
 void *macauthen_service (void *data)
@@ -364,11 +379,6 @@ void *macauthen_service (void *data)
 
     time_t start_process = time (NULL);
     int    count = 0;
-
-    if (start_process - last_process < 2) {
-      pthread_mutex_unlock (&RHMACAuthenMtxLock);
-      continue;
-    }
 
     while (g_hash_table_iter_next (&iter, &key, &value)) {
       MACAuthenElem *elem = (MACAuthenElem *) value;
@@ -402,13 +412,23 @@ void *macauthen_service (void *data)
           elem->last);
 
       if (macauthen_verify (ms, elem) && !macauthen_is_loggedin (elem)) {
-        if (++count > 10) {
-          DP ("MACAuthen Suspend");
-          goto suspend;
-        } else {
-          DP ("Send MACAuthen");
-          send_xmlrpc_macauthen (elem);
-          time (&elem->last);
+        time (&elem->last);
+
+        pthread_t tid;
+
+        if (pthread_create (&tid, NULL, &do_macauthen, (void *) elem) == 0) {
+        pthread_detach (tid);
+        }
+
+        /* Limit the trhead creation not over the 100 thread/second */
+        struct timespec delay, remain;
+        delay.tv_sec = 0;
+        delay.tv_nsec = 10000000; /* 10 ms */
+
+        int s = nanosleep (&delay, &remain);
+        while (s == -1) {
+          delay.tv_nsec = remain.tv_nsec;
+          s = nanosleep (&delay, &remain);
         }
       } else {
         pthread_mutex_lock (&RHMACAuthenDataMtxLock);
@@ -417,8 +437,6 @@ void *macauthen_service (void *data)
       }
     }
 
-suspend:
-    last_process = start_process;
     pthread_mutex_unlock (&RHMACAuthenMtxLock);
   }
 }
@@ -514,6 +532,9 @@ macauthen_add_elem (uint8_t *mac, unsigned long s_addr, uint32_t iface_idx,
   MACAuthenElem *found = (MACAuthenElem *) g_hash_table_lookup (macip_table, elem);
 
   if (!found) {
+    if (elem->cleartime == MACAUTHEN_ELEM_DELAY_CLEARTIME)
+      time (&elem->last);
+
     g_hash_table_insert (macip_table, elem, elem);
   } else {
     if (found->cleartime < cleartime) {
