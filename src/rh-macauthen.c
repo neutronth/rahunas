@@ -415,9 +415,14 @@ void *macauthen_service (void *data)
         time (&elem->last);
 
         pthread_t tid;
+        pthread_attr_t attr;
+        size_t stacksize;
 
-        if (pthread_create (&tid, NULL, &do_macauthen, (void *) elem) == 0) {
-        pthread_detach (tid);
+        pthread_attr_init (&attr);
+        pthread_attr_setstacksize (&attr, 512000);
+
+        if (pthread_create (&tid, &attr, &do_macauthen, (void *) elem) == 0) {
+          pthread_detach (tid);
         }
 
         /* Limit the trhead creation not over the 100 thread/second */
