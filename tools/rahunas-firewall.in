@@ -491,11 +491,12 @@ policy () {
 
   $IPTABLES -t mangle -N ${CHAIN_RH_MACAUTHEN}
   $IPTABLES -t mangle -A ${CHAIN_RH_MACAUTHEN} \
-    -m connlimit --connlimit-above 50 -j ACCEPT
+    -m recent --rcheck --name callcheck --seconds 10 --hitcount 1 \
+    -j RETURN
   $IPTABLES -t mangle -A ${CHAIN_RH_MACAUTHEN} \
-    -p tcp -m state --state NEW -j NFQUEUE --queue-num 0
+    -m recent --set --name callcheck --rsource
   $IPTABLES -t mangle -A ${CHAIN_RH_MACAUTHEN} \
-    -p udp -m state --state NEW -j NFQUEUE --queue-num 0
+    -j NFQUEUE --queue-num 0
 }
 
 cleanup_policy () {
