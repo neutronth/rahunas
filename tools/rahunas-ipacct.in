@@ -200,7 +200,7 @@ stop_config() {
 
 stop_config_env() {
   do_get_config "" stop
-  stop_config &
+  stop_config
   return $?
 }
 
@@ -211,7 +211,7 @@ stop_config_file() {
     return 1
   fi
 
-  stop_config &
+  stop_config
   return $?
 }
 
