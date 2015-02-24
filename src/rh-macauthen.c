@@ -424,6 +424,7 @@ void *macauthen_service (void *data)
         if (pthread_create (&tid, &attr, &do_macauthen, (void *) elem) == 0) {
           pthread_detach (tid);
         }
+        pthread_attr_destroy (&attr);
 
         /* Limit the trhead creation not over the 100 thread/second */
         struct timespec delay, remain;
