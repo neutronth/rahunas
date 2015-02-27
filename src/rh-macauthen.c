@@ -392,9 +392,12 @@ void *macauthen_service (void *data)
   RHMainServer *ms = (RHMainServer *) data;
 
   for (;;) {
-    pthread_mutex_lock (&RHMACAuthenMtxLock);
-    pthread_cond_wait (&RHMACAuthenCond, &RHMACAuthenMtxLock);
+    struct timespec timeout;
+    timeout.tv_sec  = 2;
+    timeout.tv_nsec = 0;
 
+    pthread_mutex_lock (&RHMACAuthenMtxLock);
+    pthread_cond_timedwait (&RHMACAuthenCond, &RHMACAuthenMtxLock, &timeout);
 
     DP ("MAC Authen service work queue process");
     int i;
