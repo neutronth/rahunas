@@ -527,6 +527,8 @@ macauthen_add_elem (uint8_t *mac, unsigned long s_addr, uint32_t iface_idx,
                     time_t cleartime)
 {
   MACAuthenElem *elem = (MACAuthenElem *) g_malloc0 (sizeof (MACAuthenElem));
+  MACAuthenElem *free_elem = NULL;
+
   memcpy (elem->mac, mac, 6);
   elem->src.s_addr = s_addr;
   elem->iface_idx  = iface_idx;
@@ -542,17 +544,24 @@ macauthen_add_elem (uint8_t *mac, unsigned long s_addr, uint32_t iface_idx,
       time (&elem->last);
 
     g_hash_table_insert (macip_table, elem, elem);
+
+    found = (MACAuthenElem *) g_hash_table_lookup (macip_table, elem);
+    if (!found)
+      free_elem = elem;
   } else {
     if (found->cleartime < cleartime) {
       found->cleartime = cleartime;
       time (&found->last);
     }
 
-    g_free (elem);
+    free_elem = elem;
     elem = found;
   }
 
   pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
+
+  if (free_elem)
+    g_free (free_elem);
 
   return elem;
 }
