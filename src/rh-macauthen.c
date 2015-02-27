@@ -318,9 +318,11 @@ gboolean mac_dispatch_handler (GSource *src, GSourceFunc callback,
       id = ret - MNL_CB_OK;
       nlh = nfq_build_verdict (buf, id, mac_src->nl_queue_num, NF_ACCEPT);
 
-      if (mnl_socket_sendto (mac_src->nl, nlh, nlh->nlmsg_len) > 0) {
-        DP ("Verdict ACCEPT - %u", id);
+      if (mnl_socket_sendto (mac_src->nl, nlh, nlh->nlmsg_len) < 0) {
+        return FALSE;
       }
+
+      DP ("Verdict ACCEPT - %u", id);
 
       if (pthread_mutex_trylock (&RHMACAuthenMtxLock) == 0) {
         pthread_cond_signal (&RHMACAuthenCond);
