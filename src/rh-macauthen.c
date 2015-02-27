@@ -397,7 +397,8 @@ void *macauthen_service (void *data)
 
 
     DP ("MAC Authen service work queue process");
-    while (!g_queue_is_empty (macip_workq)) {
+    int i;
+    for (i = 0; i < g_queue_get_length (macip_workq); i++) {
       MACAuthenElem *elem = NULL;
 
       pthread_mutex_lock (&RHMACAuthenWorkQMtxLock);
