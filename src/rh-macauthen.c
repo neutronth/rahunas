@@ -19,11 +19,15 @@
 
 pthread_mutex_t RHMACAuthenMtxLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RHMACAuthenDataMtxLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RHMACAuthenWorkQMtxLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RHMACAuthenRemoveQMtxLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  RHMACAuthenCond    = PTHREAD_COND_INITIALIZER;
 pthread_t       RHMACAuthenTID     = -1;
 sem_t           sem_workers;
 
 static GHashTable *macip_table  = NULL;
+static GQueue     *macip_workq = NULL;
+static GQueue     *macip_removeq = NULL;
 static MACAuthenSource *mac_src = NULL;
 static GSourceFuncs     mac_event;
 static gboolean mac_dispatch_handler (GSource *src, GSourceFunc callback,
@@ -33,6 +37,7 @@ static guint  macip_table_key_hash (gconstpointer key);
 static gboolean macip_table_key_equal (gconstpointer v1, gconstpointer v2);
 static void  macip_table_value_free (gpointer data);
 static void *macauthen_service (void *data);
+static void *macauthen_gc (void *data);
 static void *do_macauthen (void *data);
 static gboolean macauthen_verify  (RHMainServer *ms, MACAuthenElem *elem);
 static gboolean macauthen_is_loggedin  (MACAuthenElem *elem);
@@ -275,9 +280,24 @@ macauthen_setup (RHMainServer *main_server)
                                          NULL,
                                          macip_table_value_free);
     pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
+
+    pthread_mutex_lock (&RHMACAuthenWorkQMtxLock);
+    macip_workq = g_queue_new ();
+    pthread_mutex_unlock (&RHMACAuthenWorkQMtxLock);
+
+    pthread_mutex_lock (&RHMACAuthenRemoveQMtxLock);
+    macip_removeq = g_queue_new ();
+    pthread_mutex_unlock (&RHMACAuthenRemoveQMtxLock);
   }
 
   sem_init (&sem_workers, 0, 16);
+
+  if (pthread_create (&RHMACAuthenTID, NULL, macauthen_gc,
+                      (void *) main_server) == 0) {
+    pthread_detach (RHMACAuthenTID);
+  } else {
+    goto fail;
+  }
 
   if (pthread_create (&RHMACAuthenTID, NULL, macauthen_service,
                       (void *) main_server) == 0) {
@@ -359,6 +379,10 @@ static void *do_macauthen (void *data)
   DP ("Send MACAuthen");
   send_xmlrpc_macauthen (elem);
 
+  pthread_mutex_lock (&RHMACAuthenRemoveQMtxLock);
+  g_queue_push_tail (macip_removeq, elem);
+  pthread_mutex_unlock (&RHMACAuthenRemoveQMtxLock);
+
   sem_post (&sem_workers);
 }
 
@@ -366,44 +390,31 @@ static
 void *macauthen_service (void *data)
 {
   RHMainServer *ms = (RHMainServer *) data;
-  time_t last_process = 0;
 
   for (;;) {
     pthread_mutex_lock (&RHMACAuthenMtxLock);
     pthread_cond_wait (&RHMACAuthenCond, &RHMACAuthenMtxLock);
 
-    DP ("MAC Authen service table process");
-    GHashTableIter iter;
-    gpointer key;
-    gpointer value;
 
-    g_hash_table_iter_init (&iter, macip_table);
+    DP ("MAC Authen service work queue process");
+    while (!g_queue_is_empty (macip_workq)) {
+      MACAuthenElem *elem = NULL;
 
-    time_t start_process = time (NULL);
-    int    count = 0;
+      pthread_mutex_lock (&RHMACAuthenWorkQMtxLock);
+      elem = g_queue_pop_head (macip_workq);
 
-    while (g_hash_table_iter_next (&iter, &key, &value)) {
-      MACAuthenElem *elem = (MACAuthenElem *) value;
-
+      /* Delay queue */
       if (elem->last > 0) {
+        time_t start_process = time (NULL);
         time_t elapse = (start_process - elem->last);
-        if (elapse > elem->cleartime) {
-          DP ("Entry timeout - iface-idx: %d, ip: %s, "
-              "mac: %02x:%02x:%02x:%02x:%02x:%02x, "
-              "cleartime: %d",
-          elem->iface_idx,
-          inet_ntoa (elem->src),
-          elem->mac[0], elem->mac[1], elem->mac[2],
-          elem->mac[3], elem->mac[4], elem->mac[5],
-          elem->cleartime);
 
-          pthread_mutex_lock (&RHMACAuthenDataMtxLock);
-          g_hash_table_iter_remove (&iter);
-          pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
+        if (elapse < elem->cleartime) {
+          g_queue_push_tail (macip_workq, elem);
+          pthread_mutex_unlock (&RHMACAuthenWorkQMtxLock);
+          continue;
         }
-
-        continue;
       }
+      pthread_mutex_unlock (&RHMACAuthenWorkQMtxLock);
 
       DP ("Process - iface-idx: %d, ip: %s, mac: %02x:%02x:%02x:%02x:%02x:%02x"
           ", last: %d",
@@ -440,12 +451,46 @@ void *macauthen_service (void *data)
         }
       } else {
         pthread_mutex_lock (&RHMACAuthenDataMtxLock);
-        g_hash_table_iter_remove (&iter);
+        g_hash_table_remove (macip_table, elem);
         pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
       }
     }
 
     pthread_mutex_unlock (&RHMACAuthenMtxLock);
+  }
+}
+
+static
+void *macauthen_gc (void *data)
+{
+  RHMainServer *ms = (RHMainServer *) data;
+
+  for (;;) {
+    time_t start_process = time (NULL);
+    int i;
+
+    for (i = 0; i < g_queue_get_length (macip_removeq); i++) {
+      int should_remove   = 0;
+      MACAuthenElem *elem = NULL;
+
+      pthread_mutex_lock (&RHMACAuthenRemoveQMtxLock);
+      elem = g_queue_pop_head (macip_removeq);
+      time_t elapse = (start_process - elem->last);
+      if (elapse < elem->cleartime) {
+        g_queue_push_tail (macip_removeq, elem);
+      } else {
+        should_remove = 1;
+      }
+      pthread_mutex_unlock (&RHMACAuthenRemoveQMtxLock);
+
+      if (should_remove) {
+        pthread_mutex_lock (&RHMACAuthenDataMtxLock);
+        g_hash_table_remove (macip_table, elem);
+        pthread_mutex_unlock (&RHMACAuthenDataMtxLock);
+      }
+    }
+
+    sleep (1);
   }
 }
 
@@ -548,8 +593,13 @@ macauthen_add_elem (uint8_t *mac, unsigned long s_addr, uint32_t iface_idx,
     g_hash_table_insert (macip_table, elem, elem);
 
     found = (MACAuthenElem *) g_hash_table_lookup (macip_table, elem);
-    if (!found)
+    if (found) {
+      pthread_mutex_lock (&RHMACAuthenWorkQMtxLock);
+      g_queue_push_tail (macip_workq, elem);
+      pthread_mutex_unlock (&RHMACAuthenWorkQMtxLock);
+    } else {
       free_elem = elem;
+    }
   } else {
     if (found->cleartime < cleartime) {
       found->cleartime = cleartime;
