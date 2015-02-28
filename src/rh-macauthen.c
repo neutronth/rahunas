@@ -395,8 +395,10 @@ void *macauthen_service (void *data)
 
   for (;;) {
     struct timespec timeout;
-    timeout.tv_sec  = 2;
-    timeout.tv_nsec = 0;
+    struct timeval  now;
+    gettimeofday (&now, NULL);
+    timeout.tv_sec  = now.tv_sec + 2;
+    timeout.tv_nsec = now.tv_usec * 1000;
 
     pthread_mutex_lock (&RHMACAuthenMtxLock);
     pthread_cond_timedwait (&RHMACAuthenCond, &RHMACAuthenMtxLock, &timeout);
