@@ -1,5 +1,5 @@
 /**
- * RahuNASd header 
+ * RahuNASd header
  * Author: Neutron Soutmun <neo.neutron@gmail.com>
  * Date:   2008-08-07
  */
@@ -24,9 +24,10 @@
 #define DEFAULT_MAC "00:00:00:00:00:00"
 #define RH_SQLITE_BUSY_TIMEOUT_DEFAULT  10000  /* 10 seconds */
 
-extern const char *termstring; 
+extern const char *termstring;
 extern RHMainServer rh_main_server_instance;
 extern pthread_mutex_t RHMtxLock;
+extern int debug_enabled;
 
 enum RH_LOG {
   RH_LOG_DEBUG,
@@ -36,15 +37,12 @@ enum RH_LOG {
 
 #define RH_LOG_LEVEL RH_LOG_NORMAL
 
-#ifdef RH_DEBUG
 #define DP(format, args...) \
   do {  \
+    if (!debug_enabled) break; \
     fprintf(stderr, "%s - %s: %s (DBG): ", timemsg(), __FILE__, __FUNCTION__); \
     fprintf(stderr, format "\n", ## args); \
   } while (0)
-#else
-#define DP(format, args...)
-#endif
 
 enum saved_bandwidth_setting {
   SAVED_DEFAULT = 0,
@@ -60,7 +58,7 @@ struct rahunas_map {
 
 struct rahunas_member {
   struct vserver *vs;
-  uint32_t id; 
+  uint32_t id;
   unsigned short expired;
   time_t session_start;
   time_t session_timeout;
@@ -98,7 +96,7 @@ static const char *timemsg()
 
   t = time(NULL);
   strftime(tmsg, sizeof tmsg, tfmt, localtime(&t));
-  return tmsg; 
+  return tmsg;
 }
 
 #endif // __RAHUNASD_H

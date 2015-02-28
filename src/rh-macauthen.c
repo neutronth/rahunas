@@ -384,6 +384,8 @@ static void *do_macauthen (void *data)
   pthread_mutex_unlock (&RHMACAuthenRemoveQMtxLock);
 
   sem_post (&sem_workers);
+
+  return NULL;
 }
 
 static
@@ -462,6 +464,8 @@ void *macauthen_service (void *data)
 
     pthread_mutex_unlock (&RHMACAuthenMtxLock);
   }
+
+  return NULL;
 }
 
 static
@@ -496,6 +500,8 @@ void *macauthen_gc (void *data)
 
     sleep (1);
   }
+
+  return NULL;
 }
 
 static
