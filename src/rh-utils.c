@@ -21,14 +21,14 @@
 void *rh_malloc(size_t size)
 {
   void *p;
-  
+
   if (size == 0)
     return NULL;
 
   if ((p = malloc(size)) == NULL) {
     syslog(LOG_ERR, "RahuNASd: not enough memory");
     exit(EXIT_FAILURE);
-  } 
+  }
 
   return p;
 }
@@ -65,7 +65,7 @@ gchar *rh_string_get_sep(const char *haystack, const char *sep,
       return NULL;
     }
 
-    pEnd = g_strstr_len(pStart, strlen(pStart), sep);  
+    pEnd = g_strstr_len(pStart, strlen(pStart), sep);
     pEnd = pEnd == NULL ? pLast : pEnd;
 
     current_idx++;
@@ -95,7 +95,7 @@ int rh_closelog(int fd)
     return 0;
 }
 
-int logmsg(int priority, const char *msg, ...) 
+int logmsg(int priority, const char *msg, ...)
 {
   int n, size = 256;
   va_list ap;
@@ -117,7 +117,7 @@ int logmsg(int priority, const char *msg, ...)
 
     if (n > -1 && n < size)
       break;
- 
+
     if (n > -1)
       size = n+1;
     else
@@ -132,7 +132,7 @@ int logmsg(int priority, const char *msg, ...)
     }
   }
 
-  
+
   if (!p)
     return (-1);
 
@@ -171,17 +171,17 @@ uint32_t iptoid(struct rahunas_map *map, const char *ip) {
 
   if (!(inet_aton(ip, &req_ip))) {
     DP("Could not convert IP: %s", ip);
-    return (-1);  
+    return (-1);
   }
 
   DP("Request IP: %s", ip);
-  
+
   ret = ntohl(req_ip.s_addr) - ntohl(map->first_ip);
   if (ret < 0 || ret > (map->size - 1))
     ret = (-1);
 
   DP("Request Index: %lu", ret);
-  return ret; 
+  return ret;
 }
 
 const char *idtoip(struct rahunas_map *map, uint32_t id) {

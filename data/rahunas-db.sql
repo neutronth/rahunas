@@ -58,3 +58,10 @@ WHEN old.ip_dst='0.0.0.0'
 BEGIN
   UPDATE dbset SET upload_bytes=new.bytes,upload_speed=IFNULL(((new.bytes-old.bytes)/(strftime('%s', datetime('now', 'localtime'))-strftime('%s', old.stamp_updated))), 0) WHERE ip=new.ip_src;
 END;
+
+CREATE INDEX IF NOT EXISTS vserver_id_session_id_idx ON dbset (vserver_id,session_id);
+CREATE INDEX IF NOT EXISTS ip_idx ON dbset (ip);
+
+CREATE INDEX IF NOT EXISTS stamp_inserted_idx ON acct (stamp_inserted);
+CREATE INDEX IF NOT EXISTS ip_src_idx ON acct (ip_src);
+CREATE INDEX IF NOT EXISTS ip_dst_idx ON acct (ip_dst);

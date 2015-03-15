@@ -62,7 +62,7 @@ GNetXmlRpcClient *gnet_xmlrpc_client_new(const gchar *hostname,
       fprintf (stderr, "Error: Could not connect to %s:%d\n", hostname, port);
       return NULL;
     }
-  
+
   client->client.gnet_channel = gnet_tcp_socket_get_io_channel (client->socket);
   g_assert (client->client.gnet_channel != NULL);
 
@@ -95,7 +95,7 @@ int gnet_xmlrpc_client_call(GNetXmlRpcClient *_client,
                             gchar **reply)
 {
   GNetXmlRpcClientPrivate *client = (GNetXmlRpcClientPrivate*)_client;
-  gchar *xmlrpc_message = build_xmlrpc_message((GNetXmlRpcClient*)client, 
+  gchar *xmlrpc_message = build_xmlrpc_message((GNetXmlRpcClient*)client,
 	                                              method, param);
   gchar *msg_start, *msg_end;
   gchar *p;
@@ -104,14 +104,15 @@ int gnet_xmlrpc_client_call(GNetXmlRpcClient *_client,
   gsize n;
   gchar buffer[1024];
   gint error;
-  
+
   n = strlen(xmlrpc_message);
   //  printf("Writing...\n"); fflush(stdout);
   error = gnet_io_channel_writen (client->client.gnet_channel,
                                   xmlrpc_message, n, &n);
+  g_free (xmlrpc_message);
   // printf("error = %d\n", error); fflush(stdout);
   if (error != G_IO_ERROR_NONE)
-      return -1;
+    goto fail;
 
   // fprintf(stderr, "entering while loop\n");
   while (gnet_io_channel_readline (client->client.gnet_channel, buffer, sizeof(buffer), &n) == G_IO_ERROR_NONE)
@@ -124,7 +125,7 @@ int gnet_xmlrpc_client_call(GNetXmlRpcClient *_client,
               // If we don't have HTTP we've got a problem
               if (g_strstr_len(buffer, 5, "HTTP") == NULL)
                 {
-                  return -1;
+                  goto fail;
                 }
             }
           else if (n < 5) // Assume that empty line the line less than 5 chars
@@ -143,7 +144,7 @@ int gnet_xmlrpc_client_call(GNetXmlRpcClient *_client,
                   *p = g_ascii_tolower(*p);
                   p++;
                 }
-              
+
               // Search for string
               if ((p = g_strstr_len(buffer, n-1,
                                     "content-length:")) != NULL)
@@ -178,8 +179,8 @@ int gnet_xmlrpc_client_call(GNetXmlRpcClient *_client,
                            xmlrpc_string->len,
                            "<string>");
   if (msg_start == NULL)
-    return -1;
-  
+    goto fail;
+
   msg_start += strlen("<string>");
   msg_end = g_strrstr(msg_start, "</string>");
 
@@ -220,8 +221,15 @@ int gnet_xmlrpc_client_call(GNetXmlRpcClient *_client,
   g_string_free(xmlrpc_string, TRUE);
 
   return 0;
+
+fail:
+  *reply = NULL;
+  g_string_free(reply_string, TRUE);
+  g_string_free(xmlrpc_string, TRUE);
+
+  return -1;
 }
-  
+
 static gchar *build_xmlrpc_message(GNetXmlRpcClient *_client,
                                    const gchar *method,
                                    const gchar *param)
@@ -231,7 +239,7 @@ static gchar *build_xmlrpc_message(GNetXmlRpcClient *_client,
   GString *req_string = g_string_new("");
   const gchar *p;
   gchar *ret;
-  
+
   g_string_append_printf(xmlrpc_msg,
                          "<?xml version=\"1.0\"?>\n"
                          "<methodCall>\n"
@@ -254,12 +262,12 @@ static gchar *build_xmlrpc_message(GNetXmlRpcClient *_client,
           g_string_append_c(xmlrpc_msg, c);
         }
     }
-  
+
   g_string_append(xmlrpc_msg,
                   "</string></value></param>\n"
                   "</params>\n"
                   "</methodCall>\n");
-  
+
   g_string_append_printf(req_string,
                          "POST %s HTTP/1.0\n"
                          "User-Agent: RahuNASd/0.1\n"

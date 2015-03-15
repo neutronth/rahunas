@@ -49,7 +49,7 @@ get_config_value () {
   file=$3
 
   test -n "$file" || return
-  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key[ ]*=" | cut -d= -f2 | sed "s/^ *\(.*[^ ]\) *$/\1/" | sed 's/"//g'
+  test -e "$file" && cat "$file" | sed -e "0,/$section = {/ ! { /}/,/$section = {/ ! s/^/>>/ }" | grep "^>>" | sed -e "s/^>>//g" | grep -w "$key" | awk -F'=' '{st = index($0,"="); print substr($0,st+1)}' | sed "s/^\s*//g" | sed 's/"//g'
 }
 
 ##
@@ -295,7 +295,7 @@ navigation_rules () {
   $IPTABLES $action INPUT \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_INPUT
-  $IPTABLES $action INPUT -m connmark --mark 2/2 \
+  $IPTABLES $action INPUT -m connmark --mark 0x2/0x2 \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_INPUT_AUTH
 
@@ -314,10 +314,10 @@ navigation_rules () {
   $IPTABLES $action FORWARD -m set --set $SETNAME dst -j $CHAIN_FORWARD_AUTH
   $IPTABLES $action FORWARD -m set --set $SETNAME src -j $CHAIN_FORWARD_AUTH
 
-  $IPTABLES $action FORWARD -m connmark --mark 2/2 \
+  $IPTABLES $action FORWARD -m connmark --mark 0x2/0x2 \
     $DEV_OUT_PARAM $DEV_INTERNAL -d $CLIENTS \
     -j $CHAIN_FORWARD_AUTH
-  $IPTABLES $action FORWARD -m connmark --mark 2/2 \
+  $IPTABLES $action FORWARD -m connmark --mark 0x2/0x2 \
     $DEV_IN_PARAM $DEV_INTERNAL -s $CLIENTS \
     -j $CHAIN_FORWARD_AUTH
 
@@ -491,11 +491,12 @@ policy () {
 
   $IPTABLES -t mangle -N ${CHAIN_RH_MACAUTHEN}
   $IPTABLES -t mangle -A ${CHAIN_RH_MACAUTHEN} \
-    -m statistic --mode nth --every 10 \
-    -m recent --rcheck --seconds 2 --hitcount 1 --name callcheck --rsource \
-    -j NFQUEUE --queue-num 0
+    -m recent --rcheck --name callcheck --seconds 10 --hitcount 1 \
+    -j RETURN
   $IPTABLES -t mangle -A ${CHAIN_RH_MACAUTHEN} \
     -m recent --set --name callcheck --rsource
+  $IPTABLES -t mangle -A ${CHAIN_RH_MACAUTHEN} \
+    -j NFQUEUE --queue-num 0
 }
 
 cleanup_policy () {
@@ -613,8 +614,8 @@ rules () {
   ##
   # Mark the connections that have been authorized
   ##
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME dst -j CONNMARK --set-mark 2 
-  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME src -j CONNMARK --set-mark 2 
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME dst -j CONNMARK --or-mark 0x2
+  $IPTABLES -t mangle -A $CHAIN_MANGLE_PREROUTING -m set --set $SETNAME src -j CONNMARK --or-mark 0x2
 
   ##
   # MAC Authen
@@ -658,18 +659,18 @@ rules () {
 
     if [ "$PROXY" = "transparent" ]; then
       # Do not redirect the excluded src/dst to proxy
-      $IPTABLES -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
-        -m connmark --mark 6/6 -j ACCEPT
+      $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
+        -m connmark --mark 0x4/0x4 -j ACCEPT
 
       if [ "$PROXY_HOST" = "localhost" ] || [ "$PROXY_HOST" = "127.0.0.1" ]
       then
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
           ! -d $VSERVER_IP \
-          -m connmark --mark 2/2 -j REDIRECT --to-ports $PROXY_PORT
+          -m connmark --mark 0x2/0x2 -j REDIRECT --to-ports $PROXY_PORT
       else
         $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp --dport http \
           ! -d $VSERVER_IP \
-          -m connmark --mark 2/2 \
+          -m connmark --mark 0x2/0x2 \
           -j DNAT --to-destination $PROXY_HOST:$PROXY_PORT
       fi
     fi
@@ -681,7 +682,7 @@ rules () {
   
   $IPTABLES -t nat -A $CHAIN_NAT_PREROUTING -p tcp -m multiport \
     --dports $VSERVER_PORTS_INTERCEPT ! -d $VSERVER_IP \
-    -m connmark ! --mark 2/2 \
+    -m connmark ! --mark 0x2/0x2 \
     -j $CHAIN_NAT_AUTHEN
   
   $IPTABLES -t nat -A $CHAIN_NAT_AUTHEN -p tcp \
@@ -700,9 +701,9 @@ rules () {
   for excluded in $EXCLUDED;
   do
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -s $excluded \
-      -j CONNMARK --set-mark 6
+      -j CONNMARK --or-mark 0x6
     $IPTABLES -t mangle -I $CHAIN_MANGLE_PREROUTING -d $excluded \
-      -j CONNMARK --set-mark 6
+      -j CONNMARK --or-mark 0x6
   done 
 
   ##
