@@ -21,7 +21,7 @@ GList *member_get_node_by_id(RHVServer *vs, uint32_t id)
   while (runner != NULL) {
     member = (struct rahunas_member *) runner->data;
 
-    if (member->id == id)
+    if (member->id == id && !member->deleted)
       return runner;
 
     runner = g_list_next(runner);
@@ -147,6 +147,7 @@ static int startsess (RHVServer *vs, struct task_req *req)
   member->id = id; 
   member->last_update = 0;
   member->postupdate  = 0;
+  member->deleted     = 0;
 
   if (member->username && member->username != termstring)
     free(member->username);
@@ -260,9 +261,7 @@ static int stopsess  (RHVServer *vs, struct task_req *req)
                         member->session_id,
                         mac_tostring(member->mac_address)); 
 
-  rh_free_member(member);   
-
-  vs->v_map->members = g_list_delete_link(vs->v_map->members, member_node);
+  member->deleted = 1;
 
   return 0;
 }

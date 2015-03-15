@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 m4_define(rh_major, 1)
-m4_define(rh_minor, 0)
+m4_define(rh_minor, 1)
 m4_define(rh_micro, 0)
 
 AC_PREREQ(2.61)

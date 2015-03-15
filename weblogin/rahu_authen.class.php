@@ -54,7 +54,7 @@ class RahuClient {
   }
 
   public function getMAC () {
-    return $this->mac;
+    return strtolower ($this->mac);
   }
 
   private function returnMacAddress() {
@@ -395,7 +395,7 @@ class RahuAuthenLogin extends RahuAuthen {
 
   protected function onSubmit () {
     if (!empty($_POST['user']) && !empty($_POST['passwd'])) {
-      $_POST['user'] = trim($_POST['user']);
+      $_POST['user'] = trim(strtolower ($_POST['user']));
 
       $rauth = new rahu_radius_auth ($_POST['user'], $_POST['passwd'],
                                      $this->config['RADIUS_ENCRYPT']);

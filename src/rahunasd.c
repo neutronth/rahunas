@@ -17,6 +17,7 @@
 #include <sqlite3.h>
 #include <inttypes.h>
 #include <execinfo.h>
+#include <getopt.h>
 
 #include "rahunasd.h"
 #include "rh-server.h"
@@ -29,6 +30,7 @@
 
 const char *termstring = "";
 pid_t pid, sid;
+int debug_enabled = 0;
 
 pthread_mutex_t RHMtxLock        = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RHPollingMtxLock = PTHREAD_MUTEX_INITIALIZER;
@@ -92,6 +94,11 @@ void rh_sighandler(int sig)
         exit (1);
       }
       break;
+    case SIGINT:
+      {
+        rh_exit();
+        exit(EXIT_SUCCESS);
+      }
   }
   return;
 }
@@ -176,15 +183,28 @@ expired_check(void *data)
     return (-1);
 
   if (process->list == NULL)
-    return (-1); 
+    return (-1);
 
   runner = g_list_first(process->vs->v_map->members);
 
   while (runner != NULL) {
-    pthread_mutex_lock (&RHMtxLock);
     time_t time_now = time (NULL);
 
     member = (struct rahunas_member *)runner->data;
+
+    if (member->deleted) {
+      pthread_mutex_lock (&RHMtxLock);
+      DP("Deleting member = %s", member->username);
+      rh_free_member(member);
+      process->vs->v_map->members =
+        g_list_delete_link(process->vs->v_map->members, runner);
+
+      /* Restart from begining */
+      runner = g_list_first(process->vs->v_map->members);
+      pthread_mutex_unlock (&RHMtxLock);
+      continue;
+    }
+
     runner = g_list_next(runner);
 
     rh_data_sync (process->vs->vserver_config->vserver_id, member);
@@ -200,7 +220,6 @@ expired_check(void *data)
 
     d = get_data_from_set (process->list, id, process->vs->v_map);
     if (d == NULL) {
-      pthread_mutex_unlock (&RHMtxLock);
       continue;
     }
 
@@ -219,9 +238,11 @@ expired_check(void *data)
 
       if (send_xmlrpc_stopacct(process->vs, id,
             RH_RADIUS_TERM_IDLE_TIMEOUT) == 0) {
+        pthread_mutex_lock (&RHMtxLock);
         res = rh_task_stopsess(process->vs, &req);
+        pthread_mutex_unlock (&RHMtxLock);
       }
-    } else if (member->session_timeout != 0 && 
+    } else if (member->session_timeout != 0 &&
                time_now > member->session_timeout) {
       // Session Timeout (Expired)
       DP("Found IP: %s session timeout", idtoip(process->vs->v_map, id));
@@ -231,7 +252,9 @@ expired_check(void *data)
 
       if (send_xmlrpc_stopacct(process->vs, id,
             RH_RADIUS_TERM_SESSION_TIMEOUT) == 0) {
+        pthread_mutex_lock (&RHMtxLock);
         res = rh_task_stopsess(process->vs, &req);
+        pthread_mutex_unlock (&RHMtxLock);
       }
     } else {
       /* Update session */
@@ -239,8 +262,6 @@ expired_check(void *data)
       memcpy(req.mac_address, &d->ethernet, ETH_ALEN);
       res = rh_task_updatesess (process->vs, &req);
     }
-
-    pthread_mutex_unlock (&RHMtxLock);
   }
 }
 
@@ -278,12 +299,12 @@ rh_reload (void)
   rh_main_server->polling_blocked = 1;
 
   if (rh_main_server->main_config->log_file != NULL) {
-    syslog(LOG_INFO, "Open log file: %s", 
+    syslog(LOG_INFO, "Open log file: %s",
            rh_main_server->main_config->log_file);
     rh_main_server->log_fd = rh_openlog(rh_main_server->main_config->log_file);
 
     if (rh_main_server->log_fd == -1) {
-      syslog(LOG_ERR, "Could not open log file %s\n", 
+      syslog(LOG_ERR, "Could not open log file %s\n",
              rh_main_server->main_config->log_file);
       exit(EXIT_FAILURE);
     }
@@ -313,7 +334,7 @@ rh_reload (void)
 
   walk_through_vserver(do_vserver_reload, rh_main_server);
   vserver_unused_cleanup(rh_main_server);
-  
+
   /* Unblock polling */
   rh_main_server->polling_blocked = 0;
   DP("Config reload finished");
@@ -329,11 +350,11 @@ watch_child(char *argv[])
   time_t stop;
   int status;
   int nullfd;
-  
+
   if (*(argv[0]) == '(')
     return;
 
-  pid = fork(); 
+  pid = fork();
   if (pid < 0) {
     syslog(LOG_ALERT, "fork failed");
     exit(EXIT_FAILURE);
@@ -352,7 +373,7 @@ watch_child(char *argv[])
   if ((chdir("/")) < 0) {
     exit(EXIT_FAILURE);
   }
-    
+
   /* Close out the standard file descriptors */
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
@@ -368,12 +389,12 @@ watch_child(char *argv[])
       execvp(prog, argv);
       syslog(LOG_ALERT, "execvp failed");
     } else if (pid < 0) {
-      syslog(LOG_ERR, "Could not fork the child process");   
+      syslog(LOG_ERR, "Could not fork the child process");
       exit(EXIT_FAILURE);
     }
-  
+
     /* parent */
-    syslog(LOG_NOTICE, "RahuNASd Parent: child process %d started", pid);   
+    syslog(LOG_NOTICE, "RahuNASd Parent: child process %d started", pid);
 
     time(&start);
 
@@ -391,22 +412,22 @@ watch_child(char *argv[])
     } else {
       syslog(LOG_NOTICE, "RahuNASd Parent: child process %d exited", pid);
     }
-  
+
     if (stop - start < 10)
       failcount++;
     else
       failcount = 0;
-  
+
     if (failcount == 5) {
       syslog(LOG_ALERT, "Exiting due to repeated, frequent failures");
       exit(EXIT_FAILURE);
     }
-  
+
     if (WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
         syslog(LOG_NOTICE, "Exit Gracefully");
         exit(EXIT_SUCCESS);
     }
-    
+
     sleep(3);
   }
 }
@@ -432,6 +453,7 @@ int main(int argc, char *argv[])
   gchar* addr = "localhost";
   int port    = 8123;
   int fd_log;
+  int donot_fork = 0;
 
   char version[256];
 
@@ -448,6 +470,20 @@ int main(int argc, char *argv[])
     .rh_main.serviceclass = 0,
   };
 
+  int c;
+  while ((c = getopt (argc, argv, "fX")) != -1) {
+    switch (c) {
+      case 'f':
+        donot_fork = 1;
+        break;
+      case 'X':
+        debug_enabled = 1;
+        break;
+      default:
+        break;
+    }
+  }
+
   GNetXmlRpcServer *server = NULL;
   GMainLoop* main_loop     = NULL;
   pthread_t  polling_tid;
@@ -455,23 +491,29 @@ int main(int argc, char *argv[])
   signal(SIGTERM, &rh_sighandler);
   signal(SIGHUP, &rh_sighandler);
   signal(SIGSEGV, &rh_sighandler);
-  signal(SIGINT, SIG_IGN);
+
+  if (!donot_fork)
+    signal(SIGINT, SIG_IGN);
+  else
+    signal(SIGINT, &rh_sighandler);
+
   signal(SIGPIPE, SIG_IGN);
 
-  watch_child(argv);
+  if (!donot_fork)
+    watch_child(argv);
 
   /* Get main server config */
   get_config(CONFIG_FILE, &rh_main_config);
   rh_main_server->main_config = (struct rahunas_main_config *) &rh_main_config;
 
   /* Open and select main log file */
-  if (rh_main_server->main_config->log_file != NULL) {
-    syslog(LOG_INFO, "Open log file: %s", 
+  if (!donot_fork && rh_main_server->main_config->log_file != NULL) {
+    syslog(LOG_INFO, "Open log file: %s",
            rh_main_server->main_config->log_file);
     rh_main_server->log_fd = rh_openlog(rh_main_server->main_config->log_file);
 
     if (rh_main_server->log_fd == -1) {
-      syslog(LOG_ERR, "Could not open log file %s\n", 
+      syslog(LOG_ERR, "Could not open log file %s\n",
              rh_main_server->main_config->log_file);
       exit(EXIT_FAILURE);
     }
@@ -501,7 +543,7 @@ int main(int argc, char *argv[])
   }
 
 
-  snprintf(version, sizeof (version), "Starting %s - Version %s", PROGRAM, 
+  snprintf(version, sizeof (version), "Starting %s - Version %s", PROGRAM,
            RAHUNAS_VERSION);
   logmsg(RH_LOG_NORMAL, version);
 
@@ -525,19 +567,19 @@ int main(int argc, char *argv[])
     exit (EXIT_FAILURE);
   }
 
-  gnet_xmlrpc_server_register_command (server, 
-                                       "startsession", 
-                                       do_startsession, 
+  gnet_xmlrpc_server_register_command (server,
+                                       "startsession",
+                                       do_startsession,
                                        rh_main_server);
 
-  gnet_xmlrpc_server_register_command (server, 
-                                       "stopsession", 
-                                       do_stopsession, 
+  gnet_xmlrpc_server_register_command (server,
+                                       "stopsession",
+                                       do_stopsession,
                                        rh_main_server);
 
-  gnet_xmlrpc_server_register_command (server, 
-                                       "getsessioninfo", 
-                                       do_getsessioninfo, 
+  gnet_xmlrpc_server_register_command (server,
+                                       "getsessioninfo",
+                                       do_getsessioninfo,
                                        rh_main_server);
 
   gnet_xmlrpc_server_register_command (server,
@@ -547,9 +589,9 @@ int main(int argc, char *argv[])
 
   DP("Polling interval = %d", rh_main_server->main_config->polling_interval);
 
-  g_timeout_add_seconds (rh_main_server->main_config->polling_interval, 
+  g_timeout_add_seconds (rh_main_server->main_config->polling_interval,
                          polling, NULL);
- 
+
   walk_through_vserver(do_vserver_init_done, rh_main_server);
 
   if (pthread_create (&polling_tid, NULL, polling_service,
