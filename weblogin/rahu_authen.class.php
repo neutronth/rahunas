@@ -204,7 +204,7 @@ abstract class RahuAuthen {
     $tpl->setHelpLink ($this->config["NAS_HELP_LINK"]);
     $tpl->setLanguages ($this->i18n->getLanguages ());
     $tpl->setCurrentLanguage ($this->i18n->getCurrentLanguage ());
-    $tpl->setUserRequestUrl (@urldecode ($_GET['request_url']));
+    $tpl->setUserRequestUrl ($this->request_url);
     $tpl->setUserInfo ($this->userinfo);
 
     if (!empty ($this->message)) {
@@ -297,13 +297,6 @@ class RahuAuthenLogin extends RahuAuthen {
                empty ($_GET['request_url']) ?
                  urlencode ($this->config['DEFAULT_REDIRECT_URL']) :
                  $_GET['request_url']);
-
-    if (isset ($this->config["NAS_REDIRECTOR_URL"]) &&
-          !empty ($this->config["NAS_REDIRECTOR_URL"])) {
-      $this->request_url = urlencode ($this->config["NAS_REDIRECTOR_URL"]) .
-                             $this->redirect_url . "&ref=" .
-                             urlencode ($this->config["NAS_LOGIN_TITLE"]);
-    }
 
     if (empty ($this->message)) {
       header ("Location: " . $this->redirect_url);
@@ -537,6 +530,17 @@ class RahuAuthenLogout extends RahuAuthen {
     $request_url = @urldecode ($_GET['request_url']);
     $request_url_text = strlen($request_url) < 20 ?
                           $request_url : substr($request_url, 0, 20) . " ...";
+
+    $this->request_url = urldecode ($request_url);
+
+    if (isset ($this->config["NAS_REDIRECTOR_URL"]) &&
+          !empty ($this->config["NAS_REDIRECTOR_URL"])) {
+      $request_url = $this->config["NAS_REDIRECTOR_URL"] .
+                       urlencode ($request_url) . "&ref=" .
+                       urlencode ($this->config["NAS_LOGIN_TITLE"]);
+      $this->request_url = $request_url;
+    }
+
     $request_url_link = sprintf ("<a href='%s' target='_blank'>%s</a>",
                                  $request_url, $request_url_text);
 
