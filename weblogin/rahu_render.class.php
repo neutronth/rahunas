@@ -137,6 +137,7 @@ class RahuRender {
       }
     }
 
+    natsort ($images);
     $this->engine->assign ("slide_images", $images);
   }
 
