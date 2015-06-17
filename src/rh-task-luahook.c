@@ -351,11 +351,12 @@ static int luahook_getinfo (lua_State *L)
     ret = 1;
   } else if (INFONAME ("ip")) {
     lua_pushstring (L, idtoip (member->vs->v_map, member->id));
+    ret = 1;
   } else if (INFONAME ("username")) {
     lua_pushstring (L, member->username);
     ret = 1;
   } else if (INFONAME ("mac")) {
-    lua_pushstring (L, member->mac_address);
+    lua_pushstring (L, mac_tostring (member->mac_address));
     ret = 1;
   } else if (INFONAME ("serviceclass")) {
     lua_pushstring (L, member->serviceclass_name);
