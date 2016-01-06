@@ -16,6 +16,7 @@
 #include "rh-task-luahook.h"
 #include "rh-utils.h"
 #include "rh-xmlrpc-cmd.h"
+#include "rh-ipset.h"
 
 enum luahook_verdict {
   LUAHOOK_STOP     = 1,
