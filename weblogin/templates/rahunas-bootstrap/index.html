@@ -28,6 +28,17 @@
   src: url('{$template_path}/css/fonts/glyphicons-halflings-regular.eot');
   src: url('{$template_path}/css/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('{$template_path}/css/fonts/glyphicons-halflings-regular.woff') format('woff'), url('{$template_path}/css/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('{$template_path}/css/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
 }
+
+@font-face {
+  font-family: 'Kanit';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Kanit'), local('Kanit-Regular'), url('{$template_path}/css/fonts/kanit-regular.woff2') format('woff2');
+}
+
+body, input {
+  font-family: 'Kanit', sans-serif;
+}
 </style>
 
 </head>
@@ -36,10 +47,19 @@
   <div class="container-fluid">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#rhbootstrap-navbar-collapse">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
+        <div style="display: inline-block; float: left; color: #dddddd; padding-right: 10px; line-height: 14px;">
+        {if $current_language == 'Thai'}
+          เมนู
+        {else}
+          Menu
+        {/if}
+        </div>
+        <div style="display: inline-block; float: left;">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </div>
       </button>
       <b><a class="navbar-brand" href="{$smarty.server.REQUEST_URI}">{$brand_title}</a></b>
     </div>
@@ -165,8 +185,8 @@
       {/if}
       </center>
     </div>
-    <div class="col-md-7 hidden-xs">
-      <div id="carousel-rahunas" class="carousel slide hidden-xs hidden-sm" data-ride="carousel" data-interval="10000" style="position: fixed; top: 55px; bottom: 55px; left: 42%; max-width: 58%; height: auto; z-index: -1;" >
+    <div class="col-md-7 hidden-xs rh-container-right" style="padding: 0px;">
+      <div id="carousel-rahunas" class="carousel slide" data-ride="carousel" data-interval="10001">
         <ol class='carousel-indicators' style='bottom: 70px;'>
         {for $i=0 to count($slide_images)-1}
           <li data-target='#carousel-rahunas' {if $i == 0}class="active"{/if} data-slide-to='{$i}'></li>
@@ -175,7 +195,7 @@
         <div class='carousel-inner'>
         {$i=0}
         {foreach $slide_images as $image}
-        <div class='item {if $i == 0}active{/if}'><img src='{$image}'></div>
+        <div class='item {if $i == 0}active{/if}' style="z-index: -1"><img src='{$image}'></div>
         {$i=$i+1}
         {/foreach}
         </div>
@@ -215,12 +235,46 @@ Your usage information will be recorded on the system in compliance with laws.
 <script src="{$template_path}/js/jquery.min.js"></script>
 <script src="{$template_path}/js/bootstrap.min.js"></script>
 <script src="{$template_path}/libs/jasny-bootrap/js/jasny-bootstrap.min.js"></script>
+<script src="{$template_path}/libs/jquery-imagefit/jquery.imagefit.min.js"></script>
 
 <script>
+slide_resize = function () {
+  $('#carousel-rahunas').height ($("#rh-footer").offset().top - $("#rhbootstrap-navbar-collapse").height ());
+  $('.item').height ($("#rh-footer").offset().top - $("#rhbootstrap-navbar-collapse").height ());
+
+  $('.slide').imagefit ({
+    mode: 'outside',
+    force: 'true',
+    halign: 'center',
+    valign: 'middle',
+    onStart: function (idx, container, imgcontainer) {
+    }
+  });
+
+  $('.item').imagefit ({
+    mode: 'outside',
+    force: 'true',
+    halign: 'center',
+    valign: 'middle',
+    onStart: function (idx, container, imgcontainer) {
+    }
+  });
+}
+
+$(window).load (function () {
+  slide_resize ();
+});
+
 $(function () {
   setTimeout (function () {
     $("input[name='user']").focus ();
   }, 200);
+
+  slide_resize ();
+});
+
+$(window).resize (function () {
+  slide_resize ();
 });
 </script>
 </body>
