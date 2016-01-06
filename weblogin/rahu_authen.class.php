@@ -524,8 +524,8 @@ class RahuAuthenLogout extends RahuAuthen {
     $session_timeout_label = $session_timeout == 0 ?
                                _("Session Time") :_("Session Remain Time");
     $session_timeout_remain = $session_timeout == 0 ?
-      $this->formatSeconds(time() - $this->sessioninfo['session_start']) :
-      $this->formatSeconds($this->sessioninfo['session_timeout'] - time());
+      $this->formatSeconds(time() - $this->sessioninfo['session_start'], true) :
+      $this->formatSeconds($this->sessioninfo['session_timeout'] - time(), false);
 
     $request_url = @urldecode ($_GET['request_url']);
     $request_url_text = strlen($request_url) < 20 ?
@@ -592,35 +592,53 @@ class RahuAuthenLogout extends RahuAuthen {
                 array (_("Request URL") => $request_url_link));
   }
 
-  private function formatSeconds($secs) {
-    $units = array (
-      "day"     => array ("unit" => _("day"),
-                          "plural_unit" => _("days"),
-                          "div" => 24*3600),
-      "hour"    => array ("unit" => _("hour"),
-                          "plural_unit" => _("hours"),
-                          "div" =>    3600),
-      "minute"  => array ("unit" => _("minute"),
-                          "plural_unit" => _("minutes"),
-                          "div" =>      60),
-      "second"  => array ("unit" => _("second"),
-                          "plural_unit" => _("seconds"),
-                          "div" =>       1),
-    );
+  private function formatSeconds($secs, $count_up) {
+    $step_sign = $count_up ? "+" : "-";
+    $day = _("day");
+    $days = _("days");
+    $hour = _("hour");
+    $hours = _("hours");
+    $minute = _("minute");
+    $minutes = _("minutes");
+    $second = _("second");
+    $seconds = _("seconds");
 
-    if ($secs == 0)
-      return "$secs " . $units["second"]["plural_unit"];
+    $ret_script = "<div id='rh-status-session-time' data-session-time='$secs'></div>" .
+                  "<script>" .
+                  "  sstime=document.getElementById('rh-status-session-time');" .
+                  "  sstime_format = function (secs) {" .
+                  "    var ret = [];" .
+                  "    var units_list = ['day', 'hour', 'minute', 'second'];" .
+                  "    var units = { day: { unit: '$day', plural_unit: '$days', div: 24 * 3600 }," .
+                  "                  hour: { unit: '$hour', plural_unit: '$hours', div: 3600 }," .
+                  "                  minute: { unit: '$minute', plural_unit: '$minutes', div: 60 }," .
+                  "                  second: { unit: '$second', plural_unit: '$seconds', div: 1 }" .
+                  "                };" .
+                  "    if (secs == 0) {" .
+                  "      return secs + ' $seconds';" .
+                  "    }" .
 
-    $s = "";
+                  "    for (var idx=0; idx<units_list.length; idx++) {" .
+                  "      var u = units_list[idx];" .
+                  "      var n = 0;" .
+                  "      if (n = parseInt (secs / units[u].div)) {" .
+                  "        ret.push (n + ' ' + (n > 1 ? units[u].plural_unit : units[u].unit));" .
+                  "        secs -= n * units[u].div;".
+                  "      }" .
+                  "    }" .
+                  "    return ret.join (' ');" .
+                  "  };" .
+                  "  sstime_render = function () {" .
+                  "    secs = parseInt(sstime.getAttribute('data-session-time'));" .
+                  "    secs = secs <= 0 ? 0 : secs $step_sign 1;" .
+                  "    sstime.setAttribute('data-session-time', secs);" .
+                  "    sstime.innerHTML = sstime_format (secs);" .
+                  "  };" .
+                  "  setInterval (sstime_render, 1000);" .
+                  "  sstime_render ();" .
+                  "</script>";
 
-    foreach ($units as $unit) {
-      if ($n = intval($secs / $unit["div"])) {
-        $s .= "$n " . (abs($n) > 1 ? $unit["plural_unit"] : $unit["unit"]) . ", ";
-        $secs -= $n * $unit["div"];
-      }
-    }
-
-    return substr ($s, 0, -2);
+    return $ret_script;
   }
 
   private function formatBytes ($size, $precision = 2) {
