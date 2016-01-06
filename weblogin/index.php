@@ -31,10 +31,12 @@
     any other GPL-like (LGPL, GPL2) License.
 */
 
+require_once 'libs/Browscap/Browscap.php';
 require_once 'rahu_authen.class.php';
 require_once 'rahu_i18n.class.php';
 
-header ("HTTP/1.1 511 Network Authentication Required");
+use phpbrowscap\Browscap;
+
 
 $client = new RahuClient ();
 $rahuconfig = new RahuConfig ($client);
@@ -52,6 +54,20 @@ $forward_uri = sprintf ($forward_tpl,
                            ":" . $config['NAS_LOGIN_PORT'] : "",
                          "login.php?sss=" . time(),
                          urlencode ($request_url));
+
+$bc = new Browscap ("data/browscap-cache/");
+$bc->doAutoUpdate = false;
+$browser = $bc->getBrowser ();
+
+if ($browser->Platform == "iOS")
+  {
+    header ("HTTP/1.1 511 Network Authentication Required");
+  }
+else if ($browser->Platform == "Android")
+  {
+    header ("HTTP/1.1 302 Found");
+    header ("Location: " . $forward_uri);
+  }
 ?>
 <html>
 <head>
